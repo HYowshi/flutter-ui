@@ -202,6 +202,7 @@ class _StudioState extends State<Studio> {
                     ),
                   Expanded(
                     child: SingleChildScrollView(
+                      key: const ValueKey('studio-content-scroll'),
                       controller: scroll,
                       padding: EdgeInsets.all(wide ? 40 : 20),
                       child: Center(
@@ -434,7 +435,7 @@ class _StudioState extends State<Studio> {
           ),
           const SizedBox(height: 20),
           Text(
-            'v0.11.0 · Ready-to-use Flutter UI',
+            'v0.11.1 · Ready-to-use Flutter UI',
             style: TextStyle(fontSize: 10, color: s.onSurfaceVariant),
           ),
         ],
@@ -2307,7 +2308,7 @@ class _ImageDemoState extends State<ImageDemo> {
               children: [
                 Icon(Icons.hide_image_outlined),
                 SizedBox(width: 8),
-                Text('Chưa có ảnh'),
+                Flexible(child: Text('Chưa có ảnh')),
               ],
             ),
           ),

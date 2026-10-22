@@ -97,6 +97,16 @@ class _UIFormState extends State<UIForm> {
     if (widget.controller != oldWidget.controller) {
       _detach(owned: oldWidget.controller == null);
       _attach();
+    } else if (widget.formKey != oldWidget.formKey) {
+      // A different FormState represents a different record/session. Never
+      // apply a request from the previous identity to this new set of fields.
+      _generation++;
+      _controller._submitting = false;
+      _controller._error = null;
+      _controller._errors = const {};
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _controller._emit();
+      });
     }
   }
 

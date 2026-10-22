@@ -59,6 +59,7 @@ class _UITableState<T> extends State<UITable<T>> {
   int? _sort;
   bool _ascending = true;
   List<int>? _order;
+  bool _keysValidated = false;
   final _horizontal = ScrollController();
   @override
   void dispose() {
@@ -78,6 +79,10 @@ class _UITableState<T> extends State<UITable<T>> {
             widget.columns[_sort!].label != oldWidget.columns[_sort!].label ||
             widget.columns[_sort!].compare == null)) {
       _sort = null;
+    }
+    if (!identical(widget.rows, oldWidget.rows) ||
+        widget.rowKey != oldWidget.rowKey) {
+      _keysValidated = false;
     }
     if (widget.pageSize != oldWidget.pageSize) _page = 0;
   }
@@ -111,9 +116,13 @@ class _UITableState<T> extends State<UITable<T>> {
     if (selectable && widget.rowKey == null) {
       throw ArgumentError('Selection requires rowKey.');
     }
-    if (widget.rowKey != null &&
-        widget.rows.map(widget.rowKey!).toSet().length != widget.rows.length) {
-      throw ArgumentError('Row keys must be unique.');
+    if (!_keysValidated) {
+      if (widget.rowKey != null &&
+          widget.rows.map(widget.rowKey!).toSet().length !=
+              widget.rows.length) {
+        throw ArgumentError('Row keys must be unique.');
+      }
+      _keysValidated = true;
     }
     final s = Theme.of(context).colorScheme;
     if (widget.loading) {
@@ -143,16 +152,18 @@ class _UITableState<T> extends State<UITable<T>> {
             ),
       );
     }
-    final order = _order ??= (List.generate(widget.rows.length, (i) => i)
-      ..sort((a, b) {
-        if (_sort == null) return a.compareTo(b);
+    final order = _order ??= (() {
+      final indices = List.generate(widget.rows.length, (i) => i);
+      if (_sort == null) return indices;
+      return indices..sort((a, b) {
         final compare = widget.columns[_sort!].compare;
         if (compare == null) return a.compareTo(b);
         final result = _ascending
             ? compare(widget.rows[a], widget.rows[b])
             : compare(widget.rows[b], widget.rows[a]);
         return result == 0 ? a.compareTo(b) : result;
-      }));
+      });
+    })();
     final pages = (order.length / widget.pageSize).ceil();
     final page = math.min(_page, pages - 1);
     final start = page * widget.pageSize;

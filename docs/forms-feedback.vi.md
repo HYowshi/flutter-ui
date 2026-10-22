@@ -52,7 +52,7 @@ onSubmit: () async {
 
 Lỗi không dự kiến dùng `failureMessage` an toàn, không đưa nguyên exception ra màn hình. Nhận lỗi gốc qua `onError(error, stack)` để xử lý/log theo quy định của ứng dụng. Không log mật khẩu hoặc dữ liệu nhạy cảm. `onSuccess` chỉ chạy khi callback hoàn tất thành công và form còn tồn tại.
 
-Nếu cần nút gửi ngoài form, truyền `UIFormController`, gọi `await controller.submit()` và lắng nghe `isSubmitting`, `error`, `fieldErrors`. Giá trị trả về false nếu không hợp lệ, đang gửi, thất bại hoặc đã rời form. Một controller chỉ gắn một form; caller dispose sau khi tháo form. Khi form rời cây, kết quả bất đồng bộ cũ bị bỏ qua ở UI; helper không huỷ HTTP request hay đảo ngược tác vụ server. Không lồng `Form` khác trong `UIForm`. Field được tạo lazy nhưng chưa mount sẽ không được Flutter Form kiểm tra; dùng validation model cho form nhiều bước/danh sách dài.
+Nếu cần nút gửi ngoài form, truyền `UIFormController`, gọi `await controller.submit()` và lắng nghe `isSubmitting`, `error`, `fieldErrors`. Giá trị trả về false nếu không hợp lệ, đang gửi, thất bại hoặc đã rời form. Một controller chỉ gắn một form; caller dispose sau khi tháo form. Khi form rời cây hoặc đổi `formKey` sang bản ghi mới, kết quả bất đồng bộ cũ bị bỏ qua ở UI; helper không huỷ HTTP request hay đảo ngược tác vụ server. Không lồng `Form` khác trong `UIForm`. Field được tạo lazy nhưng chưa mount sẽ không được Flutter Form kiểm tra; dùng validation model cho form nhiều bước/danh sách dài.
 
 ## Thông báo
 
@@ -76,7 +76,7 @@ UIAlert(
 - `UINotice.show` dùng ScaffoldMessenger gần nhất, cần gọi từ event/callback dưới MaterialApp và có Scaffold. Không cần provider riêng. Một notice hiện tại, tối đa năm mục tính cả mục đang hiện; hàng đợi đầy trả false, giữ các mục đã nhận.
 - Trùng `id` sẽ bị bỏ qua khi đang hiện/chờ. Nếu không có id, so sánh nội dung, tone và nhãn hành động. Dùng id riêng theo tác vụ nếu câu chữ giống nhau nhưng dữ liệu/callback khác nhau. Đây là gộp bỏ bản trùng, không cộng số lượng hay thay callback của bản cũ.
 - Thông báo thường tự đóng sau năm giây (`duration` chỉnh được). Có hành động hoặc tone danger thì mặc định giữ đến khi thao tác/đóng. `persistent` có thể ghi đè. Nút hành động bố trí dưới nội dung để có chỗ xuống dòng; mọi notice có nút đóng.
-- `UINotice.clear(context)` đóng/xoá hàng đợi của helper trong messenger đó. Các SnackBar được ứng dụng tạo trực tiếp không bị xoá. Nếu trộn hai hệ thống, thứ tự hiển thị vẫn theo ScaffoldMessenger.
+- `UINotice.clear(context)` đóng/xoá hàng đợi của helper trong messenger đó. Các SnackBar được ứng dụng tạo trực tiếp không bị xoá. Khi helper còn nằm sau một SnackBar khác, mục bị huỷ sẽ được bỏ qua khi đến lượt; không đóng thông báo bên ngoài để lấy chỗ. Nếu trộn hai hệ thống, thứ tự hiển thị vẫn theo ScaffoldMessenger. Khi cần xoá toàn bộ cả hai loại, dùng `UINotice.clearAll(context)` thay cho `ScaffoldMessenger.clearSnackBars()`: native Flutter không hoàn tất future `closed` của những mục chờ bị bỏ, nên gọi trực tiếp API native đó có thể làm helper mất tín hiệu để chạy tiếp.
 - Hoàn tác gọi callback một lần, không tự phục hồi dữ liệu. Callback cần còn hợp lệ khi đổi trang: dùng service/model sống đủ lâu, hoặc kiểm tra `mounted` trước khi cập nhật State. Đợi API thành công trước khi báo thành công; xử lý lỗi của tác vụ hoàn tác tại ứng dụng.
 - Notice dùng chuyển động và thông báo truy cập của SnackBar Flutter. `UIAlert` mặc định live region, có thể tắt bằng `liveRegion: false` cho hướng dẫn tĩnh. Dùng nội dung và biểu tượng cùng màu trạng thái; không dựa riêng vào màu.
 

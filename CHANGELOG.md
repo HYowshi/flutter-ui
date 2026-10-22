@@ -1,3 +1,11 @@
+## 0.11.1
+
+- Prevent helper queue cancellation from closing unrelated native SnackBars; add clearAll for atomic mixed-queue reset.
+- Ignore async form responses after switching FormState identity, including late field errors.
+- Cache table row-key validation for unchanged data and avoid sorting an already ordered unsorted index list.
+- Fix image demo fallback text overflow at 320px with 200% text; audit all gallery pages at compact/desktop sizes.
+- Add regression coverage for mixed notification queues, form identity, table paging work and responsive gallery navigation.
+
 ## 0.11.0
 
 - Add optional managed UIForm submission, loading/interaction lock, deduplication, first-invalid focus/scroll, safe backend failures and stale completion guards.
