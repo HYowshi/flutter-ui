@@ -1,4 +1,4 @@
-# Flutter UI · Youth UI 0.4
+# Flutter UI · Youth UI 0.5
 
 Bộ Flutter/Dart UI dùng lại cho mobile, desktop và web, không gắn với một ứng dụng hay một bộ màu thương hiệu. Truyền **một hoặc hai màu**, nhận theme sáng/tối và để widget tự chọn màu theo vai trò.
 
@@ -79,7 +79,7 @@ Nếu tạo container riêng có màu nền khác, bọc `UISurfaceScope(color: 
 | UIButton | solid/soft/outline/ghost, state colors; tự giãn trong vùng hẹp và xuống dòng nhãn dài |
 | UITextField | Form validation, multiline, controller, keyboard, autofill |
 | UIPasswordField | Hiện/ẩn mật khẩu, validation, controller |
-| UISelect<T> | Dropdown có nhãn và validation |
+| UISelect<T> | Popup PC / sheet mobile, tìm kiếm, chọn mục, phím tắt, validation |
 | UICheckbox / UISwitch | Control gọn, nhãn tùy chọn, hover/focus cục bộ, bàn phím, disabled |
 | UIToggleButton | Nút bật/tắt độc lập với icon và trạng thái được chọn |
 | UISegmentedControl<T> / UIOption<T> | Nhóm chọn một giá trị, hỗ trợ khóa từng lựa chọn |
@@ -122,7 +122,7 @@ Scaffold(
 | --- | --- |
 | Button / toggle | Vùng chứa <600px: giãn rộng nếu width hữu hạn; vùng rộng: ôm nội dung. Nhãn dài xuống dòng, không ellipsis; target tối thiểu 48px. |
 | Segmented control | Đo nhãn với font và text scaler thực tế; nếu nhóm không vừa chiều ngang, chuyển sang các nút chọn xếp dọc. Giữ giá trị và disabled. |
-| Text / password / select | Padding theo vùng chứa và chuột; dropdown giới hạn chiều cao theo viewport, item có chiều cao theo nội dung; helper/lỗi hỗ trợ tối đa 6 dòng. |
+| Text / password / select | Padding theo vùng chứa và chuột; menu tự chọn popup/sheet theo viewport và input; hàng có chiều cao theo nội dung; helper/lỗi hỗ trợ tối đa 6 dòng. |
 | Checkbox / switch | Nhãn xuống dòng, control giữ vùng chạm 48px; không nở vùng hover sang nhãn hoặc cả hàng. |
 | Card / badge / alert | Card giảm padding trong vùng hẹp; badge và nội dung alert xuống dòng. |
 | UIForm / UIGrid | 1–2 / 1–4 cột mặc định. Chữ lớn làm giảm số cột, giữ cỡ chữ người dùng; không ép chiều cao tile. |
@@ -145,6 +145,32 @@ final ui = YouthUI.colors(
 `UIButton(fullWidth: false)` và `UICard(padding: ...)` vẫn cho phép ghi đè có chủ ý. Trong `Row` không có width hữu hạn, button giữ kích thước nội dung; muốn tự chuyển cả nhóm giữa hàng/cột thì dùng `UIActions`. `UIGrid` dành cho form/nhóm nội dung nhỏ; danh sách dữ liệu lớn vẫn cần ListView/GridView dạng lazy. Đặt `UIPage` trong vùng có chiều cao hữu hạn như `Scaffold.body`, vì nó quản lý cuộn của trang.
 
 Bộ UI tự xử lý các component và khối bố cục ở trên; không thể sửa overflow do một `Row`, fixed height hoặc widget tùy chỉnh do ứng dụng bên ngoài áp đặt. Với `IntrinsicWidth`/`IntrinsicHeight`, tránh bọc các component dựa trên LayoutBuilder; dùng constraint hữu hạn. Các quy tắc và phạm vi kiểm tra được ghi trong [thiết kế adaptive](docs/adaptive-design.vi.md).
+
+## Dropdown menu đồng bộ
+
+```dart
+UISelect<String>(
+  label: 'Không gian làm việc',
+  initialValue: 'personal',
+  options: const [
+    UIOption(value: 'personal', label: 'Cá nhân', icon: Icons.person_outline),
+    UIOption(value: 'team', label: 'Nhóm', icon: Icons.groups_outlined),
+    UIOption(value: 'archive', label: 'Lưu trữ', enabled: false),
+  ],
+  onChanged: (value) => setState(() => workspace = value),
+  validator: (value) => value == null ? 'Hãy chọn một mục.' : null,
+);
+```
+
+- PC: popup bám theo ô chọn, cùng chiều rộng (giới hạn theo viewport), tự tránh mép màn hình. Mobile: sheet khi viewport < compact breakpoint và không có chuột kết nối; có đóng, safe area và chừa bàn phím ảo. Một field hẹp trên desktop vẫn dùng popup.
+- Màu nền/chữ/viền/hover/focus/selected/disabled dùng tokens của theme; không thêm màu cố định. Hàng ≥48px, nhãn dài xuống dòng, có dấu chọn và scrollbar.
+- Tìm kiếm tự bật từ 8 mục có nhãn, hỗ trợ gõ tiếng Việt không dấu, nút xóa và trạng thái không có kết quả. Có thể chỉ định `searchable: true/false`, `searchHint`, `emptyLabel`, `hint`, `helper`.
+- Danh sách dùng lazy builder. Với `UIOption`/Text, đo chiều cao theo font và text scaler để cuộn đến mục đang chọn; Home/End và ↑/↓ di chuyển qua cả danh sách, bỏ qua mục disabled. Enter chọn; Esc hoặc bấm ngoài đóng. Desktop trả focus về ô chọn.
+- Hỗ trợ Form.validate/reset, `autovalidateMode`, `focusNode`, `autofocus` và `enabled`. Null `onChanged` hoặc không còn mục enabled sẽ khóa ô chọn.
+
+`items: List<DropdownMenuItem<T>>` cũ vẫn hoạt động, giữ child/onTap/enabled; không truyền đồng thời `items` và `options`. Với child tùy chỉnh, truyền `optionLabel` nếu cần tìm kiếm hoặc giá trị đọc cho screen reader. Child tự đặt màu có thể ghi đè theme; muốn tự đồng bộ hoàn toàn nên dùng `UIOption`. Cuộn đến vị trí của child tùy chỉnh dùng chiều cao ước lượng, còn nội dung Text/UIOption dùng đo nhãn. Giá trị phải riêng biệt và khác null; null đại diện chưa chọn. `initialValue` là giá trị ban đầu/reset, state chọn do form quản lý; đổi value đầu vào không phải API controlled.
+
+Mục **Dropdown menu** trên website có danh sách dài, nhãn dài, mục bị khóa, tìm không dấu và form bắt buộc. Các primitive dựa trên MenuAnchor và modal bottom sheet của Flutter: [MenuAnchor](https://api.flutter.dev/flutter/material/MenuAnchor-class.html), [showModalBottomSheet](https://api.flutter.dev/flutter/material/showModalBottomSheet.html).
 
 ## Lựa chọn và vùng tương tác
 

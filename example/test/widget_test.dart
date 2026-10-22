@@ -160,4 +160,28 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+  testWidgets('dropdown gallery searches and applies an actual selection', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1600, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(const ShowcaseApp());
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ListTile, 'Dropdown menu'));
+    await tester.pumpAndSettle();
+    final select = find
+        .widgetWithText(UISelect<String>, 'Không gian làm việc')
+        .first;
+    await tester.ensureVisible(select);
+    await tester.tap(select);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'thiet ke');
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(MenuItemButton, 'Thiết kế hệ thống'));
+    await tester.pumpAndSettle();
+    expect(find.text('Bạn đã chọn: Thiết kế hệ thống'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }

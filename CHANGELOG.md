@@ -1,3 +1,12 @@
+## 0.5.0
+
+- Replace the default dropdown route with a themed MenuAnchor popup and compact-touch bottom sheet.
+- Shared state colors, rounded rows, selection marks, variable-height labels, bounded scrolling and keyboard focus.
+- UIOption-based select declarations; preserve DropdownMenuItem compatibility, callbacks and form validation/reset.
+- Automatic search for 8+ labeled options, Vietnamese accent-insensitive matching, clear action and empty state.
+- Lazy menu rows, measured initial selection scroll, keyboard navigation through offscreen options and disabled-item skipping.
+- Dropdown gallery and regression coverage for desktop/mobile, large text, keyboard insets, RTL/edges and owner disposal.
+
 ## 0.4.0
 
 - Automatic local-width adaptation, mouse-aware spacing and system text scaling.

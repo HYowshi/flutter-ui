@@ -1,8 +1,13 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'theme.dart';
 import 'color_engine.dart';
 import 'adaptive.dart';
+
+part 'select.dart';
 
 class UIButton extends StatelessWidget {
   const UIButton({
@@ -720,38 +725,5 @@ class UISegmentedControl<T> extends StatelessWidget {
         ),
       );
     },
-  );
-}
-
-class UISelect<T> extends StatelessWidget {
-  const UISelect({
-    super.key,
-    required this.label,
-    required this.items,
-    this.initialValue,
-    this.onChanged,
-    this.validator,
-  });
-  final String label;
-  final List<DropdownMenuItem<T>> items;
-  final T? initialValue;
-  final ValueChanged<T?>? onChanged;
-  final FormFieldValidator<T>? validator;
-  @override
-  Widget build(BuildContext context) => UIAdaptiveBuilder(
-    builder: (context, ui) => DropdownButtonFormField<T>(
-      decoration: InputDecoration(
-        labelText: label,
-        contentPadding: ui.controlPadding,
-      ),
-      itemHeight: null,
-      isDense: false,
-      menuMaxHeight: MediaQuery.sizeOf(context).height * .5,
-      initialValue: initialValue,
-      items: items,
-      onChanged: onChanged,
-      validator: validator,
-      isExpanded: true,
-    ),
   );
 }

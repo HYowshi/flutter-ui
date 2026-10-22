@@ -99,6 +99,7 @@ class _StudioState extends State<Studio> {
     'Bắt đầu sử dụng',
     'Selection controls',
     'Adaptive UI',
+    'Dropdown menu',
   ];
   static const icons = [
     Icons.grid_view_rounded,
@@ -111,6 +112,7 @@ class _StudioState extends State<Studio> {
     Icons.code_rounded,
     Icons.toggle_on_outlined,
     Icons.devices_rounded,
+    Icons.unfold_more_rounded,
   ];
   @override
   void dispose() {
@@ -259,6 +261,7 @@ class _StudioState extends State<Studio> {
                               if (selected == 0 || selected == 8)
                                 const SelectionDemo(),
                               if (selected == 9) const AdaptiveDemo(),
+                              if (selected == 10) const DropdownDemo(),
                               if (selected == 0 || selected == 3)
                                 const InputDemo(),
                               if (selected == 0 || selected == 4)
@@ -325,6 +328,7 @@ class _StudioState extends State<Studio> {
     'Khởi tạo theme một lần. Sau đó chỉ gọi widget.',
     'Checkbox, switch, toggle và nhóm chọn. Hiệu ứng gọn trong từng control.',
     'Cùng một mã Dart tự thay đổi theo vùng chứa, chuột và cỡ chữ.',
+    'Một ô chọn, hai cách mở phù hợp với PC và mobile. Màu và trạng thái thống nhất.',
   ];
   Widget sidebar(BuildContext context, {bool closeDrawer = false}) {
     final s = Theme.of(context).colorScheme;
@@ -419,7 +423,7 @@ class _StudioState extends State<Studio> {
           ),
           const SizedBox(height: 20),
           Text(
-            'v0.4.0 · Adaptive Flutter controls',
+            'v0.5.0 · Adaptive selection menus',
             style: TextStyle(fontSize: 10, color: s.onSurfaceVariant),
           ),
         ],
@@ -1334,6 +1338,140 @@ class _AdaptiveSampleState extends State<AdaptiveSample> {
         ],
       ),
     ],
+  );
+}
+
+class DropdownDemo extends StatefulWidget {
+  const DropdownDemo({super.key});
+  @override
+  State<DropdownDemo> createState() => _DropdownDemoState();
+}
+
+class _DropdownDemoState extends State<DropdownDemo> {
+  final form = GlobalKey<FormState>();
+  String selected = 'personal';
+  static const choices = [
+    UIOption(
+      value: 'personal',
+      label: 'Cá nhân',
+      icon: Icons.person_outline_rounded,
+    ),
+    UIOption(
+      value: 'design',
+      label: 'Thiết kế hệ thống',
+      icon: Icons.palette_outlined,
+    ),
+    UIOption(
+      value: 'youth',
+      label: 'Ứng dụng thanh niên',
+      icon: Icons.groups_outlined,
+    ),
+    UIOption(
+      value: 'projects',
+      label: 'Quản lý dự án',
+      icon: Icons.work_outline_rounded,
+    ),
+    UIOption(value: 'docs', label: 'Kho tài liệu', icon: Icons.folder_outlined),
+    UIOption(
+      value: 'planning',
+      label: 'Kế hoạch phát triển sản phẩm và phối hợp giữa các nhóm',
+      icon: Icons.event_note_rounded,
+    ),
+    UIOption(
+      value: 'mobile',
+      label: 'Giao diện mobile',
+      icon: Icons.smartphone_rounded,
+    ),
+    UIOption(
+      value: 'web',
+      label: 'Website cộng đồng',
+      icon: Icons.language_rounded,
+    ),
+    UIOption(
+      value: 'reports',
+      label: 'Báo cáo hoạt động',
+      icon: Icons.bar_chart_rounded,
+    ),
+    UIOption(
+      value: 'events',
+      label: 'Sự kiện sắp tới',
+      icon: Icons.event_outlined,
+    ),
+    UIOption(
+      value: 'archive',
+      label: 'Lưu trữ · tạm khóa',
+      icon: Icons.lock_outline_rounded,
+      enabled: false,
+    ),
+    UIOption(
+      value: 'settings',
+      label: 'Cài đặt ứng dụng',
+      icon: Icons.settings_outlined,
+    ),
+  ];
+  @override
+  Widget build(BuildContext context) => DemoBlock(
+    number: '09',
+    title: 'Dropdown menu',
+    description: 'Popup bám ô chọn trên PC; bảng chọn từ dưới lên trên mobile cảm ứng. Cùng màu theme, bo góc, dấu chọn và trạng thái focus.',
+    effects: 'Tìm không dấu · hàng cao theo nội dung · danh sách lazy · ↑/↓ Home End Enter Esc · form validation',
+    code: "UISelect<String>(\n  label: 'Không gian làm việc',\n  initialValue: 'personal',\n  options: const [\n    UIOption(value: 'personal', label: 'Cá nhân'),\n    UIOption(value: 'design', label: 'Thiết kế hệ thống'),\n  ],\n  onChanged: selectWorkspace,\n); // Tự thêm tìm kiếm khi có từ 8 lựa chọn.",
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        UIGrid(
+          maxColumns: 2,
+          children: [
+            UISelect<String>(
+              label: 'Không gian làm việc',
+              initialValue: selected,
+              options: choices,
+              helper: 'Thử tìm “ung dung” hoặc “thiet ke”.',
+              onChanged: (v) => setState(() => selected = v!),
+            ),
+            const UISelect<String>(
+              label: 'Lựa chọn không khả dụng',
+              initialValue: 'personal',
+              options: choices,
+              helper: 'Disabled không mở menu.',
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Bạn đã chọn: ${choices.firstWhere((o) => o.value == selected).label}',
+        ),
+        const SizedBox(height: 24),
+        Form(
+          key: form,
+          child: UISelect<String>(
+            label: 'Lựa chọn bắt buộc',
+            options: choices.take(3).toList(),
+            validator: (v) =>
+                v == null ? 'Hãy chọn một không gian làm việc.' : null,
+            onChanged: (_) {},
+          ),
+        ),
+        const SizedBox(height: 16),
+        UIActions(
+          children: [
+            UIButton(
+              label: 'Kiểm tra lựa chọn',
+              onPressed: () => form.currentState!.validate(),
+            ),
+            UIButton(
+              label: 'Đặt lại',
+              variant: UIButtonVariant.outline,
+              onPressed: () => form.currentState!.reset(),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        const UIAlert(
+          message: 'Bấm ngoài menu hoặc Esc để đóng. Mục đang chọn có dấu ✓; mục bị khóa không nhận thao tác. Menu tự theo màu và chế độ sáng/tối.',
+        ),
+      ],
+    ),
   );
 }
 

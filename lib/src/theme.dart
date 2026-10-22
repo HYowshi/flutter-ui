@@ -92,6 +92,14 @@ abstract final class YouthUI {
       colorScheme: s,
       fontFamily: fontFamily,
       scaffoldBackgroundColor: colors.canvas,
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: s.surfaceContainerLowest,
+        surfaceTintColor: Colors.transparent,
+        modalElevation: 8,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+      ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: s.surfaceContainerLowest,
