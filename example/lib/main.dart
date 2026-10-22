@@ -12,6 +12,9 @@ class ShowcaseApp extends StatefulWidget {
 
 class _ShowcaseAppState extends State<ShowcaseApp> {
   Color primary = const Color(0xFF1565C0);
+  Color? secondary;
+  UIProfile profile = UIProfile.balanced;
+  bool highContrast = false;
   bool dark = false;
   bool reduce = false;
   @override
@@ -20,9 +23,12 @@ class _ShowcaseAppState extends State<ShowcaseApp> {
     debugShowCheckedModeBanner: false,
     theme: YouthUI.init(
       primary: primary,
+      secondary: secondary,
+      profile: profile,
+      contrastLevel: highContrast ? 1 : 0,
       brightness: dark ? Brightness.dark : Brightness.light,
     ),
-    themeAnimationDuration: reduce
+    themeAnimationDuration: reduce || highContrast
         ? Duration.zero
         : const Duration(milliseconds: 320),
     builder: (context, child) => MediaQuery(
@@ -33,6 +39,12 @@ class _ShowcaseAppState extends State<ShowcaseApp> {
     ),
     home: Studio(
       primary: primary,
+      secondary: secondary,
+      profile: profile,
+      highContrast: highContrast,
+      onSecondary: (c) => setState(() => secondary = c),
+      onProfile: (v) => setState(() => profile = v),
+      onHighContrast: (v) => setState(() => highContrast = v),
       dark: dark,
       reduce: reduce,
       onColor: (c) => setState(() => primary = c),
@@ -51,7 +63,19 @@ class Studio extends StatefulWidget {
     required this.onColor,
     required this.onDark,
     required this.onReduce,
+    required this.secondary,
+    required this.profile,
+    required this.highContrast,
+    required this.onSecondary,
+    required this.onProfile,
+    required this.onHighContrast,
   });
+  final Color? secondary;
+  final UIProfile profile;
+  final bool highContrast;
+  final ValueChanged<Color?> onSecondary;
+  final ValueChanged<UIProfile> onProfile;
+  final ValueChanged<bool> onHighContrast;
   final Color primary;
   final bool dark, reduce;
   final ValueChanged<Color> onColor;
@@ -413,7 +437,7 @@ class _StudioState extends State<Studio> {
           ),
           const SizedBox(height: 20),
           Text(
-            'v0.1.0  ·  Material 3',
+            'v0.2.0 · HCT color engine',
             style: TextStyle(fontSize: 10, color: s.onSurfaceVariant),
           ),
         ],
@@ -545,8 +569,16 @@ class _StudioState extends State<Studio> {
     );
   }
 
-  Widget themeSection(BuildContext context) =>
-      ThemeEditor(primary: widget.primary, onColor: widget.onColor);
+  Widget themeSection(BuildContext context) => ThemeEditor(
+    primary: widget.primary,
+    secondary: widget.secondary,
+    onColor: widget.onColor,
+    onSecondary: widget.onSecondary,
+    profile: widget.profile,
+    onProfile: widget.onProfile,
+    highContrast: widget.highContrast,
+    onHighContrast: widget.onHighContrast,
+  );
 }
 
 class DemoBlock extends StatelessWidget {
@@ -690,70 +722,107 @@ void toast(BuildContext context, String text) {
 }
 
 class ThemeEditor extends StatefulWidget {
-  const ThemeEditor({super.key, required this.primary, required this.onColor});
+  const ThemeEditor({
+    super.key,
+    required this.primary,
+    required this.secondary,
+    required this.onColor,
+    required this.onSecondary,
+    required this.profile,
+    required this.onProfile,
+    required this.highContrast,
+    required this.onHighContrast,
+  });
   final Color primary;
+  final Color? secondary;
   final ValueChanged<Color> onColor;
+  final ValueChanged<Color?> onSecondary;
+  final UIProfile profile;
+  final ValueChanged<UIProfile> onProfile;
+  final bool highContrast;
+  final ValueChanged<bool> onHighContrast;
   @override
   State<ThemeEditor> createState() => _ThemeEditorState();
 }
 
 class _ThemeEditorState extends State<ThemeEditor> {
   final controller = TextEditingController();
-  String? error;
+  final second = TextEditingController(text: '#DA251D');
+  String? error, secondError;
   static const seeds = [
     Color(0xFF1565C0),
     Color(0xFF7545B8),
     Color(0xFF087B59),
     Color(0xFFBE3155),
-    Color(0xFFE4B53B),
+    Color(0xFFFFDF42),
   ];
+  String hex(Color c) =>
+      '#${c.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
   @override
   void initState() {
     super.initState();
-    sync();
-  }
-
-  void sync() {
-    controller.text =
-        '#${widget.primary.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
+    controller.text = hex(widget.primary);
+    if (widget.secondary != null) second.text = hex(widget.secondary!);
   }
 
   @override
   void didUpdateWidget(covariant ThemeEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.primary != widget.primary) {
-      sync();
+      controller.text = hex(widget.primary);
       error = null;
+    }
+    if (widget.secondary != null && oldWidget.secondary != widget.secondary) {
+      second.text = hex(widget.secondary!);
+      secondError = null;
     }
   }
 
   @override
   void dispose() {
     controller.dispose();
+    second.dispose();
     super.dispose();
+  }
+
+  Color? parse(String v) => RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(v.trim())
+      ? Color(int.parse('FF${v.trim().substring(1)}', radix: 16))
+      : null;
+  void apply() {
+    final first = parse(controller.text),
+        other = widget.secondary == null ? null : parse(second.text);
+    setState(() {
+      error = first == null ? 'Dùng #RRGGBB' : null;
+      secondError = widget.secondary != null && other == null
+          ? 'Dùng #RRGGBB'
+          : null;
+    });
+    if (first == null || secondError != null) return;
+    widget.onColor(first);
+    if (other != null) widget.onSecondary(other);
   }
 
   @override
   Widget build(BuildContext context) {
-    final s = Theme.of(context).colorScheme;
+    final s = Theme.of(context).colorScheme, tokens = YouthColors.of(context);
+    final checks = tokens.audit(),
+        passed = tokens.audit().where((c) => c.passed).length;
     return UICard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              const Text(
-                'Bảng màu của bạn',
-                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
-              ),
-              Text(
-                'Đổi màu để xem toàn bộ UI thích ứng',
-                style: TextStyle(color: s.onSurfaceVariant, fontSize: 12),
-              ),
-            ],
+          const Text(
+            'Một hoặc hai màu. Một hệ giao diện.',
+            style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Giữ seed thương hiệu, sinh đầy đủ vai trò chữ / nền / viền theo HCT.',
+            style: TextStyle(
+              color: s.onSurfaceVariant,
+              height: 1.6,
+              fontSize: 12,
+            ),
           ),
           const SizedBox(height: 20),
           Wrap(
@@ -763,17 +832,17 @@ class _ThemeEditorState extends State<ThemeEditor> {
             children: [
               for (final c in seeds)
                 Semantics(
-                  label: 'Màu ${c.toARGB32().toRadixString(16)}',
+                  label: 'Seed ${hex(c)}',
                   selected: widget.primary == c,
                   button: true,
                   child: Tooltip(
-                    message: '#${c.toARGB32().toRadixString(16).substring(2)}',
+                    message: hex(c),
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(15),
+                      borderRadius: BorderRadius.circular(13),
                       onTap: () => widget.onColor(c),
                       child: Container(
-                        width: 42,
-                        height: 42,
+                        width: 44,
+                        height: 44,
                         decoration: BoxDecoration(
                           color: c,
                           borderRadius: BorderRadius.circular(13),
@@ -788,11 +857,7 @@ class _ThemeEditorState extends State<ThemeEditor> {
                             ? Icon(
                                 Icons.check,
                                 size: 20,
-                                color:
-                                    ThemeData.estimateBrightnessForColor(c) ==
-                                        Brightness.dark
-                                    ? Colors.white
-                                    : Colors.black,
+                                color: uiForeground(c),
                               )
                             : null,
                       ),
@@ -800,11 +865,11 @@ class _ThemeEditorState extends State<ThemeEditor> {
                   ),
                 ),
               SizedBox(
-                width: 150,
+                width: 156,
                 child: TextField(
                   controller: controller,
                   decoration: InputDecoration(
-                    labelText: 'HEX tùy chỉnh',
+                    labelText: 'Màu chính · HEX',
                     errorText: error,
                     isDense: true,
                   ),
@@ -818,16 +883,129 @@ class _ThemeEditorState extends State<ThemeEditor> {
               ),
             ],
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: 14),
+          UISwitch(
+            label: 'Dùng thêm màu thứ hai',
+            value: widget.secondary != null,
+            onChanged: (v) => widget.onSecondary(
+              v ? parse(second.text) ?? const Color(0xFFDA251D) : null,
+            ),
+          ),
+          if (widget.secondary != null) ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              width: 240,
+              child: TextField(
+                controller: second,
+                decoration: InputDecoration(
+                  labelText: 'Màu thứ hai · HEX',
+                  errorText: secondError,
+                ),
+                onSubmitted: (_) => apply(),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              'Màu thứ hai sinh cả nhóm secondary; không thay một mã màu riêng lẻ.',
+              style: TextStyle(fontSize: 12, color: s.onSurfaceVariant),
+            ),
+          ],
+          const SizedBox(height: 18),
+          UISelect<UIProfile>(
+            label: 'Phân bổ sắc độ',
+            initialValue: widget.profile,
+            items: const [
+              DropdownMenuItem(
+                value: UIProfile.balanced,
+                child: Text('Cân bằng · mặc định'),
+              ),
+              DropdownMenuItem(
+                value: UIProfile.reading,
+                child: Text('Ưu tiên đọc · nền ít sắc hơn'),
+              ),
+              DropdownMenuItem(
+                value: UIProfile.expressive,
+                child: Text('Biểu cảm · màu nhấn rõ hơn'),
+              ),
+            ],
+            onChanged: (v) {
+              if (v != null) widget.onProfile(v);
+            },
+          ),
+          UISwitch(
+            label: 'Tăng tương phản chữ lên 7:1',
+            value: widget.highContrast,
+            onChanged: widget.onHighContrast,
+          ),
+          const SizedBox(height: 18),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
-              token('Primary', s.primary, s.onPrimary),
-              token('Container', s.primaryContainer, s.onPrimaryContainer),
+              token(
+                'Brand gốc',
+                tokens.brandPrimary,
+                uiForeground(tokens.brandPrimary),
+              ),
+              if (tokens.brandSecondary != null)
+                token(
+                  'Brand thứ hai',
+                  tokens.brandSecondary!,
+                  uiForeground(tokens.brandSecondary!),
+                ),
+              token('Action', s.primary, s.onPrimary),
               token('Secondary', s.secondary, s.onSecondary),
-              token('Accent', s.tertiary, s.onTertiary),
-              token('Surface', s.surfaceContainerHigh, s.onSurface),
+              token('Accent tự sinh', s.tertiary, s.onTertiary),
+            ],
+          ),
+          const SizedBox(height: 22),
+          const Text(
+            'Phân lớp bề mặt',
+            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              token('Canvas', tokens.canvas, s.onSurface),
+              token('Card', s.surfaceContainerLowest, s.onSurface),
+              token('Container', s.surfaceContainer, s.onSurface),
+              token('Nổi', s.surfaceContainerHigh, s.onSurface),
+            ],
+          ),
+          const SizedBox(height: 20),
+          UIAlert(
+            tone: passed == checks.length ? UITone.success : UITone.danger,
+            title: '$passed/${checks.length} cặp vai trò đạt ngưỡng kiểm tra',
+            message:
+                'Chữ ≥ ${tokens.textContrast.toStringAsFixed(1)}:1; focus và viền control ≥ 3:1 trên các bề mặt chuẩn. Không thay thế kiểm tra toàn màn hình.',
+          ),
+          const SizedBox(height: 10),
+          ExpansionTile(
+            title: const Text(
+              'Xem các cặp được kiểm tra',
+              style: TextStyle(fontSize: 12),
+            ),
+            children: [
+              for (final check in checks)
+                ListTile(
+                  dense: true,
+                  leading: Icon(
+                    check.passed
+                        ? Icons.check_circle_outline
+                        : Icons.error_outline,
+                    size: 18,
+                  ),
+                  title: Text(
+                    check.label,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                  trailing: Text(
+                    '${check.ratio.toStringAsFixed(2)}:1',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ),
             ],
           ),
         ],
@@ -843,15 +1021,6 @@ class _ThemeEditorState extends State<ThemeEditor> {
       style: TextStyle(color: fg, fontSize: 11, fontWeight: FontWeight.w600),
     ),
   );
-  void apply() {
-    final value = controller.text.trim();
-    if (!RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(value)) {
-      setState(() => error = 'Dùng #RRGGBB');
-      return;
-    }
-    setState(() => error = null);
-    widget.onColor(Color(int.parse('FF${value.substring(1)}', radix: 16)));
-  }
 }
 
 class ButtonDemo extends StatefulWidget {
@@ -868,7 +1037,7 @@ class _ButtonDemoState extends State<ButtonDemo> {
     title: 'Buttons',
     description:
         'Bốn kiểu hiển thị, sáu vai trò màu. Thử hover, Tab hoặc nhấn nút.',
-    effects: 'Material ripple khi nhấn · overlay khi hover / focus · loading khóa thao tác',
+    effects: 'Màu hover / pressed được kiểm tra sau phối lớp · focus có viền riêng · loading khóa thao tác',
     code: "UIButton(label: 'Tiếp tục', onPressed: submit);\nUIButton(label: 'Hủy', variant: UIButtonVariant.outline, onPressed: cancel);\nUIButton(label: 'Đang lưu', loading: true);",
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1287,12 +1456,12 @@ class UsageDemo extends StatelessWidget {
   Widget build(BuildContext context) => const DemoBlock(
     number: 'START',
     title: 'Khởi tạo một lần',
-    description: 'Dùng package cục bộ hoặc Git dependency. Không cần truyền màu cho từng widget.',
-    effects: 'Theme dùng chung cho Youth UI và widget Material · hỗ trợ light / dark · không phụ thuộc React',
-    code: "// pubspec.yaml\ndependencies:\n  youth_ui:\n    git:\n      url: https://github.com/HYowshi/flutter-ui.git\n      ref: main\n\n// main.dart\nimport 'package:youth_ui/youth_ui.dart';\n\nMaterialApp(\n  theme: YouthUI.init(\n    primary: const Color(0xFF1565C0),\n    secondary: const Color(0xFFDA251D),\n    accent: const Color(0xFFF9C846),\n  ),\n  home: const HomePage(),\n);\n\n// Trong HomePage\nUIButton(label: 'Tiếp tục', onPressed: submit);\nUITextField(label: 'Email');\nUIPasswordField();\nUIBadge(label: 'Đã duyệt', tone: UITone.success);",
+    description: 'Truyền một màu; tùy chọn màu thứ hai. Không cần tự chọn màu chữ, nền hay hover.',
+    effects: 'Sinh theme light/dark theo vai trò · giữ brand gốc · widget tự kế thừa',
+    code: "final ui = YouthUI.colors(\n  primary: const Color(0xFF1565C0),\n  // secondary: const Color(0xFFDA251D), // tùy chọn\n);\n\nMaterialApp(\n  theme: ui.light,\n  darkTheme: ui.dark,\n  themeMode: ThemeMode.system,\n  home: const HomePage(),\n);\n\n// Trong HomePage: không set lại màu\nUIButton(label: 'Tiếp tục', onPressed: submit);\nUITextField(label: 'Email');\nUIPasswordField();\nUIBadge(label: 'Đã duyệt', tone: UITone.success);\n\n// Nâng cao: theme đọc nội dung, tăng tương phản\nYouthUI.init(\n  primary: const Color(0xFF1565C0),\n  profile: UIProfile.reading,\n  contrastLevel: 1,\n);",
     child: UIAlert(
-      title: 'Một nguồn màu duy nhất',
-      message: 'Đặt YouthUI.init() tại MaterialApp. Các màn hình phía dưới tự kế thừa theme. Đổi seed để đổi toàn bộ bộ UI.',
+      title: 'Màu gốc khác vai trò tương tác',
+      message: 'Seed được giữ trong YouthColors.brandPrimary. Action, container, chữ, viền và trạng thái được sinh theo chế độ và kiểm tra tương phản.',
     ),
   );
 }

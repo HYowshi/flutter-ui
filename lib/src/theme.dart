@@ -1,44 +1,99 @@
 import 'package:flutter/material.dart';
 
-/// Initialize once in MaterialApp. Widgets inherit colors automatically.
+import 'color_engine.dart';
+
+/// Theme pair for MaterialApp(theme: ui.light, darkTheme: ui.dark).
+class YouthThemeSet {
+  YouthThemeSet({
+    required Color primary,
+    Color? secondary,
+    Color? accent,
+    UIProfile profile = UIProfile.balanced,
+    double contrastLevel = 0,
+    String? fontFamily,
+  }) {
+    light = YouthUI.init(
+      primary: primary,
+      secondary: secondary,
+      accent: accent,
+      profile: profile,
+      contrastLevel: contrastLevel,
+      fontFamily: fontFamily,
+    );
+    dark = YouthUI.init(
+      primary: primary,
+      secondary: secondary,
+      accent: accent,
+      profile: profile,
+      contrastLevel: contrastLevel,
+      fontFamily: fontFamily,
+      brightness: Brightness.dark,
+    );
+  }
+  late final ThemeData light, dark;
+}
+
 abstract final class YouthUI {
+  /// One or two seeds are enough; optional accent is a third explicit seed.
+  static YouthThemeSet colors({
+    required Color primary,
+    Color? secondary,
+    Color? accent,
+    UIProfile profile = UIProfile.balanced,
+    double contrastLevel = 0,
+    String? fontFamily,
+  }) => YouthThemeSet(
+    primary: primary,
+    secondary: secondary,
+    accent: accent,
+    profile: profile,
+    contrastLevel: contrastLevel,
+    fontFamily: fontFamily,
+  );
+
   static ThemeData init({
     required Color primary,
-    Color secondary = const Color(0xFFDA251D),
-    Color accent = const Color(0xFFF9C846),
+    Color? secondary,
+    Color? accent,
     Color? surface,
     Color? background,
     Brightness brightness = Brightness.light,
     String? fontFamily,
+    UIProfile profile = UIProfile.balanced,
+    double contrastLevel = 0,
   }) {
-    final scheme =
-        ColorScheme.fromSeed(
-          seedColor: primary,
-          brightness: brightness,
-        ).copyWith(
-          primary: primary,
-          onPrimary: uiForeground(primary),
-          secondary: secondary,
-          onSecondary: uiForeground(secondary),
-          tertiary: accent,
-          onTertiary: uiForeground(accent),
-          surface: surface,
-        );
+    final colors = buildYouthColors(
+      primary: primary,
+      secondary: secondary,
+      accent: accent,
+      surface: surface,
+      background: background,
+      brightness: brightness,
+      profile: profile,
+      contrastLevel: contrastLevel,
+    );
+    final s = colors.scheme;
     final border = OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
-      borderSide: BorderSide(color: scheme.outlineVariant),
+      borderSide: BorderSide(color: colors.fieldBorder),
     );
     final shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(14),
     );
     return ThemeData(
       useMaterial3: true,
-      colorScheme: scheme,
+      colorScheme: s,
       fontFamily: fontFamily,
-      scaffoldBackgroundColor: background ?? scheme.surface,
+      scaffoldBackgroundColor: colors.canvas,
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: scheme.surfaceContainerLowest,
+        fillColor: s.surfaceContainerLowest,
+        labelStyle: TextStyle(color: s.onSurfaceVariant),
+        helperStyle: TextStyle(color: s.onSurfaceVariant),
+        hintStyle: TextStyle(color: s.onSurfaceVariant),
+        prefixIconColor: s.onSurfaceVariant,
+        suffixIconColor: s.onSurfaceVariant,
+        errorStyle: TextStyle(color: s.error),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 18,
           vertical: 18,
@@ -46,21 +101,19 @@ abstract final class YouthUI {
         border: border,
         enabledBorder: border,
         focusedBorder: border.copyWith(
-          borderSide: BorderSide(color: primary, width: 2),
+          borderSide: BorderSide(color: colors.focus, width: 2),
         ),
-        errorBorder: border.copyWith(
-          borderSide: BorderSide(color: scheme.error),
-        ),
+        errorBorder: border.copyWith(borderSide: BorderSide(color: s.error)),
         focusedErrorBorder: border.copyWith(
-          borderSide: BorderSide(color: scheme.error, width: 2),
+          borderSide: BorderSide(color: s.error, width: 2),
         ),
       ),
       cardTheme: CardThemeData(
         elevation: 0,
-        color: scheme.surfaceContainerLowest,
+        color: s.surfaceContainerLowest,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(22),
-          side: BorderSide(color: scheme.outlineVariant.withValues(alpha: .6)),
+          side: BorderSide(color: s.outlineVariant),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -84,13 +137,10 @@ abstract final class YouthUI {
         ),
       ),
       extensions: [
+        colors,
         YouthPalette(
-          success: brightness == Brightness.light
-              ? const Color(0xFF146C43)
-              : const Color(0xFF81D8A4),
-          warning: brightness == Brightness.light
-              ? const Color(0xFF805600)
-              : const Color(0xFFFFD878),
+          success: colors.tones[UITone.success]!.solid,
+          warning: colors.tones[UITone.warning]!.solid,
         ),
       ],
     );
@@ -121,38 +171,9 @@ class YouthPalette extends ThemeExtension<YouthPalette> {
         );
 }
 
-enum UITone { primary, secondary, accent, success, warning, danger }
-
 extension UIToneColor on UITone {
-  Color color(BuildContext context) {
-    final s = Theme.of(context).colorScheme;
-    return switch (this) {
-      UITone.primary => s.primary,
-      UITone.secondary => s.secondary,
-      UITone.accent => s.tertiary,
-      UITone.success => YouthPalette.of(context).success,
-      UITone.warning => YouthPalette.of(context).warning,
-      UITone.danger => s.error,
-    };
-  }
-}
-
-/// Chooses the stronger black/white contrast, rather than brightness heuristics.
-Color uiForeground(Color color) {
-  final l = color.computeLuminance();
-  return (l + .05) / .05 >= 1.05 / (l + .05) ? Colors.black : Colors.white;
-}
-
-Color uiReadable(Color color, Color background) {
-  double contrast(Color a, Color b) {
-    final x = a.computeLuminance(), y = b.computeLuminance();
-    return ((x > y ? x : y) + .05) / ((x < y ? x : y) + .05);
-  }
-
-  if (contrast(color, background) >= 4.5) return color;
-  for (var i = 1; i <= 20; i++) {
-    final adjusted = Color.lerp(color, uiForeground(background), i / 20)!;
-    if (contrast(adjusted, background) >= 4.5) return adjusted;
-  }
-  return uiForeground(background);
+  Color color(BuildContext context) =>
+      YouthColors.of(context).tones[this]!.solid;
+  UIAccentColors colors(BuildContext context) =>
+      YouthColors.of(context).tones[this]!;
 }

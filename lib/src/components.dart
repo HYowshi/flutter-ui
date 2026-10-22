@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'theme.dart';
-
-enum UIButtonVariant { solid, soft, outline, ghost }
+import 'color_engine.dart';
 
 class UIButton extends StatelessWidget {
   const UIButton({
@@ -23,32 +22,27 @@ class UIButton extends StatelessWidget {
   final bool loading, fullWidth;
   @override
   Widget build(BuildContext context) {
-    final c = tone.color(context), s = Theme.of(context).colorScheme;
-    final foreground = variant == UIButtonVariant.solid
-        ? uiForeground(c)
-        : uiReadable(c, s.surface);
+    final tokens = YouthColors.of(context);
+    UIControlColors resolve(Set<WidgetState> states) => tokens.button(
+      tone,
+      variant,
+      states,
+      surface: UISurfaceScope.of(context),
+    );
     final style = ButtonStyle(
       foregroundColor: WidgetStateProperty.resolveWith(
-        (states) => states.contains(WidgetState.disabled)
-            ? s.onSurface.withValues(alpha: .38)
-            : foreground,
+        (states) => resolve(states).foreground,
       ),
-      backgroundColor: WidgetStateProperty.resolveWith((states) {
-        if (states.contains(WidgetState.disabled)) {
-          return s.onSurface.withValues(alpha: .08);
-        }
-        return switch (variant) {
-          UIButtonVariant.solid => c,
-          UIButtonVariant.soft => c.withValues(alpha: .10),
-          _ => Colors.transparent,
-        };
-      }),
-      overlayColor: WidgetStatePropertyAll(foreground.withValues(alpha: .10)),
-      side: WidgetStatePropertyAll(
-        variant == UIButtonVariant.outline
-            ? BorderSide(
-                color: onPressed == null || loading ? s.outlineVariant : c,
-              )
+      backgroundColor: WidgetStateProperty.resolveWith(
+        (states) => resolve(states).background,
+      ),
+      // States already resolve to an opaque checked color. Disable extra alpha.
+      overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+      side: WidgetStateProperty.resolveWith(
+        (states) => states.contains(WidgetState.focused)
+            ? BorderSide(color: resolve(states).border, width: 2)
+            : variant == UIButtonVariant.outline
+            ? BorderSide(color: resolve(states).border)
             : BorderSide.none,
       ),
     );
@@ -62,7 +56,9 @@ class UIButton extends StatelessWidget {
             height: 17,
             child: CircularProgressIndicator(
               strokeWidth: 2,
-              color: s.onSurface.withValues(alpha: .5),
+              color: tokens.button(tone, variant, {
+                WidgetState.disabled,
+              }).foreground,
             ),
           ),
           const SizedBox(width: 10),
@@ -91,7 +87,6 @@ class UIButton extends StatelessWidget {
       ),
     };
     return Semantics(
-      button: true,
       liveRegion: loading,
       child: fullWidth ? SizedBox(width: double.infinity, child: child) : child,
     );
@@ -225,10 +220,22 @@ class _UICardState extends State<UICard> {
         margin: EdgeInsets.zero,
         clipBehavior: Clip.antiAlias,
         child: widget.onTap == null
-            ? Padding(padding: widget.padding, child: widget.child)
+            ? Padding(
+                padding: widget.padding,
+                child: UISurfaceScope(
+                  color: Theme.of(context).colorScheme.surfaceContainerLowest,
+                  child: widget.child,
+                ),
+              )
             : InkWell(
                 onTap: widget.onTap,
-                child: Padding(padding: widget.padding, child: widget.child),
+                child: Padding(
+                  padding: widget.padding,
+                  child: UISurfaceScope(
+                    color: Theme.of(context).colorScheme.surfaceContainerLowest,
+                    child: widget.child,
+                  ),
+                ),
               ),
       ),
     ),
@@ -247,12 +254,9 @@ class UIBadge extends StatelessWidget {
   final IconData? icon;
   @override
   Widget build(BuildContext context) {
-    final c = tone.color(context);
-    final bg = Color.alphaBlend(
-      c.withValues(alpha: .10),
-      Theme.of(context).colorScheme.surface,
-    );
-    final fg = uiReadable(c, bg);
+    final colors = tone.colors(context);
+    final bg = colors.soft;
+    final fg = colors.onSoft;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: bg,
@@ -297,7 +301,8 @@ class UIAlert extends StatelessWidget {
   final UITone tone;
   @override
   Widget build(BuildContext context) {
-    final c = tone.color(context);
+    final colors = tone.colors(context);
+    final c = colors.onSoft;
     final icon = switch (tone) {
       UITone.success => Icons.check_circle_outline,
       UITone.warning => Icons.warning_amber_rounded,
@@ -310,9 +315,9 @@ class UIAlert extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: c.withValues(alpha: .08),
+          color: colors.soft,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: c.withValues(alpha: .25)),
+          border: Border.all(color: colors.border),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -333,7 +338,7 @@ class UIAlert extends StatelessWidget {
                   Text(
                     message,
                     style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
+                      color: colors.onSoft,
                       height: 1.5,
                       fontSize: 13,
                     ),

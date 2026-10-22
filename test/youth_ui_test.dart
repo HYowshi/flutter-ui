@@ -17,7 +17,7 @@ Widget host(
 );
 void main() {
   test(
-    'theme preserves requested seeds and readable on-primary for extremes',
+    'theme preserves brand seeds separately and generates readable roles',
     () {
       for (final color in [
         Colors.white,
@@ -26,8 +26,8 @@ void main() {
         Colors.blue,
       ]) {
         final theme = YouthUI.init(primary: color);
-        expect(theme.colorScheme.primary, color);
-        final a = color.computeLuminance(),
+        expect(theme.extension<YouthColors>()!.brandPrimary, color);
+        final a = theme.colorScheme.primary.computeLuminance(),
             b = theme.colorScheme.onPrimary.computeLuminance();
         expect(
           ((a > b ? a : b) + .05) / ((a < b ? a : b) + .05),
@@ -105,7 +105,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       final context = tester.element(find.byType(UIButton));
-      expect(Theme.of(context).colorScheme.primary, Colors.purple);
+      expect(YouthColors.of(context).brandPrimary, Colors.purple);
     },
   );
 }
