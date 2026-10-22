@@ -1,3 +1,10 @@
+## 0.10.0
+
+- Redesign Adaptive UI around task hierarchy, readable one-column forms, contextual support and deliberate mobile/tablet/desktop navigation.
+- Add reusable UIAdaptiveScaffold / UIDestination with bottom navigation, compact/extended rails, constrained primary content, optional supporting pane, compact disclosure and persistent action footer.
+- Retain keyed content across layout changes; respect keyboard insets, text scaling, RTL and local constraints.
+- Add working profile/notification/security sample, functional save/reset, fit-to-preview zoom with a 100% inspection mode and design research notes.
+
 ## 0.9.0
 
 - Add UIRadio / UIRadioGroup with native group keyboard navigation, local 48px hit targets, labeled semantics, disabled options and adaptive layout.

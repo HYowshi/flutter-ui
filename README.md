@@ -362,3 +362,31 @@ UITable<Person>(
 `UITable` tự đổi bảng thành thẻ có nhãn ở vùng compact hoặc text scale >1.5. Desktop nhiều cột có thanh cuộn ngang; parent quản lý cuộn dọc. Chỉ dựng ô của trang hiện tại (pageSize 1–100, mặc định10). Header có compare thì được sắp xếp, null thì chỉ đọc; numeric chỉ căn số, muốn sort số phải truyền comparator số. Sort ổn định, không thay đổi danh sách gốc. Mobile có nút sắp xếp tương đương. `cellBuilder(context, row)` cho badge, ảnh, nút thao tác; widget tùy biến vẫn phải tuân theo constraint.
 
 Chọn dòng là tùy chọn: cần rowKey duy nhất, selectedKeys và onSelectionChanged; chỉ checkbox nhận thao tác chọn. Set trả về bất biến, giữ lựa chọn qua các trang. Ứng dụng tự loại bỏ khóa của bản ghi đã xóa/đổi bộ dữ liệu khi cần. Loading tĩnh (`loading: true`) và trạng thái rỗng (`empty: widget`) được hỗ trợ. Tạo danh sách rows/columns mới khi dữ liệu thay đổi, tránh sửa tại chỗ vì thứ tự sort được cache. Table xử lý dữ liệu trong bộ nhớ, sort toàn danh sách; phân trang không phải server paging hay bảng ảo hóa cho dữ liệu cực lớn. Xem [chi tiết Table và Radio](docs/table-radio.vi.md).
+
+
+## Bố cục ứng dụng thích ứng
+
+`UIAdaptiveScaffold` tổ chức điều hướng và quan hệ nội dung, còn UIPage/UIGrid/UIForm là các primitive đơn giản. Form không nên chia cột chỉ vì màn hình rộng; chọn bố cục dựa trên tác vụ và độ dài nội dung.
+
+```dart
+UIAdaptiveScaffold(
+  title: 'Hồ sơ cá nhân',
+  subtitle: 'Quản lý thông tin và tùy chọn của bạn.',
+  destinations: const [
+    UIDestination(label: 'Hồ sơ', icon: Icons.person_outline),
+    UIDestination(label: 'Thông báo', icon: Icons.notifications_none),
+  ],
+  selectedIndex: page,
+  onDestinationSelected: (value) => setState(() => page = value),
+  child: profileForm,
+  supportingTitle: 'Gợi ý hồ sơ',
+  supporting: profileSummary,
+  actions: UIActions(children: [UIButton(label: 'Lưu thay đổi', onPressed: save)]),
+);
+```
+
+Dùng làm màn hình gốc trong vùng có chiều cao hữu hạn (widget đã có Scaffold). Nhận 2–5 destination; ứng dụng quản lý tab, route và dữ liệu. Mobile dùng NavigationBar; tablet dùng rail; vùng expanded có thể dùng rail mở rộng. Chữ lớn ưu tiên điều hướng dưới để dành chỗ đọc. Form/nội dung chính giới hạn mặc định720px, supporting240px chỉ ra cạnh khi hai pane đủ chỗ. Compact thu gọn phần hỗ trợ vào ExpansionTile, vì thông tin quan trọng phải nằm trong child. `leading` là tùy chọn cho rail.
+
+Action footer luôn ở ngoài vùng cuộn và bàn phím được Scaffold xử lý. Caller vẫn phải bố trí actions vừa khung và không dùng footer quá cao. Không dùng intrinsic sizing hoặc bọc cả scaffold bằng một SingleChildScrollView không giới hạn chiều cao. Scaffold giữ subtree của child/supporting/actions khi thay đổi bố cục; ứng dụng nên giữ controller/model khi thay hẳn trang hoặc route.
+
+Demo Adaptive UI nay có thiết kế tài khoản hoàn chỉnh và ba viewport độc lập. Preview có thể thu nhỏ vừa khung website, luôn ghi % zoom; bật kích thước gốc để đánh giá chữ/vùng bấm. Thu nhỏ bản preview không phải cách library xử lý màn hình nhỏ. Xem [nghiên cứu và nguyên tắc thiết kế](docs/adaptive-design.vi.md).

@@ -434,7 +434,7 @@ class _StudioState extends State<Studio> {
           ),
           const SizedBox(height: 20),
           Text(
-            'v0.9.0 · Ready-to-use Flutter UI',
+            'v0.10.0 · Ready-to-use Flutter UI',
             style: TextStyle(fontSize: 10, color: s.onSurfaceVariant),
           ),
         ],
@@ -1202,16 +1202,23 @@ class AdaptiveDemo extends StatefulWidget {
 
 class _AdaptiveDemoState extends State<AdaptiveDemo> {
   double width = 360;
-  bool largeText = false;
+  bool largeText = false, actualSize = false;
+  final horizontal = ScrollController();
+  @override
+  void dispose() {
+    horizontal.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) => DemoBlock(
     number: '08',
-    title: 'Một mã nguồn. Nhiều không gian.',
-    description: 'Thay chiều rộng vùng chứa bên dưới. Form tự chia cột, nút tự giãn, nhóm chọn tự xếp dọc khi không đủ chỗ. Bật chữ lớn để kiểm tra khả năng đọc.',
-    effects: 'Local constraints · giữ dữ liệu khi resize · chữ theo hệ thống · vùng chạm ≥ 48px',
-    code: "UIPage(children: [\n  UICard(child: UIForm(children: [\n    UITextField(label: 'Tên hiển thị'),\n    UITextField(label: 'Email'),\n  ])),\n  UIActions(children: [\n    UIButton(label: 'Lưu', onPressed: save),\n    UIButton(label: 'Hủy', onPressed: cancel),\n  ]),\n]);",
+    title: 'Cùng một sản phẩm. Bố cục đúng ngữ cảnh.',
+    description: 'Mobile tập trung vào tác vụ chính. Tablet dùng thanh điều hướng gọn. Desktop tách nội dung và phần hỗ trợ, giữ form ở chiều rộng dễ đọc. Thử nhập dữ liệu rồi đổi kích thước.',
+    effects: 'Phân cấp rõ · không kéo giãn form · điều hướng đổi vị trí · giữ dữ liệu · hỗ trợ chữ lớn',
+    code: "UIAdaptiveScaffold(\n  title: 'Hồ sơ cá nhân',\n  subtitle: 'Quản lý thông tin và tùy chọn của bạn.',\n  destinations: const [\n    UIDestination(label: 'Hồ sơ', icon: Icons.person_outline),\n    UIDestination(label: 'Thông báo', icon: Icons.notifications_none),\n  ],\n  selectedIndex: page,\n  onDestinationSelected: (value) => setState(() => page = value),\n  child: profileForm,\n  supporting: profileSummary,\n  actions: UIActions(children: [UIButton(label: 'Lưu thay đổi', onPressed: save)]),\n);",
     child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Wrap(
           spacing: 10,
@@ -1231,42 +1238,97 @@ class _AdaptiveDemoState extends State<AdaptiveDemo> {
           ],
         ),
         const SizedBox(height: 12),
-        UISwitch(
-          label: 'Chữ lớn 200%',
-          value: largeText,
-          onChanged: (v) => setState(() => largeText = v),
-        ),
-        const SizedBox(height: 12),
-        const Text(
-          'Đây là chiều rộng vùng preview, không đổi kích thước trình duyệt. Có thể cuộn ngang khi preview rộng hơn màn hình.',
+        Wrap(
+          spacing: 24,
+          runSpacing: 8,
+          children: [
+            UISwitch(
+              label: 'Chữ lớn 200%',
+              value: largeText,
+              onChanged: (v) => setState(() => largeText = v),
+            ),
+            UISwitch(
+              label: 'Xem kích thước gốc',
+              value: actualSize,
+              onChanged: (v) => setState(() => actualSize = v),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: SizedBox(
-            key: const ValueKey('adaptive-preview'),
-            width: width,
-            height: 560,
-            child: MediaQuery(
-              data: MediaQuery.of(context).copyWith(
-                size: Size(width, 560),
-                textScaler: largeText
-                    ? const TextScaler.linear(2)
-                    : MediaQuery.textScalerOf(context),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final height = width == 360
+                ? 720.0
+                : width == 768
+                ? 680.0
+                : 640.0;
+            final zoom = actualSize || constraints.maxWidth >= width
+                ? 1.0
+                : constraints.maxWidth / width;
+            final preview = SizedBox(
+              key: const ValueKey('adaptive-preview'),
+              width: width,
+              height: height,
+              child: MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  size: Size(width, height),
+                  textScaler: largeText
+                      ? const TextScaler.linear(2)
+                      : MediaQuery.textScalerOf(context),
+                ),
+                child: Material(
+                  color: Theme.of(context).colorScheme.surface,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    side: BorderSide(
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: const AdaptiveSample(),
+                ),
               ),
-              child: Material(
-                color: YouthColors.of(context).canvas,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  side: BorderSide(
-                    color: Theme.of(context).colorScheme.outlineVariant,
+            );
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    '${width.toInt()} × ${height.toInt()} · xem trước ${(zoom * 100).round()}%'
+                    '${zoom < 1 ? ' · bật kích thước gốc để kiểm tra chữ và vùng bấm' : ''}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
-                clipBehavior: Clip.antiAlias,
-                child: const AdaptiveSample(),
-              ),
-            ),
-          ),
+                if (actualSize)
+                  Scrollbar(
+                    controller: horizontal,
+                    thumbVisibility: width > constraints.maxWidth,
+                    child: SingleChildScrollView(
+                      controller: horizontal,
+                      scrollDirection: Axis.horizontal,
+                      child: preview,
+                    ),
+                  )
+                else
+                  Align(
+                    alignment: Alignment.topCenter,
+                    child: SizedBox(
+                      width: width * zoom,
+                      height: height * zoom,
+                      child: FittedBox(
+                        fit: BoxFit.contain,
+                        alignment: Alignment.topCenter,
+                        child: preview,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
       ],
     ),
@@ -1281,75 +1343,278 @@ class AdaptiveSample extends StatefulWidget {
 
 class _AdaptiveSampleState extends State<AdaptiveSample> {
   final form = GlobalKey<FormState>();
-  bool notify = true;
+  final name = TextEditingController(text: 'An Nguyễn');
+  final email = TextEditingController(text: 'an.nguyen@example.com');
+  int page = 0;
+  bool notify = true, security = true, saved = false;
   String period = 'week';
   @override
-  Widget build(BuildContext context) => UIPage(
-    children: [
-      Text(
-        'Không gian của bạn',
-        style: Theme.of(context).textTheme.headlineSmall,
+  void dispose() {
+    name.dispose();
+    email.dispose();
+    super.dispose();
+  }
+
+  Widget section(
+    BuildContext context,
+    String title,
+    String description,
+    Widget child,
+  ) {
+    final s = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: s.surfaceContainerLowest,
+        border: Border.all(color: s.outlineVariant),
+        borderRadius: BorderRadius.circular(16),
       ),
-      const Text('Không viết điều kiện PC/mobile trong màn hình này.'),
-      UICard(
-        child: UIForm(
-          formKey: form,
-          children: [
-            const UITextField(
-              key: ValueKey('adaptive-name'),
-              label: 'Tên hiển thị',
-              prefixIcon: Icons.person_outline,
-            ),
-            UITextField(
-              label: 'Email liên hệ',
-              keyboardType: TextInputType.emailAddress,
-              validator: (v) => (v ?? '').contains('@')
-                  ? null
-                  : 'Nhập email để lưu thông tin.',
-            ),
-          ],
-        ),
-      ),
-      UICard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Tần suất cập nhật'),
-            const SizedBox(height: 12),
-            UISegmentedControl<String>(
-              options: const [
-                UIOption(value: 'day', label: 'Hàng ngày'),
-                UIOption(value: 'week', label: 'Hàng tuần'),
-                UIOption(value: 'month', label: 'Hàng tháng'),
-              ],
-              value: period,
-              onChanged: (v) => setState(() => period = v),
-            ),
-            const SizedBox(height: 12),
-            UICheckbox(
-              label: 'Nhận thông báo khi có cập nhật mới trong không gian làm việc',
-              value: notify,
-              onChanged: (v) => setState(() => notify = v ?? false),
-            ),
-          ],
-        ),
-      ),
-      UIActions(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          UIButton(
-            label: 'Lưu thay đổi của bạn',
-            icon: Icons.check_rounded,
-            onPressed: () => form.currentState!.validate(),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           ),
-          UIButton(
-            label: 'Để sau',
-            variant: UIButtonVariant.outline,
-            onPressed: () {},
+          const SizedBox(height: 6),
+          Text(
+            description,
+            style: TextStyle(
+              color: s.onSurfaceVariant,
+              height: 1.5,
+              fontSize: 13,
+            ),
+          ),
+          const SizedBox(height: 24),
+          child,
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = Theme.of(context).colorScheme;
+    return UIAdaptiveScaffold(
+      title: ['Hồ sơ cá nhân', 'Thông báo', 'Bảo mật'][page],
+      subtitle: [
+        'Thông tin giúp mọi người nhận ra bạn trong không gian làm việc.',
+        'Chọn những cập nhật hữu ích và thời điểm nhận tin.',
+        'Giữ tài khoản của bạn an toàn.',
+      ][page],
+      destinations: const [
+        UIDestination(
+          label: 'Hồ sơ',
+          icon: Icons.person_outline,
+          selectedIcon: Icons.person,
+        ),
+        UIDestination(
+          label: 'Thông báo',
+          icon: Icons.notifications_none,
+          selectedIcon: Icons.notifications,
+        ),
+        UIDestination(
+          label: 'Bảo mật',
+          icon: Icons.shield_outlined,
+          selectedIcon: Icons.shield,
+        ),
+      ],
+      selectedIndex: page,
+      onDestinationSelected: (v) => setState(() {
+        page = v;
+        saved = false;
+      }),
+      supportingTitle: 'Gợi ý cho hồ sơ',
+      leading: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        child: Icon(Icons.layers_outlined, color: s.primary, size: 28),
+      ),
+      supporting: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: s.primaryContainer,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: s.primary,
+                  foregroundColor: s.onPrimary,
+                  child: const Text('AN'),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Không gian cá nhân',
+                  style: TextStyle(
+                    color: s.onPrimaryContainer,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Mọi thay đổi bắt đầu từ những thông tin rõ ràng.',
+                  style: TextStyle(
+                    color: s.onPrimaryContainer,
+                    height: 1.6,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'MẸO NHỎ',
+            style: TextStyle(
+              color: s.onSurfaceVariant,
+              fontWeight: FontWeight.w700,
+              fontSize: 11,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Dùng tên bạn thường gọi và một email có thể liên hệ.',
+            style: TextStyle(
+              color: s.onSurfaceVariant,
+              height: 1.6,
+              fontSize: 13,
+            ),
           ),
         ],
       ),
-    ],
-  );
+      actions: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (saved)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Semantics(
+                liveRegion: true,
+                child: Text(
+                  'Đã lưu trong bản demo',
+                  style: TextStyle(color: s.primary, fontSize: 13),
+                ),
+              ),
+            ),
+          UIAdaptiveBuilder(
+            builder: (context, ui) => Row(
+              children: [
+                TextButton(
+                  onPressed: () => setState(() {
+                    name.text = 'An Nguyễn';
+                    email.text = 'an.nguyen@example.com';
+                    notify = true;
+                    security = true;
+                    period = 'week';
+                    saved = false;
+                  }),
+                  child: const Text('Đặt lại'),
+                ),
+                const Spacer(),
+                Flexible(
+                  child: UIButton(
+                    label: 'Lưu thay đổi',
+                    fullWidth: false,
+                    onPressed: () {
+                      if (page != 0 ||
+                          (form.currentState?.validate() ?? false)) {
+                        setState(() => saved = true);
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      child: page == 0
+          ? Form(
+              key: form,
+              child: section(
+                context,
+                'Thông tin cơ bản',
+                'Thông tin liên hệ chỉ được dùng trong bản demo này.',
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    UITextField(
+                      key: const ValueKey('adaptive-name'),
+                      label: 'Tên hiển thị',
+                      controller: name,
+                      prefixIcon: Icons.person_outline,
+                      validator: (v) => (v ?? '').trim().isEmpty
+                          ? 'Nhập tên hiển thị.'
+                          : null,
+                    ),
+                    const SizedBox(height: 20),
+                    UITextField(
+                      label: 'Email liên hệ',
+                      controller: email,
+                      keyboardType: TextInputType.emailAddress,
+                      prefixIcon: Icons.alternate_email,
+                      validator: (v) =>
+                          (v ?? '').contains('@') ? null : 'Nhập email hợp lệ.',
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Bạn có thể chỉnh sửa lại bất cứ lúc nào.',
+                      style: TextStyle(
+                        color: s.onSurfaceVariant,
+                        fontSize: 12,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : page == 1
+          ? section(
+              context,
+              'Tùy chọn nhận tin',
+              'Ít gián đoạn hơn, đúng thông tin bạn cần.',
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  UISwitch(
+                    label: 'Nhận thông báo',
+                    value: notify,
+                    onChanged: (v) => setState(() => notify = v),
+                  ),
+                  const SizedBox(height: 20),
+                  UIRadioGroup<String>(
+                    value: period,
+                    options: const [
+                      UIOption(value: 'day', label: 'Hàng ngày'),
+                      UIOption(value: 'week', label: 'Hàng tuần'),
+                      UIOption(value: 'month', label: 'Hàng tháng'),
+                    ],
+                    onChanged: (v) => setState(() => period = v ?? 'week'),
+                  ),
+                ],
+              ),
+            )
+          : section(
+              context,
+              'Bảo vệ tài khoản',
+              'Kiểm soát các thông báo về hoạt động đăng nhập.',
+              UISwitch(
+                value: security,
+                label: 'Cảnh báo khi có đăng nhập mới',
+                onChanged: (v) => setState(() => security = v),
+              ),
+            ),
+    );
+  }
 }
 
 class DropdownDemo extends StatefulWidget {

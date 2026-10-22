@@ -188,9 +188,15 @@ void main() {
         of: find.byType(AdaptiveSample),
         matching: find.byType(TextFormField),
       );
+      expect(find.byType(NavigationRail), findsOneWidget);
       expect(
-        tester.getTopLeft(fields.first).dy,
+        tester.widget<NavigationRail>(find.byType(NavigationRail)).extended,
+        isTrue,
+      );
+      // A readable form stays in one column; supporting content uses the space beside it.
+      expect(
         tester.getTopLeft(fields.last).dy,
+        greaterThan(tester.getTopLeft(fields.first).dy),
       );
       await tester.tap(find.text('Mobile · 360'));
       await tester.pumpAndSettle();
