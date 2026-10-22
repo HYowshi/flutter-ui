@@ -62,7 +62,30 @@ UIWireframe.avatar();
 
 **Transition:** fade 220ms từ một ảnh chụp theme cũ sang UI mới đang hoạt động. Không clone cây widget, không tính lại HCT theo từng frame; giới hạn snapshot khoảng 2 triệu pixel, DPR ≤1.5 và giải phóng sau fade. Đổi liên tục sẽ kết thúc ở theme được yêu cầu cuối cùng. Reduced motion/high contrast chuyển ngay. Renderer/platform view không hỗ trợ chụp thì dùng cập nhật trực tiếp. Đây là tối ưu có giới hạn bộ nhớ, không phải bảo đảm FPS cho mọi thiết bị.
 
-**Ảnh:** khung/tỉ lệ ổn định khi loading/lỗi; placeholder tĩnh, fade một lần, giữ aspect nguồn khi gợi ý decode native; bucket 128px, tối đa 2048px chiều ngang. Không tải khi vùng chứa bằng 0; avatar/thumbnail giữ kích thước ngay trong cột giãn rộng. Fallback không lặp retry tự động, URL lỗi có nút thử lại khi đủ chỗ. `semanticLabel` dành cho ảnh có nội dung; không đọc đường dẫn asset. Tôn trọng constraint cha, `fit`, `alignment`, `width`, `height` có thể ghi đè.
+**Ảnh:** khung ổn định khi loading/lỗi; fallback tùy ứng dụng, fade một lần và decode hint native. Mọi constructor (ảnh thường, avatar, thumbnail, banner, provider) đều nhận các tùy chọn dưới đây:
+
+```dart
+UIImage(photoUrl, // String?; null / chuỗi trắng không tải asset
+  fallbackSource: 'assets/default-cover.png', // cũng nhận URL HTTP(S)
+  fallback: const Center(child: Icon(Icons.hide_image_outlined)),
+  placeholder: const UIWireframe.image(),
+);
+UIImage.avatar(avatarUrl,
+  fallbackSource: 'assets/default-avatar.png',
+  fallback: const Center(child: Text('AN')),
+);
+// Thay toàn bộ cách xử lý lỗi, nhận lỗi gốc:
+UIImage(photoUrl, errorBuilder: (context, error, stack) =>
+  const Center(child: Text('Ảnh chưa có sẵn')));
+```
+
+Thứ tự: `errorBuilder` nếu có → nếu không, thử `fallbackSource` một lần → `fallback` widget → giao diện lỗi mặc định. Ảnh fallback lỗi sẽ dừng ở widget cuối, không thử lại dây chuyền. Hai nguồn giống nhau không bị tải lặp. `placeholder` dùng trong lúc chờ cả nguồn chính và nguồn fallback. Widget tự cung cấp phải vừa khung; nếu tự đặt `Image` vào placeholder/fallback thì ứng dụng quản lý lỗi của Image đó. Các asset kể cả fallback phải khai báo trong pubspec.
+
+`allowRetry` chỉ áp dụng cho giao diện lỗi mặc định, không chèn nút vào fallback tùy biến; avatar/thumbnail/provider mặc định tắt, ảnh thường/banner mặc định bật. Nút dùng icon khi khung nhỏ hoặc chữ lớn; không hiện nếu không đủ vùng chạm 48px. Chống nhấn lặp và bỏ qua kết quả thử lại của nguồn cũ sau khi đổi nguồn/dispose. Retry xóa đúng cache key ResizeImage và provider gốc.
+
+Giữ `fit`, `alignment`, bo góc và khung cho cả nguồn chính/fallback. Avatar/thumbnail co đều khi parent nhỏ; ảnh thường tôn trọng chiều cao tối đa của parent. Có thể ghi đè fit/alignment/variants/optimizeDecode ở các kiểu ảnh; banner hỗ trợ height và borderRadius. Cần `semanticLabel` cho ảnh mang thông tin, kể cả nội dung thay thế. Không tự đọc URL hoặc thông báo lỗi kỹ thuật cho người dùng. API `.source` nay là `String?` vì hỗ trợ nguồn vắng mặt; code đọc thuộc tính này cần xử lý null.
+
+Decode native theo bucket 128px, tối đa 2048px chiều ngang; web dùng provider nguyên bản. Xem [quy tắc fallback và giới hạn của ảnh](docs/images.vi.md).
 
 Web bỏ qua cacheWidth/cacheHeight của Flutter: để giảm byte tải trên web, truyền biến thể kích thước thực từ máy chủ, không chỉ URL ảnh gốc dung lượng lớn:
 
@@ -141,7 +164,7 @@ Nếu tạo container riêng có màu nền khác, bọc `UISurfaceScope(color: 
 
 | Widget | Chức năng |
 | UIApp / UIThemeToggle | Khởi tạo một lần, giữ theme pair và chuyển light/dark |
-| UIImage | Asset/URL/provider, avatar/banner/thumbnail, placeholder/lỗi và decode hint |
+| UIImage | Asset/URL/provider, fallbackSource/widget/errorBuilder, placeholder, retry và khung thích ứng |
 | UIWireframe | 14 bố cục, nhận diện dữ liệu/schema, giải thích lựa chọn và tự thích ứng |
 | --- | --- |
 | UIButton | solid/soft/outline/ghost, state colors; tự giãn trong vùng hẹp và xuống dòng nhãn dài |

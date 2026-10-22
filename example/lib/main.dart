@@ -426,7 +426,7 @@ class _StudioState extends State<Studio> {
           ),
           const SizedBox(height: 20),
           Text(
-            'v0.7.0 · Ready-to-use Flutter UI',
+            'v0.8.0 · Ready-to-use Flutter UI',
             style: TextStyle(fontSize: 10, color: s.onSurfaceVariant),
           ),
         ],
@@ -1825,17 +1825,24 @@ class _MotionDemoState extends State<MotionDemo> {
   );
 }
 
-class ImageDemo extends StatelessWidget {
+class ImageDemo extends StatefulWidget {
   const ImageDemo({super.key});
+  @override
+  State<ImageDemo> createState() => _ImageDemoState();
+}
+
+class _ImageDemoState extends State<ImageDemo> {
+  bool missing = true;
+  BoxFit fit = BoxFit.cover;
   @override
   Widget build(BuildContext context) => DemoBlock(
     number: '10',
-    title: 'Images · gọi một dòng',
-    description: 'Asset hoặc URL dùng chung một widget. Khung ảnh không đổi trong lúc tải; ảnh lỗi có fallback; avatar và thumbnail giữ kích thước trong layout giãn rộng.',
-    effects: 'Giữ tỉ lệ · bo góc · fade một lần · decode bucket trên native · variants trên web',
-    code: "UIImage('assets/studio.png');\nUIImage.banner('assets/studio.png');\nUIImage.avatar('assets/studio.png');\nUIImage.thumbnail('assets/studio.png');",
+    title: 'Images · fallback theo ứng dụng',
+    description: 'Nguồn rỗng hoặc lỗi dùng ảnh dự phòng của bạn. Nếu ảnh dự phòng cũng lỗi, chuyển sang widget cuối. Khung, bo góc và cách căn ảnh được giữ nguyên.',
+    effects: 'Asset / URL / provider · placeholder riêng · fallback một bước · retry an toàn · khung thích ứng',
+    code: "UIImage(photoUrl,\n  fallbackSource: 'assets/default-cover.png',\n  fallback: const Icon(Icons.hide_image_outlined),\n  placeholder: const UIWireframe.image(),\n);\n\nUIImage.avatar(avatarUrl,\n  fallbackSource: 'assets/default-avatar.png',\n  fallback: const Center(child: Text('AN')),\n);\n\n// Tự xử lý toàn bộ giao diện lỗi:\nUIImage(photoUrl, errorBuilder: (context, error, stack) =>\n  const Center(child: Text('Ảnh chưa có sẵn')));",
     child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const UIImage.banner(
           'assets/studio.png',
@@ -1848,12 +1855,71 @@ class ImageDemo extends StatelessWidget {
           children: [
             UIImage.avatar('assets/studio.png'),
             UIImage.thumbnail('assets/studio.png'),
+            UIImage.avatar(
+              null,
+              fallback: Center(child: Text('AN')),
+              semanticLabel: 'Ảnh đại diện thay thế bằng tên viết tắt',
+            ),
+            UIImage.thumbnail(null, fallbackSource: 'assets/studio.png'),
           ],
         ),
-        const SizedBox(height: 16),
-        const Text('Fallback khi ảnh không có sẵn'),
+        const SizedBox(height: 20),
+        UISwitch(
+          value: missing,
+          label: 'Nguồn chính không có sẵn',
+          onChanged: (value) => setState(() => missing = value),
+        ),
         const SizedBox(height: 12),
-        const UIImage('assets/intentional-missing.png', height: 120),
+        UISelect<BoxFit>(
+          label: 'Cách đặt ảnh',
+          initialValue: fit,
+          options: const [
+            UIOption(value: BoxFit.cover, label: 'Cover · lấp đầy khung'),
+            UIOption(value: BoxFit.contain, label: 'Contain · giữ toàn bộ ảnh'),
+          ],
+          onChanged: (value) => setState(() => fit = value ?? BoxFit.cover),
+        ),
+        const SizedBox(height: 12),
+        const Text('Ảnh dự phòng riêng · bật/tắt nguồn để thử đổi ảnh'),
+        const SizedBox(height: 8),
+        UIImage(
+          missing ? null : 'assets/studio.png',
+          height: 140,
+          fit: fit,
+          fallbackSource: 'assets/fallback.png',
+          fallback: const Center(child: Text('Ảnh dự phòng chưa có sẵn')),
+        ),
+        const SizedBox(height: 20),
+        const Text('Cả hai nguồn đều lỗi · widget fallback cuối'),
+        const SizedBox(height: 8),
+        const UIImage(
+          null,
+          height: 100,
+          fallbackSource: 'assets/intentional-missing.png',
+          fallback: Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.hide_image_outlined),
+                SizedBox(width: 8),
+                Text('Chưa có ảnh'),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        const Text('errorBuilder · giao diện lỗi do ứng dụng quyết định'),
+        const SizedBox(height: 8),
+        UIImage(
+          null,
+          height: 80,
+          errorBuilder: (context, error, stack) =>
+              const Center(child: Text('Nội dung ảnh sẽ được cập nhật')),
+        ),
+        const SizedBox(height: 20),
+        const Text('Fallback mặc định'),
+        const SizedBox(height: 8),
+        const UIImage(null, height: 80, allowRetry: false),
       ],
     ),
   );

@@ -1,3 +1,12 @@
+## 0.8.0
+
+- UIImage accepts absent/blank sources without asset requests; adds fallbackSource, fallback, placeholder and errorBuilder to all constructors.
+- Bounded fallback chain, shared geometry/fit/clip, final UI if backup also fails; no recursive retries.
+- Configurable fit/alignment/decode/variants on avatar and thumbnail; banner height/radius options.
+- Respect bounded parent heights and shrink small square media uniformly; skip blank source variants.
+- Retry evicts the resized cache key and ignores stale completions after source replacement/disposal, with tap deduplication and compact accessible actions.
+- Expanded image gallery, custom fallback asset, regression tests and documented source nullability.
+
 ## 0.7.0
 
 - Add UIWireframe.auto / inspect / fromPlan with bounded structural inference, evidence levels and reasons; neutral fallback for ambiguous data.

@@ -209,8 +209,16 @@ void main() {
         await tester.tap(find.widgetWithText(ListTile, label));
         await tester.pumpAndSettle();
         if (label == 'Images') {
-          expect(find.byType(UIImage), findsNWidgets(4));
+          expect(find.byType(UIImage), findsNWidgets(9));
           expect(find.byIcon(Icons.broken_image_outlined), findsOneWidget);
+          final sourceSwitch = find.descendant(
+            of: find.widgetWithText(UISwitch, 'Nguồn chính không có sẵn'),
+            matching: find.byType(Switch),
+          );
+          await tester.ensureVisible(sourceSwitch);
+          await tester.tap(sourceSwitch);
+          await tester.pumpAndSettle();
+          expect(tester.widget<Switch>(sourceSwitch).value, isFalse);
         } else {
           expect(find.byType(UIWireframe), findsWidgets);
           await tester.ensureVisible(find.text('Phân tích dữ liệu'));
