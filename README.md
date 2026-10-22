@@ -6,6 +6,8 @@ Bộ Flutter/Dart UI dùng lại cho mobile, desktop và web, không gắn với
 
 ## Dùng nhanh
 
+**Mới 0.11:** form tự quản lý gửi, validation theo thời điểm, lỗi server theo trường; thông báo có hàng đợi và Hoàn tác. Xem [cách dùng form và thông báo](docs/forms-feedback.vi.md).
+
 ```yaml
 dependencies:
   youth_ui:

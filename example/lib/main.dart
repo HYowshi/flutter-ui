@@ -434,7 +434,7 @@ class _StudioState extends State<Studio> {
           ),
           const SizedBox(height: 20),
           Text(
-            'v0.10.0 · Ready-to-use Flutter UI',
+            'v0.11.0 · Ready-to-use Flutter UI',
             style: TextStyle(fontSize: 10, color: s.onSurfaceVariant),
           ),
         ],
@@ -742,10 +742,7 @@ class DemoBlock extends StatelessWidget {
 }
 
 void toast(BuildContext context, String text) {
-  ScaffoldMessenger.of(context).hideCurrentSnackBar();
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(text), behavior: SnackBarBehavior.floating),
-  );
+  UINotice.show(context, message: text);
 }
 
 class ThemeEditor extends StatefulWidget {
@@ -1788,87 +1785,107 @@ class InputDemo extends StatefulWidget {
 }
 
 class _InputDemoState extends State<InputDemo> {
-  final form = GlobalKey<FormState>();
-  bool checked = true, notifications = false;
+  final email = TextEditingController();
+  final password = TextEditingController();
+  String result = 'success';
+  int attempts = 0;
+  @override
+  void dispose() {
+    email.dispose();
+    password.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) => DemoBlock(
     number: '02',
     title: 'Form & Inputs',
-    description:
-        'Các widget có validation, semantics và trạng thái tương tác thật.',
-    effects: 'Viền focus · label nổi · lỗi inline · hiện / ẩn mật khẩu · chuyển trạng thái lựa chọn',
-    code: "Form(key: formKey, child: Column(children: [\n  UITextField(label: 'Email', validator: validateEmail),\n  UIPasswordField(),\n  UISelect<String>(label: 'Đơn vị', items: items, onChanged: select),\n]));",
-    child: Form(
-      key: form,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          UIGrid(
-            maxColumns: 2,
-            children: [
-              UITextField(
-                label: 'Email',
-                hint: 'ban@example.com',
-                prefixIcon: Icons.mail_outline,
-                keyboardType: TextInputType.emailAddress,
-                autofillHints: const [AutofillHints.email],
-                validator: (v) =>
-                    RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(v ?? '')
-                    ? null
-                    : 'Nhập email hợp lệ.',
-              ),
-              UIPasswordField(
-                validator: (v) =>
-                    (v?.length ?? 0) >= 8 ? null : 'Cần ít nhất 8 ký tự.',
-              ),
-            ],
+    description: 'Nhập tự nhiên, nhận lỗi đúng lúc và giữ nguyên dữ liệu khi gửi thất bại.',
+    effects: 'Rời ô để kiểm tra · sửa lỗi trực tiếp · focus lỗi đầu tiên · khoá khi gửi · lỗi server theo tên trường',
+    code: "UIForm(\n  onSubmit: () async {\n    await api.save(email.text);\n    // Lỗi server: throw UIFormException(\n    //   fieldErrors: {'email': 'Email đã tồn tại.'});\n  },\n  children: [\n    UITextField(name: 'email', label: 'Email',\n      controller: email, validator: UIValidators.email()),\n    UIPasswordField(name: 'password', controller: password),\n  ],\n);",
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const UIAlert(
+          title: 'Thử một quy trình gửi thật',
+          message: 'Chọn kết quả mô phỏng, nhập dữ liệu rồi gửi. Demo chỉ chạy trong trình duyệt, không tạo tài khoản.',
+          liveRegion: false,
+        ),
+        const SizedBox(height: 20),
+        UISelect<String>(
+          label: 'Kết quả mô phỏng',
+          initialValue: result,
+          options: const [
+            UIOption(value: 'success', label: 'Thành công'),
+            UIOption(value: 'field', label: 'Email đã được sử dụng'),
+            UIOption(value: 'network', label: 'Lỗi kết nối'),
+          ],
+          onChanged: (value) => setState(() => result = value!),
+        ),
+        const SizedBox(height: 24),
+        UIForm(
+          submitLabel: 'Kiểm tra biểu mẫu',
+          onSubmit: () async {
+            final outcome = result;
+            setState(() => attempts++);
+            await Future<void>.delayed(const Duration(milliseconds: 900));
+            if (outcome == 'field') {
+              throw const UIFormException(
+                fieldErrors: {
+                  'email': 'Email này đã được sử dụng. Hãy chọn email khác.',
+                },
+              );
+            }
+            if (outcome == 'network') {
+              throw const UIFormException(
+                message:
+                    'Không thể kết nối. Dữ liệu vẫn được giữ để bạn thử lại.',
+              );
+            }
+          },
+          onSuccess: () => UINotice.show(
+            context,
+            message: 'Dữ liệu hợp lệ. Đã hoàn tất bản gửi mô phỏng.',
+            tone: UITone.success,
           ),
-          const SizedBox(height: 22),
-          UISelect<String>(
-            label: 'Không gian làm việc',
-            items: const [
-              DropdownMenuItem(value: 'school', child: Text('Cá nhân')),
-              DropdownMenuItem(value: 'local', child: Text('Nhóm')),
-            ],
-            onChanged: (_) {},
-          ),
-          const SizedBox(height: 22),
-          const UITextField(
-            label: 'Giới thiệu',
-            hint: 'Chia sẻ ý tưởng của bạn…',
-            maxLines: 3,
-          ),
-          const SizedBox(height: 18),
-          const UITextField(
-            label: 'Thông tin đã xác minh',
-            helper: 'Ví dụ trường không khả dụng',
-            enabled: false,
-          ),
-          const SizedBox(height: 12),
-          UICheckbox(
-            label: 'Nhận thông báo qua email',
-            value: checked,
-            onChanged: (v) => setState(() => checked = v ?? false),
-          ),
-          UISwitch(
-            label: 'Bật thông báo',
-            value: notifications,
-            onChanged: (v) => setState(() => notifications = v),
-          ),
-          const SizedBox(height: 12),
-          UIButton(
-            label: 'Kiểm tra biểu mẫu',
-            onPressed: () {
-              if (form.currentState!.validate()) {
-                toast(
-                  context,
-                  'Dữ liệu hợp lệ. Đây là demo, không tạo tài khoản.',
-                );
-              }
-            },
-          ),
-        ],
-      ),
+          children: [
+            UITextField(
+              name: 'email',
+              label: 'Email',
+              controller: email,
+              hint: 'ban@example.com',
+              helper: 'Kiểm tra sau khi rời ô hoặc gửi.',
+              prefixIcon: Icons.mail_outline,
+              clearable: true,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              autofillHints: const [AutofillHints.email],
+              validator: UIValidators.email(),
+            ),
+            UIPasswordField(
+              name: 'password',
+              controller: password,
+              helper: 'Ít nhất 8 ký tự. Có thể bấm biểu tượng để xem.',
+              autofillHints: const [AutofillHints.newPassword],
+              textInputAction: TextInputAction.done,
+              validator: UIValidators.minLength(8),
+            ),
+            const UITextField(
+              label: 'Giới thiệu',
+              maxLines: 3,
+              maxLength: 180,
+              hint: 'Chia sẻ ý tưởng của bạn…',
+            ),
+            const UITextField(
+              label: 'Thông tin đã xác minh',
+              helper: 'Ví dụ trường không khả dụng',
+              enabled: false,
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Text('Số lần gửi mô phỏng: $attempts'),
+      ],
     ),
   );
 }
@@ -1945,44 +1962,125 @@ class CardDemo extends StatelessWidget {
   );
 }
 
-class FeedbackDemo extends StatelessWidget {
+class FeedbackDemo extends StatefulWidget {
   const FeedbackDemo({super.key});
+  @override
+  State<FeedbackDemo> createState() => _FeedbackDemoState();
+}
+
+class _FeedbackDemoState extends State<FeedbackDemo> {
+  bool online = false, archived = false;
+  int batch = 0;
   @override
   Widget build(BuildContext context) => DemoBlock(
     number: '04',
     title: 'Alerts & Dialog',
-    description: 'Thông điệp rõ ràng, màu theo vai trò và phản hồi ngay tại nơi tương tác.',
-    effects: 'SnackBar xuất hiện / ẩn · dialog chuyển cảnh Material · thông báo có live-region',
-    code: "UIAlert(message: 'Đã lưu.', tone: UITone.success);\nScaffoldMessenger.of(context).showSnackBar(\n  const SnackBar(content: Text('Đã sao chép')),\n);",
+    description: 'Phản hồi đặt đúng nơi: banner cho trạng thái, thông báo ngắn cho thao tác và dialog cho quyết định.',
+    effects: 'Hàng đợi tối đa 5 · chống trùng · Hoàn tác · lỗi quan trọng giữ đến khi đóng · nút thao tác theo theme',
+    code: "UINotice.show(context,\n  message: 'Đã lưu trữ mục.',\n  tone: UITone.success,\n  actionLabel: 'Hoàn tác',\n  onAction: restoreItem,\n);\n\nUIAlert(message: 'Đang ngoại tuyến',\n  tone: UITone.warning,\n  actionLabel: 'Thử lại', onAction: reconnect);",
     child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const UIAlert(
-          message: 'Thông tin được đồng bộ trong không gian làm việc.',
-        ),
-        const SizedBox(height: 12),
-        const UIAlert(
-          message: 'Đã lưu thay đổi của bạn.',
-          tone: UITone.success,
-        ),
-        const SizedBox(height: 12),
-        const UIAlert(
-          message: 'Kiểm tra thông tin trước khi gửi.',
-          tone: UITone.warning,
-        ),
-        const SizedBox(height: 12),
-        const UIAlert(
-          message: 'Chưa thể hoàn tất yêu cầu. Vui lòng thử lại.',
-          tone: UITone.danger,
+        UIAlert(
+          title: online ? 'Đã kết nối' : 'Bạn đang ngoại tuyến',
+          message: online
+              ? 'Có thể tiếp tục đồng bộ dữ liệu.'
+              : 'Bản nháp vẫn được giữ. Kiểm tra kết nối rồi thử lại.',
+          tone: online ? UITone.success : UITone.warning,
+          actionLabel: online ? 'Mô phỏng mất mạng' : 'Thử kết nối lại',
+          onAction: () => setState(() => online = !online),
         ),
         const SizedBox(height: 20),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
+        UICard(
+          child: Row(
+            children: [
+              Icon(
+                archived
+                    ? Icons.inventory_2_outlined
+                    : Icons.description_outlined,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  archived
+                      ? 'Mục demo đã được lưu trữ'
+                      : 'Tài liệu demo đang hiển thị',
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 20),
+        UIActions(
           children: [
             UIButton(
               label: 'Thử SnackBar',
               variant: UIButtonVariant.soft,
-              onPressed: () => toast(context, 'Đây là thông báo ngắn.'),
+              onPressed: () => UINotice.show(
+                context,
+                message: 'Đã sao chép liên kết.',
+                tone: UITone.success,
+              ),
+            ),
+            UIButton(
+              label: 'Lưu trữ và Hoàn tác',
+              onPressed: archived
+                  ? null
+                  : () {
+                      setState(() => archived = true);
+                      UINotice.show(
+                        context,
+                        id: 'archive-demo',
+                        message: 'Đã lưu trữ mục demo.',
+                        tone: UITone.success,
+                        actionLabel: 'Hoàn tác',
+                        onAction: () {
+                          if (mounted) setState(() => archived = false);
+                        },
+                      );
+                    },
+            ),
+            UIButton(
+              label: 'Thử hàng đợi',
+              variant: UIButtonVariant.outline,
+              onPressed: () {
+                final run = ++batch;
+                for (var i = 1; i <= 3; i++) {
+                  UINotice.show(
+                    context,
+                    id: 'batch-$run-$i',
+                    message: 'Thông báo $i / 3 · lượt $run',
+                  );
+                }
+              },
+            ),
+            UIButton(
+              label: 'Thử chống trùng',
+              variant: UIButtonVariant.outline,
+              onPressed: () {
+                for (var i = 0; i < 3; i++) {
+                  UINotice.show(
+                    context,
+                    id: 'duplicate-demo',
+                    message: 'Ba lần gọi, chỉ một thông báo.',
+                  );
+                }
+              },
+            ),
+            UIButton(
+              label: 'Thử lỗi quan trọng',
+              tone: UITone.danger,
+              variant: UIButtonVariant.soft,
+              onPressed: () => UINotice.show(
+                context,
+                message: 'Chưa đồng bộ được bản nháp. Đóng thông báo sau khi đã đọc.',
+                tone: UITone.danger,
+              ),
+            ),
+            UIButton(
+              label: 'Xoá hàng đợi',
+              variant: UIButtonVariant.ghost,
+              onPressed: () => UINotice.clear(context),
             ),
             UIButton(
               label: 'Mở dialog',
@@ -1990,10 +2088,10 @@ class FeedbackDemo extends StatelessWidget {
               onPressed: () => showDialog<void>(
                 context: context,
                 builder: (dialogContext) => AlertDialog(
-                  icon: const Icon(Icons.task_alt_rounded),
-                  title: const Text('Một kết nối mới'),
+                  icon: const Icon(Icons.info_outline),
+                  title: const Text('Xác nhận thao tác'),
                   content: const Text(
-                    'Dialog kế thừa màu sắc và kiểu chữ từ cùng một theme.',
+                    'Chỉ dùng dialog khi cần người dùng quyết định trước khi tiếp tục.',
                   ),
                   actions: [
                     TextButton(
@@ -2005,6 +2103,10 @@ class FeedbackDemo extends StatelessWidget {
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 16),
+        const Text(
+          'Thông báo có Hoàn tác và lỗi quan trọng sẽ giữ đến khi bạn thao tác hoặc đóng. Các mục còn lại xếp hàng lần lượt.',
         ),
       ],
     ),

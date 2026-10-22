@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -8,6 +10,8 @@ import 'color_engine.dart';
 import 'adaptive.dart';
 
 part 'select.dart';
+part 'form.dart';
+part 'feedback.dart';
 
 class UIButton extends StatelessWidget {
   const UIButton({
@@ -114,10 +118,12 @@ class UIButton extends StatelessWidget {
   );
 }
 
+/// Text input with blur-first validation and optional server field binding.
 class UITextField extends StatelessWidget {
   const UITextField({
     super.key,
     required this.label,
+    this.name,
     this.hint,
     this.helper,
     this.controller,
@@ -129,91 +135,205 @@ class UITextField extends StatelessWidget {
     this.maxLines = 1,
     this.autofillHints,
     this.textInputAction,
+    this.focusNode,
+    this.onFieldSubmitted,
+    this.inputFormatters,
+    this.maxLength,
+    this.readOnly = false,
+    this.clearable = false,
+    this.autovalidateMode = AutovalidateMode.onUnfocus,
   });
   final String label;
-  final String? hint, helper;
+  final String? name, hint, helper;
   final TextEditingController? controller;
   final FormFieldValidator<String>? validator;
-  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onChanged, onFieldSubmitted;
   final TextInputType? keyboardType;
   final IconData? prefixIcon;
-  final bool enabled;
+  final bool enabled, readOnly, clearable;
   final int maxLines;
+  final int? maxLength;
   final Iterable<String>? autofillHints;
   final TextInputAction? textInputAction;
+  final FocusNode? focusNode;
+  final List<TextInputFormatter>? inputFormatters;
+  final AutovalidateMode autovalidateMode;
   @override
-  Widget build(BuildContext context) => UIAdaptiveBuilder(
-    builder: (context, ui) => TextFormField(
-      controller: controller,
-      validator: validator,
-      onChanged: onChanged,
-      keyboardType: keyboardType,
-      enabled: enabled,
-      maxLines: maxLines,
-      autofillHints: autofillHints,
-      textInputAction: textInputAction,
-      decoration: InputDecoration(
-        contentPadding: ui.controlPadding,
-        labelText: label,
-        hintText: hint,
-        helperText: helper,
-        prefixIcon: prefixIcon == null ? null : Icon(prefixIcon, size: 20),
-      ),
-    ),
-  );
+  Widget build(BuildContext context) => _UISmartField(input: this);
 }
 
-class UIPasswordField extends StatefulWidget {
+class UIPasswordField extends StatelessWidget {
   const UIPasswordField({
     super.key,
     this.label = 'Mật khẩu',
+    this.name,
     this.controller,
     this.validator,
     this.onChanged,
     this.enabled = true,
     this.autofillHints,
+    this.focusNode,
+    this.textInputAction,
+    this.onFieldSubmitted,
+    this.helper,
+    this.autovalidateMode = AutovalidateMode.onUnfocus,
   });
   final String label;
+  final String? name, helper;
   final TextEditingController? controller;
   final FormFieldValidator<String>? validator;
-  final ValueChanged<String>? onChanged;
+  final ValueChanged<String>? onChanged, onFieldSubmitted;
   final bool enabled;
   final Iterable<String>? autofillHints;
+  final FocusNode? focusNode;
+  final TextInputAction? textInputAction;
+  final AutovalidateMode autovalidateMode;
   @override
-  State<UIPasswordField> createState() => _UIPasswordFieldState();
-}
-
-class _UIPasswordFieldState extends State<UIPasswordField> {
-  bool hidden = true;
-  @override
-  Widget build(BuildContext context) => UIAdaptiveBuilder(
-    builder: (context, ui) => TextFormField(
-      controller: widget.controller,
-      validator: widget.validator,
-      onChanged: widget.onChanged,
-      enabled: widget.enabled,
-      autofillHints: widget.autofillHints,
-      obscureText: hidden,
-      enableSuggestions: false,
-      autocorrect: false,
-      decoration: InputDecoration(
-        contentPadding: ui.controlPadding,
-        labelText: widget.label,
-        prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
-        suffixIcon: IconButton(
-          tooltip: '${hidden ? 'Hiện' : 'Ẩn'} ${widget.label.toLowerCase()}',
-          isSelected: !hidden,
-          onPressed: widget.enabled
-              ? () => setState(() => hidden = !hidden)
-              : null,
-          icon: Icon(
-            hidden ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-            size: 20,
-          ),
-        ),
-      ),
+  Widget build(BuildContext context) => _UISmartField(
+    password: true,
+    input: UITextField(
+      label: label,
+      name: name,
+      controller: controller,
+      validator: validator,
+      onChanged: onChanged,
+      enabled: enabled,
+      autofillHints: autofillHints,
+      focusNode: focusNode,
+      helper: helper,
+      textInputAction: textInputAction,
+      onFieldSubmitted: onFieldSubmitted,
+      prefixIcon: Icons.lock_outline_rounded,
+      autovalidateMode: autovalidateMode,
     ),
   );
+}
+
+class _UISmartField extends StatefulWidget {
+  const _UISmartField({required this.input, this.password = false});
+  final UITextField input;
+  final bool password;
+  @override
+  State<_UISmartField> createState() => _UISmartFieldState();
+}
+
+class _UISmartFieldState extends State<_UISmartField> {
+  final field = GlobalKey<FormFieldState<String>>();
+  late TextEditingController text;
+  bool hidden = true;
+  @override
+  void initState() {
+    super.initState();
+    text = widget.input.controller ?? TextEditingController();
+  }
+
+  @override
+  void didUpdateWidget(covariant _UISmartField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.input.controller != widget.input.controller) {
+      final value = text.value;
+      if (oldWidget.input.controller == null) text.dispose();
+      text = widget.input.controller ?? TextEditingController.fromValue(value);
+    }
+  }
+
+  @override
+  void dispose() {
+    if (widget.input.controller == null) text.dispose();
+    super.dispose();
+  }
+
+  void changed(String value) {
+    final input = widget.input;
+    final form = _UIFormScope.maybeOf(context);
+    final hadError = field.currentState?.hasError ?? false;
+    if (input.name != null) form?._clearFieldError(input.name!);
+    input.onChanged?.call(value);
+    // The first error is deferred to blur/submit. Once invalid, correct it live.
+    if (hadError && input.autovalidateMode != AutovalidateMode.disabled) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) field.currentState?.validate();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final input = widget.input;
+    final form = _UIFormScope.maybeOf(context);
+    final enabled = input.enabled && !(form?.isSubmitting ?? false);
+    return UIAdaptiveBuilder(
+      builder: (context, ui) => TextFormField(
+        key: field,
+        controller: text,
+        focusNode: input.focusNode,
+        validator: input.validator,
+        forceErrorText: form?.fieldErrors[input.name],
+        autovalidateMode: input.autovalidateMode,
+        onChanged: changed,
+        keyboardType: input.keyboardType,
+        enabled: enabled,
+        readOnly: input.readOnly,
+        maxLines: input.maxLines,
+        maxLength: input.maxLength,
+        inputFormatters: input.inputFormatters,
+        autofillHints: input.autofillHints,
+        textInputAction: input.textInputAction,
+        onFieldSubmitted:
+            input.onFieldSubmitted ??
+            (input.textInputAction == TextInputAction.done && form != null
+                ? (_) => unawaited(form.submit())
+                : null),
+        obscureText: widget.password && hidden,
+        enableSuggestions: !widget.password,
+        autocorrect: !widget.password,
+        decoration: InputDecoration(
+          contentPadding: ui.controlPadding,
+          labelText: input.label,
+          hintText: input.hint,
+          helperText: input.helper,
+          errorMaxLines: 4,
+          helperMaxLines: 4,
+          prefixIcon: input.prefixIcon == null
+              ? null
+              : Icon(input.prefixIcon, size: 20),
+          suffixIcon: widget.password
+              ? IconButton(
+                  tooltip:
+                      '${hidden ? 'Hiện' : 'Ẩn'} ${input.label.toLowerCase()}',
+                  isSelected: !hidden,
+                  onPressed: enabled
+                      ? () => setState(() => hidden = !hidden)
+                      : null,
+                  icon: Icon(
+                    hidden
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                    size: 20,
+                  ),
+                )
+              : input.clearable
+              ? ValueListenableBuilder<TextEditingValue>(
+                  valueListenable: text,
+                  builder: (context, value, _) => value.text.isEmpty
+                      ? const SizedBox.shrink()
+                      : IconButton(
+                          tooltip: 'Xoá ${input.label.toLowerCase()}',
+                          onPressed: enabled && !input.readOnly
+                              ? () {
+                                  text.clear();
+                                  field.currentState?.didChange('');
+                                  changed('');
+                                }
+                              : null,
+                          icon: const Icon(Icons.close_rounded, size: 20),
+                        ),
+                )
+              : null,
+        ),
+      ),
+    );
+  }
 }
 
 class UICard extends StatefulWidget {
@@ -323,10 +443,17 @@ class UIAlert extends StatelessWidget {
     required this.message,
     this.tone = UITone.primary,
     this.title,
-  });
+    this.actionLabel,
+    this.onAction,
+    this.onDismiss,
+    this.liveRegion = true,
+  }) : assert((actionLabel == null) == (onAction == null));
   final String message;
   final String? title;
   final UITone tone;
+  final String? actionLabel;
+  final VoidCallback? onAction, onDismiss;
+  final bool liveRegion;
   @override
   Widget build(BuildContext context) {
     final colors = tone.colors(context);
@@ -338,7 +465,7 @@ class UIAlert extends StatelessWidget {
       _ => Icons.info_outline,
     };
     return Semantics(
-      liveRegion: true,
+      liveRegion: liveRegion,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(16),
@@ -371,9 +498,24 @@ class UIAlert extends StatelessWidget {
                       fontSize: 13,
                     ),
                   ),
+                  if (onAction != null) ...[
+                    const SizedBox(height: 8),
+                    TextButton(
+                      style: TextButton.styleFrom(foregroundColor: c),
+                      onPressed: onAction,
+                      child: Text(actionLabel!),
+                    ),
+                  ],
                 ],
               ),
             ),
+            if (onDismiss != null)
+              IconButton(
+                tooltip: 'Đóng thông báo',
+                color: c,
+                onPressed: onDismiss,
+                icon: const Icon(Icons.close_rounded, size: 20),
+              ),
           ],
         ),
       ),

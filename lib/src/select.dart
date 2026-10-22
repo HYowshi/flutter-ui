@@ -6,6 +6,7 @@ class UISelect<T> extends StatefulWidget {
   const UISelect({
     super.key,
     required this.label,
+    this.name,
     this.items = const [],
     this.options = const [],
     this.initialValue,
@@ -23,7 +24,7 @@ class UISelect<T> extends StatefulWidget {
     this.autovalidateMode = AutovalidateMode.disabled,
   });
   final String label, hint, searchHint, emptyLabel;
-  final String? helper;
+  final String? helper, name;
   final List<DropdownMenuItem<T>> items;
   final List<UIOption<T>> options;
   final T? initialValue;
@@ -141,6 +142,14 @@ class _UISelectState<T> extends State<UISelect<T>> {
     }
     if (!_entries.any((e) => e.value == entry.value && e.enabled)) return;
     field.didChange(entry.value);
+    if (widget.name != null) {
+      _UIFormScope.maybeOf(context)?._clearFieldError(widget.name!);
+    }
+    if (field.hasError) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && field.mounted) field.validate();
+      });
+    }
     entry.onTap?.call();
     widget.onChanged!(entry.value);
   }
@@ -159,6 +168,7 @@ class _UISelectState<T> extends State<UISelect<T>> {
       }
       final enabled =
           widget.enabled &&
+          !(_UIFormScope.maybeOf(context)?.isSubmitting ?? false) &&
           widget.onChanged != null &&
           entries.any((e) => e.enabled);
       final colors = YouthColors.of(context);
@@ -170,6 +180,7 @@ class _UISelectState<T> extends State<UISelect<T>> {
       final height =
           _popupHeight ?? math.min(420.0, math.max(96.0, viewport.height * .6));
       return FormField<T>(
+        forceErrorText: _UIFormScope.maybeOf(context)?.fieldErrors[widget.name],
         initialValue: widget.initialValue,
         enabled: enabled,
         autovalidateMode: widget.autovalidateMode,

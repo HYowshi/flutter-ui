@@ -1,3 +1,11 @@
+## 0.11.0
+
+- Add optional managed UIForm submission, loading/interaction lock, deduplication, first-invalid focus/scroll, safe backend failures and stale completion guards.
+- Add name-bound server errors to text/password/select inputs; blur-first text validation, live correction, clear action, formatters and character limits.
+- Add composable UIValidators and optional UIFormController while preserving layout-only form calls.
+- Add bounded, deduplicated UINotice queue, persistent important/action messages, one-shot undo callbacks, and adaptive wrapping actions.
+- Add UIAlert actions/dismissal, interactive form/feedback demos, Vietnamese API guide and lifecycle/responsive regressions.
+
 ## 0.10.0
 
 - Redesign Adaptive UI around task hierarchy, readable one-column forms, contextual support and deliberate mobile/tablet/desktop navigation.

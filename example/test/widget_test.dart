@@ -4,6 +4,70 @@ import 'package:youth_ui/youth_ui.dart';
 import 'package:flutter_ui_showcase/main.dart';
 
 void main() {
+  testWidgets('input gallery simulates failure and retains values for retry', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(1200, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: YouthUI.init(primary: Colors.blue),
+        home: const Scaffold(body: SingleChildScrollView(child: InputDemo())),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(UISelect<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(MenuItemButton, 'Lỗi kết nối'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byType(TextFormField).at(0),
+      'demo@example.com',
+    );
+    await tester.enterText(find.byType(TextFormField).at(1), 'demo-password');
+    await tester.ensureVisible(find.text('Kiểm tra biểu mẫu'));
+    await tester.tap(find.text('Kiểm tra biểu mẫu'));
+    await tester.pump();
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pumpAndSettle();
+    expect(
+      find.text('Không thể kết nối. Dữ liệu vẫn được giữ để bạn thử lại.'),
+      findsOneWidget,
+    );
+    expect(find.text('Số lần gửi mô phỏng: 1'), findsOneWidget);
+    expect(find.text('demo@example.com'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('feedback gallery undo restores the actual demo item', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(390, 1000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: YouthUI.init(primary: Colors.blue),
+        home: const Scaffold(
+          body: SingleChildScrollView(child: FeedbackDemo()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Lưu trữ và Hoàn tác'));
+    await tester.tap(find.text('Lưu trữ và Hoàn tác'));
+    await tester.pumpAndSettle();
+    expect(find.text('Mục demo đã được lưu trữ'), findsOneWidget);
+    await tester.tap(find.text('Hoàn tác'));
+    await tester.pumpAndSettle();
+    expect(find.text('Tài liệu demo đang hiển thị'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('table and radio galleries work on desktop and mobile', (
     tester,
   ) async {

@@ -171,19 +171,6 @@ class UIGrid extends StatelessWidget {
   );
 }
 
-/// One/two-column validated form without hand-written breakpoints.
-class UIForm extends StatelessWidget {
-  const UIForm({super.key, required this.children, this.formKey});
-  final List<Widget> children;
-  final GlobalKey<FormState>? formKey;
-
-  @override
-  Widget build(BuildContext context) => Form(
-    key: formKey,
-    child: UIGrid(maxColumns: 2, children: children),
-  );
-}
-
 /// Stacked full-width actions in narrow regions; wrapping actions on desktop.
 class UIActions extends StatelessWidget {
   const UIActions({super.key, required this.children});
