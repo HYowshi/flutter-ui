@@ -142,7 +142,32 @@ class YouthColors extends ThemeExtension<YouthColors> {
     scheme.surfaceContainerHighest,
   ];
 
+  final Map<(UITone, UIButtonVariant, int, Color), UIControlColors>
+  _buttonCache = {};
+
   UIControlColors button(
+    UITone tone,
+    UIButtonVariant variant,
+    Set<WidgetState> states, {
+    Color? surface,
+  }) {
+    final base = surface ?? scheme.surfaceContainerLowest;
+    var mask = 0;
+    for (final state in states) {
+      mask |= 1 << state.index;
+    }
+    final key = (tone, variant, mask, base);
+    final cached = _buttonCache[key];
+    if (cached != null) return cached;
+    final result = _resolveButton(tone, variant, states, surface: base);
+    if (_buttonCache.length >= 128) {
+      _buttonCache.remove(_buttonCache.keys.first);
+    }
+    _buttonCache[key] = result;
+    return result;
+  }
+
+  UIControlColors _resolveButton(
     UITone tone,
     UIButtonVariant variant,
     Set<WidgetState> states, {

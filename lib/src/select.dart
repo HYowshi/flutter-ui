@@ -446,13 +446,33 @@ class _SelectPanelState<T> extends State<_SelectPanel<T>> {
   int _active = -1;
   bool _positioned = false;
   List<double> _heights = [];
-  List<_SelectEntry<T>> get _filtered => widget.entries
-      .where(
-        (e) =>
-            _query.isEmpty ||
-            _selectSearchKey(e.label ?? '').contains(_selectSearchKey(_query)),
-      )
-      .toList();
+  List<_SelectEntry<T>>? _sourceCache, _filterCache;
+  String? _queryCache;
+  Map<T, String>? _normalizedLabels;
+  Object? _heightKey;
+  List<_SelectEntry<T>> get _filtered {
+    if (identical(_sourceCache, widget.entries) && _queryCache == _query) {
+      return _filterCache!;
+    }
+    if (!identical(_sourceCache, widget.entries)) _normalizedLabels = null;
+    _sourceCache = widget.entries;
+    _queryCache = _query;
+    final needle = _selectSearchKey(_query);
+    if (needle.isNotEmpty) {
+      _normalizedLabels ??= {
+        for (final entry in widget.entries)
+          entry.value: _selectSearchKey(entry.label ?? ''),
+      };
+    }
+    return _filterCache = needle.isEmpty
+        ? widget.entries
+        : widget.entries
+              .where(
+                (entry) => _normalizedLabels![entry.value]!.contains(needle),
+              )
+              .toList();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -538,20 +558,30 @@ class _SelectPanelState<T> extends State<_SelectPanel<T>> {
       16.0,
       contentWidth - 64 - (entries.any((e) => e.icon != null) ? 32 : 0),
     );
-    _heights = [
-      for (final entry in entries)
-        (() {
-          if (!entry.measurable) return 56.0;
-          final painter = TextPainter(
-            text: TextSpan(text: entry.label, style: style),
-            textDirection: Directionality.of(context),
-            textScaler: MediaQuery.textScalerOf(context),
-          )..layout(maxWidth: textWidth);
-          final result = math.max(48.0, painter.height.ceilToDouble() + 24);
-          painter.dispose();
-          return result;
-        })(),
-    ];
+    final heightKey = (
+      entries,
+      textWidth,
+      style.copyWith(color: Colors.transparent),
+      MediaQuery.textScalerOf(context),
+      Directionality.of(context),
+    );
+    if (_heightKey != heightKey) {
+      _heightKey = heightKey;
+      _heights = [
+        for (final entry in entries)
+          (() {
+            if (!entry.measurable) return 56.0;
+            final painter = TextPainter(
+              text: TextSpan(text: entry.label, style: style),
+              textDirection: Directionality.of(context),
+              textScaler: MediaQuery.textScalerOf(context),
+            )..layout(maxWidth: textWidth);
+            final result = math.max(48.0, painter.height.ceilToDouble() + 24);
+            painter.dispose();
+            return result;
+          })(),
+      ];
+    }
     if (!_positioned) {
       _positioned = true;
       final index = entries.indexWhere((e) => e.value == widget.value);

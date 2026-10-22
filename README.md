@@ -1,4 +1,4 @@
-# Flutter UI · Youth UI 0.5
+# Flutter UI · Youth UI 0.6
 
 Bộ Flutter/Dart UI dùng lại cho mobile, desktop và web, không gắn với một ứng dụng hay một bộ màu thương hiệu. Truyền **một hoặc hai màu**, nhận theme sáng/tối và để widget tự chọn màu theo vai trò.
 
@@ -18,26 +18,66 @@ dependencies:
 import 'package:flutter/material.dart';
 import 'package:youth_ui/youth_ui.dart';
 
-final ui = YouthUI.colors(
+void main() => runApp(UIApp(
   primary: const Color(0xFF1565C0),
   // secondary: const Color(0xFFDA251D), // tùy chọn
-);
-
-MaterialApp(
-  theme: ui.light,
-  darkTheme: ui.dark,
-  themeMode: ThemeMode.system,
-  home: const HomePage(),
-);
-
-// Bên dưới, không truyền màu lại:
-UIButton(label: 'Tiếp tục', onPressed: submit);
-UITextField(label: 'Email', validator: validateEmail);
-UIPasswordField();
-UIBadge(label: 'Đã xác nhận', tone: UITone.success);
+  home: Scaffold(body: UIPage(children: [
+    UIForm(children: [UITextField(label: 'Email'), UIPasswordField()]),
+    UIImage('assets/photo.png'),
+    UIActions(children: [UIButton(label: 'Tiếp tục', onPressed: submit)]),
+    UIThemeToggle(),
+  ])),
+));
 ```
 
-Tạo ui một lần ở cấp ứng dụng. Pin commit khi cần dependency ổn định thay vì dùng main.
+`UIApp` tự tạo và giữ theme sáng/tối, theo hệ thống, hỗ trợ đổi chế độ qua `UIThemeToggle`. Không cần khởi tạo thêm provider hay bộ màu ở từng trang. `submit` là callback của ứng dụng; asset phải khai báo trong pubspec. Pin commit khi cần dependency ổn định thay vì dùng main.
+
+Với MaterialApp/router sẵn có, vẫn dùng `YouthUI.colors(...)` một lần rồi đặt `theme: ui.light`, `darkTheme: ui.dark`. Muốn transition mới: đặt `themeAnimationDuration: Duration.zero` và trong builder trả `UIThemeTransition(theme: Theme.of(context), child: child!)`. Không chồng hai animation theme.
+
+## Theme, ảnh và wireframe gọi nhanh
+
+```dart
+// Controller là tùy chọn; nếu truyền vào, ứng dụng chịu trách nhiệm dispose.
+final theme = UIThemeController(mode: ThemeMode.system);
+UIApp(primary: Colors.indigo, controller: theme, home: const HomePage());
+theme.mode = ThemeMode.dark;
+
+UIImage('assets/photo.png');             // asset
+UIImage('https://example.com/photo.jpg'); // HTTP(S), cần CORS hợp lệ trên web
+UIImage.avatar('assets/avatar.png');
+UIImage.thumbnail('assets/photo.png');
+UIImage.banner('assets/photo.png');       // 16:9 gọn, 21:9 vùng rộng
+UIImage.provider(MemoryImage(bytes));     // provider tùy chọn
+
+UIWireframe.page();
+UIWireframe.page(layout: UIWireframeLayout.dashboard);
+UIWireframe.page(layout: UIWireframeLayout.form);
+UIWireframe.card();
+UIWireframe.list(count: 3);
+UIWireframe.line(widthFactor: .7);
+UIWireframe.image();
+UIWireframe.avatar();
+```
+
+**Transition:** fade 220ms từ một ảnh chụp theme cũ sang UI mới đang hoạt động. Không clone cây widget, không tính lại HCT theo từng frame; giới hạn snapshot khoảng 2 triệu pixel, DPR ≤1.5 và giải phóng sau fade. Đổi liên tục sẽ kết thúc ở theme được yêu cầu cuối cùng. Reduced motion/high contrast chuyển ngay. Renderer/platform view không hỗ trợ chụp thì dùng cập nhật trực tiếp. Đây là tối ưu có giới hạn bộ nhớ, không phải bảo đảm FPS cho mọi thiết bị.
+
+**Ảnh:** khung/tỉ lệ ổn định khi loading/lỗi; placeholder tĩnh, fade một lần, giữ aspect nguồn khi gợi ý decode native; bucket 128px, tối đa 2048px chiều ngang. Không tải khi vùng chứa bằng 0; avatar/thumbnail giữ kích thước ngay trong cột giãn rộng. Fallback không lặp retry tự động, URL lỗi có nút thử lại khi đủ chỗ. `semanticLabel` dành cho ảnh có nội dung; không đọc đường dẫn asset. Tôn trọng constraint cha, `fit`, `alignment`, `width`, `height` có thể ghi đè.
+
+Web bỏ qua cacheWidth/cacheHeight của Flutter: để giảm byte tải trên web, truyền biến thể kích thước thực từ máy chủ, không chỉ URL ảnh gốc dung lượng lớn:
+
+```dart
+UIImage('https://cdn.example.com/photo-1280.jpg', variants: const {
+  320: 'https://cdn.example.com/photo-320.jpg',
+  640: 'https://cdn.example.com/photo-640.jpg',
+  1280: 'https://cdn.example.com/photo-1280.jpg',
+});
+```
+
+Thư viện chọn biến thể theo vùng hiển thị và DPR, không tự sửa URL tùy ý hoặc vượt CORS. Không cung cấp cache ổ đĩa/offline; dùng ImageCache của Flutter. Raster có dạng rất khác khung crop có thể cần provider/chất lượng riêng (`optimizeDecode: false`). SVG dùng provider/giải pháp phù hợp riêng, không phải định dạng ảnh raster được hỗ trợ tự động.
+
+**Wireframe:** mẫu phác thảo/placeholder tĩnh, theo theme và responsive; không phải mô hình AI hoặc công cụ thiết kế kéo thả. Không ticker/shimmer hoặc request dữ liệu. Dành cho bố cục nhỏ; danh sách dữ liệu lớn vẫn cần widget lazy.
+
+Xem [rà soát độ ổn định và hiệu năng](docs/reliability-review.vi.md) cho test, phạm vi và giới hạn đo.
 
 ## Khởi tạo nâng cao
 
@@ -75,6 +115,9 @@ Nếu tạo container riêng có màu nền khác, bọc `UISurfaceScope(color: 
 ## Component
 
 | Widget | Chức năng |
+| UIApp / UIThemeToggle | Khởi tạo một lần, giữ theme pair và chuyển light/dark |
+| UIImage | Asset/URL/provider, avatar/banner/thumbnail, placeholder/lỗi và decode hint |
+| UIWireframe | Các block tĩnh và mẫu feed/dashboard/form responsive |
 | --- | --- |
 | UIButton | solid/soft/outline/ghost, state colors; tự giãn trong vùng hẹp và xuống dòng nhãn dài |
 | UITextField | Form validation, multiline, controller, keyboard, autofill |

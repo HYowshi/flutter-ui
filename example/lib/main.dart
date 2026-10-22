@@ -15,28 +15,23 @@ class _ShowcaseAppState extends State<ShowcaseApp> {
   Color? secondary;
   UIProfile profile = UIProfile.balanced;
   bool highContrast = false;
-  bool dark = false;
   bool reduce = false;
+  final mode = UIThemeController(mode: ThemeMode.light);
   @override
-  Widget build(BuildContext context) => MaterialApp(
+  void dispose() {
+    mode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => UIApp(
+    primary: primary,
+    secondary: secondary,
+    profile: profile,
+    contrastLevel: highContrast ? 1 : 0,
+    controller: mode,
+    reduceMotion: reduce,
     title: 'Flutter UI · Component Studio',
-    debugShowCheckedModeBanner: false,
-    theme: YouthUI.init(
-      primary: primary,
-      secondary: secondary,
-      profile: profile,
-      contrastLevel: highContrast ? 1 : 0,
-      brightness: dark ? Brightness.dark : Brightness.light,
-    ),
-    themeAnimationDuration: reduce || highContrast
-        ? Duration.zero
-        : const Duration(milliseconds: 320),
-    builder: (context, child) => MediaQuery(
-      data: MediaQuery.of(context).copyWith(
-        disableAnimations: reduce || MediaQuery.disableAnimationsOf(context),
-      ),
-      child: child!,
-    ),
     home: Studio(
       primary: primary,
       secondary: secondary,
@@ -45,10 +40,9 @@ class _ShowcaseAppState extends State<ShowcaseApp> {
       onSecondary: (c) => setState(() => secondary = c),
       onProfile: (v) => setState(() => profile = v),
       onHighContrast: (v) => setState(() => highContrast = v),
-      dark: dark,
       reduce: reduce,
       onColor: (c) => setState(() => primary = c),
-      onDark: () => setState(() => dark = !dark),
+      onDark: () => mode.toggle(),
       onReduce: (v) => setState(() => reduce = v),
     ),
   );
@@ -58,7 +52,6 @@ class Studio extends StatefulWidget {
   const Studio({
     super.key,
     required this.primary,
-    required this.dark,
     required this.reduce,
     required this.onColor,
     required this.onDark,
@@ -77,7 +70,7 @@ class Studio extends StatefulWidget {
   final ValueChanged<UIProfile> onProfile;
   final ValueChanged<bool> onHighContrast;
   final Color primary;
-  final bool dark, reduce;
+  final bool reduce;
   final ValueChanged<Color> onColor;
   final VoidCallback onDark;
   final ValueChanged<bool> onReduce;
@@ -100,6 +93,8 @@ class _StudioState extends State<Studio> {
     'Selection controls',
     'Adaptive UI',
     'Dropdown menu',
+    'Images',
+    'Wireframe',
   ];
   static const icons = [
     Icons.grid_view_rounded,
@@ -113,6 +108,8 @@ class _StudioState extends State<Studio> {
     Icons.toggle_on_outlined,
     Icons.devices_rounded,
     Icons.unfold_more_rounded,
+    Icons.image_outlined,
+    Icons.view_quilt_outlined,
   ];
   @override
   void dispose() {
@@ -142,7 +139,7 @@ class _StudioState extends State<Studio> {
                   onPressed: widget.onDark,
                   tooltip: 'Đổi sáng / tối',
                   icon: Icon(
-                    widget.dark
+                    Theme.of(context).brightness == Brightness.dark
                         ? Icons.light_mode_outlined
                         : Icons.dark_mode_outlined,
                   ),
@@ -189,7 +186,7 @@ class _StudioState extends State<Studio> {
                             onPressed: widget.onDark,
                             tooltip: 'Đổi sáng / tối',
                             icon: Icon(
-                              widget.dark
+                              Theme.of(context).brightness == Brightness.dark
                                   ? Icons.light_mode_outlined
                                   : Icons.dark_mode_outlined,
                             ),
@@ -262,6 +259,8 @@ class _StudioState extends State<Studio> {
                                 const SelectionDemo(),
                               if (selected == 9) const AdaptiveDemo(),
                               if (selected == 10) const DropdownDemo(),
+                              if (selected == 11) const ImageDemo(),
+                              if (selected == 12) const WireframeDemo(),
                               if (selected == 0 || selected == 3)
                                 const InputDemo(),
                               if (selected == 0 || selected == 4)
@@ -329,6 +328,8 @@ class _StudioState extends State<Studio> {
     'Checkbox, switch, toggle và nhóm chọn. Hiệu ứng gọn trong từng control.',
     'Cùng một mã Dart tự thay đổi theo vùng chứa, chuột và cỡ chữ.',
     'Một ô chọn, hai cách mở phù hợp với PC và mobile. Màu và trạng thái thống nhất.',
+    'Gọi ảnh một dòng: giữ khung, decode theo vùng hiển thị, có loading và fallback.',
+    'Khối phác thảo tĩnh, tự chia cột theo vùng chứa. Không tải dữ liệu, không có shimmer.',
   ];
   Widget sidebar(BuildContext context, {bool closeDrawer = false}) {
     final s = Theme.of(context).colorScheme;
@@ -423,7 +424,7 @@ class _StudioState extends State<Studio> {
           ),
           const SizedBox(height: 20),
           Text(
-            'v0.5.0 · Adaptive selection menus',
+            'v0.6.0 · Ready-to-use Flutter UI',
             style: TextStyle(fontSize: 10, color: s.onSurfaceVariant),
           ),
         ],
@@ -1731,6 +1732,12 @@ class _MotionDemoState extends State<MotionDemo> {
           value: widget.reduce,
           onChanged: widget.onReduce,
         ),
+        const SizedBox(height: 12),
+        const Wrap(
+          spacing: 12,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [Text('Chuyển theme toàn ứng dụng'), UIThemeToggle()],
+        ),
         const SizedBox(height: 18),
         LayoutBuilder(
           builder: (context, box) {
@@ -1816,6 +1823,73 @@ class _MotionDemoState extends State<MotionDemo> {
   );
 }
 
+class ImageDemo extends StatelessWidget {
+  const ImageDemo({super.key});
+  @override
+  Widget build(BuildContext context) => DemoBlock(
+    number: '10',
+    title: 'Images · gọi một dòng',
+    description: 'Asset hoặc URL dùng chung một widget. Khung ảnh không đổi trong lúc tải; ảnh lỗi có fallback; avatar và thumbnail giữ kích thước trong layout giãn rộng.',
+    effects: 'Giữ tỉ lệ · bo góc · fade một lần · decode bucket trên native · variants trên web',
+    code: "UIImage('assets/studio.png');\nUIImage.banner('assets/studio.png');\nUIImage.avatar('assets/studio.png');\nUIImage.thumbnail('assets/studio.png');",
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const UIImage.banner(
+          'assets/studio.png',
+          semanticLabel: 'Ảnh mẫu cục bộ',
+        ),
+        const SizedBox(height: 16),
+        const Wrap(
+          spacing: 16,
+          runSpacing: 16,
+          children: [
+            UIImage.avatar('assets/studio.png'),
+            UIImage.thumbnail('assets/studio.png'),
+          ],
+        ),
+        const SizedBox(height: 16),
+        const Text('Fallback khi ảnh không có sẵn'),
+        const SizedBox(height: 12),
+        const UIImage('assets/intentional-missing.png', height: 120),
+      ],
+    ),
+  );
+}
+
+class WireframeDemo extends StatefulWidget {
+  const WireframeDemo({super.key});
+  @override
+  State<WireframeDemo> createState() => _WireframeDemoState();
+}
+
+class _WireframeDemoState extends State<WireframeDemo> {
+  UIWireframeLayout layout = UIWireframeLayout.feed;
+  @override
+  Widget build(BuildContext context) => DemoBlock(
+    number: '11',
+    title: 'Wireframe · phác bố cục nhanh',
+    description: 'Feed, dashboard và form dùng các khối tĩnh theo theme, tự chia cột. Dùng để thử bố cục hoặc làm placeholder trước khi có nội dung.',
+    effects: 'Không ticker · không network · responsive · block nhỏ dùng lại độc lập',
+    code: "UIWireframe.page();\nUIWireframe.page(layout: UIWireframeLayout.dashboard);\nUIWireframe.card();\nUIWireframe.list();\nUIWireframe.line(widthFactor: .7);",
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        UISegmentedControl<UIWireframeLayout>(
+          options: [
+            for (final item in UIWireframeLayout.values)
+              UIOption(value: item, label: item.name),
+          ],
+          value: layout,
+          onChanged: (v) => setState(() => layout = v),
+        ),
+        const SizedBox(height: 20),
+        UIWireframe.page(layout: layout),
+      ],
+    ),
+  );
+}
+
 class UsageDemo extends StatelessWidget {
   const UsageDemo({super.key});
   @override
@@ -1824,7 +1898,7 @@ class UsageDemo extends StatelessWidget {
     title: 'Khởi tạo một lần',
     description: 'Truyền một màu; tùy chọn màu thứ hai. Không cần tự chọn màu chữ, nền hay hover.',
     effects: 'Sinh theme light/dark theo vai trò · giữ brand gốc · widget tự kế thừa',
-    code: "final ui = YouthUI.colors(\n  primary: const Color(0xFF1565C0),\n  // secondary: const Color(0xFFDA251D), // tùy chọn\n);\n\nMaterialApp(\n  theme: ui.light,\n  darkTheme: ui.dark,\n  themeMode: ThemeMode.system,\n  home: const HomePage(),\n);\n\n// Trong HomePage: không set lại màu\nUIButton(label: 'Tiếp tục', onPressed: submit);\nUITextField(label: 'Email');\nUIPasswordField();\nUIBadge(label: 'Đã duyệt', tone: UITone.success);\n\n// Nâng cao: theme đọc nội dung, tăng tương phản\nYouthUI.init(\n  primary: const Color(0xFF1565C0),\n  profile: UIProfile.reading,\n  contrastLevel: 1,\n);",
+    code: "UIApp(\n  primary: Colors.indigo,\n  home: Scaffold(body: UIPage(children: [\n    UIForm(children: [UITextField(label: 'Email'), UIPasswordField()]),\n    UIImage('assets/photo.png'),\n    UIActions(children: [UIButton(label: 'Tiếp tục', onPressed: submit)]),\n    UIThemeToggle(),\n  ])),\n);\n\n// Phác bố cục khi chưa có nội dung:\nUIWireframe.page(layout: UIWireframeLayout.dashboard);",
     child: UIAlert(
       title: 'Màu gốc khác vai trò tương tác',
       message: 'Seed được giữ trong YouthColors.brandPrimary. Action, container, chữ, viền và trạng thái được sinh theo chế độ và kiểm tra tương phản.',

@@ -1,3 +1,13 @@
+## 0.6.0
+
+- UIApp caches a light/dark theme pair and provides controller/system mode and UIThemeToggle.
+- UIThemeTransition uses one bounded old-theme raster, retains live widget state, coalesces rapid requests and respects reduced motion/high contrast.
+- UIImage auto-selects asset/HTTP source, stable geometry, native bucketed decode hints, source variants, static loading and safe error fallback.
+- Add static theme-aware wireframe blocks and responsive feed/dashboard/form presets.
+- Bound button-state cache to 128 entries per theme; reuse select search normalization, filters and measured row heights.
+- Fix mobile motion-gallery overflow and keep fixed-size media inside stretched layouts.
+- Add lifecycle/media/state/performance smoke regressions, local image gallery and simplified starter code.
+
 ## 0.5.0
 
 - Replace the default dropdown route with a themed MenuAnchor popup and compact-touch bottom sheet.

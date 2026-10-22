@@ -184,4 +184,71 @@ void main() {
     expect(find.text('Bạn đã chọn: Thiết kế hệ thống'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+  testWidgets(
+    'image and wireframe galleries load locally and adapt on mobile',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(const ShowcaseApp());
+      await tester.pumpAndSettle();
+      for (final label in ['Images', 'Wireframe']) {
+        await tester.tap(find.byTooltip('Open navigation menu'));
+        await tester.pumpAndSettle();
+        await tester.scrollUntilVisible(
+          find.widgetWithText(ListTile, label),
+          180,
+          scrollable: find
+              .descendant(
+                of: find.byType(Drawer),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        await tester.tap(find.widgetWithText(ListTile, label));
+        await tester.pumpAndSettle();
+        if (label == 'Images') {
+          expect(find.byType(UIImage), findsNWidgets(4));
+          expect(find.byIcon(Icons.broken_image_outlined), findsOneWidget);
+        } else {
+          expect(find.byType(UIWireframe), findsWidgets);
+          await tester.ensureVisible(find.text('dashboard'));
+          await tester.tap(find.text('dashboard'));
+          await tester.pumpAndSettle();
+        }
+        expect(tester.takeException(), isNull);
+      }
+    },
+  );
+
+  testWidgets(
+    'theme switching keeps selected gallery and repeated requests settle',
+    (tester) async {
+      tester.view.physicalSize = const Size(1440, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(const ShowcaseApp());
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ListTile, 'Form & Inputs'));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byType(TextFormField).first,
+        'stable@example.com',
+      );
+      for (var i = 0; i < 5; i++) {
+        await tester.tap(find.byTooltip('Đổi sáng / tối'));
+        await tester.pump(const Duration(milliseconds: 30));
+      }
+      await tester.pumpAndSettle();
+      expect(find.text('stable@example.com'), findsOneWidget);
+      expect(
+        Theme.of(tester.element(find.byType(InputDemo))).brightness,
+        Brightness.dark,
+      );
+      expect(find.byType(RawImage), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
