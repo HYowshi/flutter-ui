@@ -1,0 +1,1298 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:youth_ui/youth_ui.dart';
+
+void main() => runApp(const ShowcaseApp());
+
+class ShowcaseApp extends StatefulWidget {
+  const ShowcaseApp({super.key});
+  @override
+  State<ShowcaseApp> createState() => _ShowcaseAppState();
+}
+
+class _ShowcaseAppState extends State<ShowcaseApp> {
+  Color primary = const Color(0xFF1565C0);
+  bool dark = false;
+  bool reduce = false;
+  @override
+  Widget build(BuildContext context) => MaterialApp(
+    title: 'Flutter UI · Component Studio',
+    debugShowCheckedModeBanner: false,
+    theme: YouthUI.init(
+      primary: primary,
+      brightness: dark ? Brightness.dark : Brightness.light,
+    ),
+    themeAnimationDuration: reduce
+        ? Duration.zero
+        : const Duration(milliseconds: 320),
+    builder: (context, child) => MediaQuery(
+      data: MediaQuery.of(context).copyWith(
+        disableAnimations: reduce || MediaQuery.disableAnimationsOf(context),
+      ),
+      child: child!,
+    ),
+    home: Studio(
+      primary: primary,
+      dark: dark,
+      reduce: reduce,
+      onColor: (c) => setState(() => primary = c),
+      onDark: () => setState(() => dark = !dark),
+      onReduce: (v) => setState(() => reduce = v),
+    ),
+  );
+}
+
+class Studio extends StatefulWidget {
+  const Studio({
+    super.key,
+    required this.primary,
+    required this.dark,
+    required this.reduce,
+    required this.onColor,
+    required this.onDark,
+    required this.onReduce,
+  });
+  final Color primary;
+  final bool dark, reduce;
+  final ValueChanged<Color> onColor;
+  final VoidCallback onDark;
+  final ValueChanged<bool> onReduce;
+  @override
+  State<Studio> createState() => _StudioState();
+}
+
+class _StudioState extends State<Studio> {
+  int selected = 0;
+  final scroll = ScrollController();
+  static const labels = [
+    'Tổng quan',
+    'Bảng màu',
+    'Buttons',
+    'Form & Inputs',
+    'Cards & Badges',
+    'Thông báo',
+    'Animation',
+    'Bắt đầu sử dụng',
+  ];
+  static const icons = [
+    Icons.grid_view_rounded,
+    Icons.palette_outlined,
+    Icons.touch_app_outlined,
+    Icons.edit_note_rounded,
+    Icons.dashboard_outlined,
+    Icons.notifications_none_rounded,
+    Icons.auto_awesome_outlined,
+    Icons.code_rounded,
+  ];
+  @override
+  void dispose() {
+    scroll.dispose();
+    super.dispose();
+  }
+
+  void select(int index) {
+    setState(() => selected = index);
+    if (scroll.hasClients) scroll.jumpTo(0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = Theme.of(context).colorScheme;
+    final wide = MediaQuery.sizeOf(context).width >= 1000;
+    return Scaffold(
+      appBar: wide
+          ? null
+          : AppBar(
+              title: const Text(
+                'Flutter UI',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+              actions: [
+                IconButton(
+                  onPressed: widget.onDark,
+                  tooltip: 'Đổi sáng / tối',
+                  icon: Icon(
+                    widget.dark
+                        ? Icons.light_mode_outlined
+                        : Icons.dark_mode_outlined,
+                  ),
+                ),
+              ],
+            ),
+      drawer: wide ? null : Drawer(child: sidebar(context, closeDrawer: true)),
+      body: SafeArea(
+        child: Row(
+          children: [
+            if (wide) SizedBox(width: 244, child: sidebar(context)),
+            Expanded(
+              child: Column(
+                children: [
+                  if (wide)
+                    Container(
+                      height: 78,
+                      padding: const EdgeInsets.symmetric(horizontal: 40),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: s.outlineVariant.withValues(alpha: .5),
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Text(
+                            'THƯ VIỆN THIẾT KẾ',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.6,
+                              color: s.onSurfaceVariant,
+                            ),
+                          ),
+                          const Spacer(),
+                          const UIBadge(
+                            label: 'Flutter / Dart',
+                            icon: Icons.flutter_dash,
+                          ),
+                          const SizedBox(width: 16),
+                          IconButton(
+                            onPressed: widget.onDark,
+                            tooltip: 'Đổi sáng / tối',
+                            icon: Icon(
+                              widget.dark
+                                  ? Icons.light_mode_outlined
+                                  : Icons.dark_mode_outlined,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      controller: scroll,
+                      padding: EdgeInsets.all(wide ? 40 : 20),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1200),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              if (selected == 0)
+                                hero(context)
+                              else ...[
+                                Text(
+                                  'FLUTTER UI / ${labels[selected].toUpperCase()}',
+                                  style: TextStyle(
+                                    color: s.primary,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 1.4,
+                                  ),
+                                ),
+                                const SizedBox(height: 14),
+                                Text(
+                                  labels[selected],
+                                  style: const TextStyle(
+                                    fontSize: 34,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: -1,
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  descriptions[selected],
+                                  style: TextStyle(
+                                    color: s.onSurfaceVariant,
+                                    height: 1.7,
+                                  ),
+                                ),
+                                const SizedBox(height: 28),
+                              ],
+                              if (selected == 0 || selected == 1)
+                                themeSection(context),
+                              if (selected == 0) ...[
+                                const SizedBox(height: 36),
+                                const Text(
+                                  'Thiết kế một lần. Dùng ở mọi nơi.',
+                                  style: TextStyle(
+                                    fontSize: 25,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                Text(
+                                  'Tương tác trực tiếp với từng component. Mở “Mã sử dụng” để mang vào app.',
+                                  style: TextStyle(color: s.onSurfaceVariant),
+                                ),
+                                const SizedBox(height: 24),
+                              ],
+                              if (selected == 0 || selected == 2)
+                                const ButtonDemo(),
+                              if (selected == 0 || selected == 3)
+                                const InputDemo(),
+                              if (selected == 0 || selected == 4)
+                                const CardDemo(),
+                              if (selected == 0 || selected == 5)
+                                const FeedbackDemo(),
+                              if (selected == 0 || selected == 6)
+                                MotionDemo(
+                                  reduce: widget.reduce,
+                                  onReduce: widget.onReduce,
+                                ),
+                              if (selected == 7) const UsageDemo(),
+                              const SizedBox(height: 32),
+                              Divider(
+                                color: s.outlineVariant.withValues(alpha: .5),
+                              ),
+                              const SizedBox(height: 18),
+                              Wrap(
+                                spacing: 20,
+                                runSpacing: 10,
+                                children: [
+                                  Text(
+                                    'FLUTTER UI  /  YOUTH UI',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: s.onSurfaceVariant,
+                                      letterSpacing: 1.4,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Built with Flutter. Made to be reused.',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: s.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static const descriptions = [
+    '',
+    'Đổi một màu gốc. Toàn bộ thư viện phản hồi cùng nhau.',
+    'Hover, focus, nhấn, loading và disabled. Màu sắc tự lấy từ theme.',
+    'Nhập liệu, xác thực, hiện mật khẩu và các lựa chọn có trạng thái thật.',
+    'Bề mặt, nội dung và các nhãn trạng thái nhất quán.',
+    'Phản hồi rõ ràng cho mỗi hành động của người dùng.',
+    'Chuyển động có mục đích, có thể chạy lại và giảm chuyển động.',
+    'Khởi tạo theme một lần. Sau đó chỉ gọi widget.',
+  ];
+  Widget sidebar(BuildContext context, {bool closeDrawer = false}) {
+    final s = Theme.of(context).colorScheme;
+    return Container(
+      decoration: BoxDecoration(
+        color: s.surfaceContainerLowest,
+        border: Border(
+          right: BorderSide(color: s.outlineVariant.withValues(alpha: .45)),
+        ),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: s.primary,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(Icons.layers_rounded, color: s.onPrimary, size: 23),
+              ),
+              const SizedBox(width: 12),
+              const Flexible(
+                child: Text(
+                  'Flutter UI',
+                  style: TextStyle(
+                    fontSize: 21,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Text(
+            'Bộ giao diện dùng chung',
+            style: TextStyle(color: s.onSurfaceVariant, fontSize: 12),
+          ),
+          const SizedBox(height: 40),
+          Text(
+            'KHÁM PHÁ',
+            style: TextStyle(
+              color: s.onSurfaceVariant,
+              fontSize: 10,
+              letterSpacing: 1.7,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 14),
+          Expanded(
+            child: ListView(
+              children: List.generate(
+                labels.length,
+                (i) => Padding(
+                  padding: const EdgeInsets.only(bottom: 5),
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: ListTile(
+                      dense: true,
+                      selected: selected == i,
+                      selectedTileColor: s.primaryContainer.withValues(
+                        alpha: .45,
+                      ),
+                      selectedColor: s.primary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(11),
+                      ),
+                      leading: Icon(icons[i], size: 20),
+                      title: Text(
+                        labels[i],
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: selected == i
+                              ? FontWeight.w700
+                              : FontWeight.w500,
+                        ),
+                      ),
+                      onTap: () {
+                        select(i);
+                        if (closeDrawer) Navigator.pop(context);
+                      },
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: s.primaryContainer.withValues(alpha: .25),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.auto_awesome, size: 19, color: s.primary),
+                const SizedBox(height: 10),
+                const Text(
+                  'Một theme. Mọi component.',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Màu sắc được kế thừa tự động từ YouthUI.init().',
+                  style: TextStyle(
+                    color: s.onSurfaceVariant,
+                    height: 1.6,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'v0.1.0  ·  Material 3',
+            style: TextStyle(fontSize: 10, color: s.onSurfaceVariant),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget hero(BuildContext context) {
+    final s = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(32),
+      margin: const EdgeInsets.only(bottom: 28),
+      decoration: BoxDecoration(
+        color: s.primaryContainer.withValues(alpha: .25),
+        borderRadius: BorderRadius.circular(26),
+      ),
+      child: LayoutBuilder(
+        builder: (context, box) {
+          final text = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const UIBadge(
+                label: 'FLUTTER COMPONENT STUDIO',
+                icon: Icons.bolt_rounded,
+              ),
+              const SizedBox(height: 23),
+              Text(
+                'Một hệ UI.\nVô hạn sắc thái.',
+                style: TextStyle(
+                  fontSize: box.maxWidth > 700 ? 43 : 32,
+                  fontWeight: FontWeight.w900,
+                  height: 1.17,
+                  letterSpacing: -1.7,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Tập trung vào ý tưởng của bạn.\nĐể theme, component và chuyển động lo phần còn lại.',
+                style: TextStyle(
+                  color: s.onSurfaceVariant,
+                  height: 1.8,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  UIButton(
+                    label: 'Khám phá component',
+                    icon: Icons.arrow_downward_rounded,
+                    onPressed: () => select(2),
+                  ),
+                  UIButton(
+                    label: 'Bắt đầu sử dụng',
+                    variant: UIButtonVariant.outline,
+                    onPressed: () => select(7),
+                  ),
+                ],
+              ),
+            ],
+          );
+          if (box.maxWidth < 760) return text;
+          return Row(
+            children: [
+              Expanded(flex: 6, child: text),
+              const SizedBox(width: 36),
+              Expanded(
+                flex: 4,
+                child: UIEntrance(
+                  child: UICard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: s.primaryContainer,
+                              child: Icon(
+                                Icons.waving_hand_rounded,
+                                color: s.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Expanded(
+                              child: Text(
+                                'Xin chào, sáng tạo!',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        const Text(
+                          'Sẵn sàng cho ý tưởng tiếp theo?',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            height: 1.3,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        const Wrap(
+                          spacing: 7,
+                          runSpacing: 7,
+                          children: [
+                            UIBadge(label: 'Reusable'),
+                            UIBadge(label: 'Theme-ready', tone: UITone.success),
+                          ],
+                        ),
+                        const SizedBox(height: 22),
+                        UIButton(
+                          label: 'Thử ngay',
+                          fullWidth: true,
+                          icon: Icons.arrow_forward_rounded,
+                          onPressed: () => select(6),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget themeSection(BuildContext context) =>
+      ThemeEditor(primary: widget.primary, onColor: widget.onColor);
+}
+
+class DemoBlock extends StatelessWidget {
+  const DemoBlock({
+    super.key,
+    required this.number,
+    required this.title,
+    required this.description,
+    required this.code,
+    required this.child,
+    required this.effects,
+  });
+  final String number, title, description, code, effects;
+  final Widget child;
+  @override
+  Widget build(BuildContext context) {
+    final s = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: UICard(
+        padding: EdgeInsets.zero,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        number,
+                        style: TextStyle(
+                          color: s.primary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 21,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      color: s.onSurfaceVariant,
+                      height: 1.6,
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  child,
+                  const SizedBox(height: 22),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        Icons.motion_photos_on_outlined,
+                        size: 15,
+                        color: s.onSurfaceVariant,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          effects,
+                          style: TextStyle(
+                            fontSize: 11,
+                            height: 1.6,
+                            color: s.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Divider(height: 1, color: s.outlineVariant.withValues(alpha: .5)),
+            ExpansionTile(
+              title: const Text(
+                'Mã sử dụng',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+              leading: const Icon(Icons.code, size: 18),
+              shape: const Border(),
+              collapsedShape: const Border(),
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton.icon(
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: code));
+                            toast(context, 'Đã sao chép mã Dart.');
+                          },
+                          icon: const Icon(Icons.copy, size: 15),
+                          label: const Text('Sao chép'),
+                        ),
+                      ),
+                      SelectableText(
+                        code,
+                        style: TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          height: 1.8,
+                          color: s.onSurface,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+void toast(BuildContext context, String text) {
+  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(text), behavior: SnackBarBehavior.floating),
+  );
+}
+
+class ThemeEditor extends StatefulWidget {
+  const ThemeEditor({super.key, required this.primary, required this.onColor});
+  final Color primary;
+  final ValueChanged<Color> onColor;
+  @override
+  State<ThemeEditor> createState() => _ThemeEditorState();
+}
+
+class _ThemeEditorState extends State<ThemeEditor> {
+  final controller = TextEditingController();
+  String? error;
+  static const seeds = [
+    Color(0xFF1565C0),
+    Color(0xFF7545B8),
+    Color(0xFF087B59),
+    Color(0xFFBE3155),
+    Color(0xFFE4B53B),
+  ];
+  @override
+  void initState() {
+    super.initState();
+    sync();
+  }
+
+  void sync() {
+    controller.text =
+        '#${widget.primary.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
+  }
+
+  @override
+  void didUpdateWidget(covariant ThemeEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.primary != widget.primary) {
+      sync();
+      error = null;
+    }
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = Theme.of(context).colorScheme;
+    return UICard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              const Text(
+                'Bảng màu của bạn',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+              ),
+              Text(
+                'Đổi màu để xem toàn bộ UI thích ứng',
+                style: TextStyle(color: s.onSurfaceVariant, fontSize: 12),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Wrap(
+            spacing: 12,
+            runSpacing: 14,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              for (final c in seeds)
+                Semantics(
+                  label: 'Màu ${c.toARGB32().toRadixString(16)}',
+                  selected: widget.primary == c,
+                  button: true,
+                  child: Tooltip(
+                    message: '#${c.toARGB32().toRadixString(16).substring(2)}',
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(15),
+                      onTap: () => widget.onColor(c),
+                      child: Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: c,
+                          borderRadius: BorderRadius.circular(13),
+                          border: Border.all(
+                            color: widget.primary == c
+                                ? s.onSurface
+                                : Colors.transparent,
+                            width: 2,
+                          ),
+                        ),
+                        child: widget.primary == c
+                            ? Icon(
+                                Icons.check,
+                                size: 20,
+                                color:
+                                    ThemeData.estimateBrightnessForColor(c) ==
+                                        Brightness.dark
+                                    ? Colors.white
+                                    : Colors.black,
+                              )
+                            : null,
+                      ),
+                    ),
+                  ),
+                ),
+              SizedBox(
+                width: 150,
+                child: TextField(
+                  controller: controller,
+                  decoration: InputDecoration(
+                    labelText: 'HEX tùy chỉnh',
+                    errorText: error,
+                    isDense: true,
+                  ),
+                  onSubmitted: (_) => apply(),
+                ),
+              ),
+              UIButton(
+                label: 'Áp dụng',
+                variant: UIButtonVariant.soft,
+                onPressed: apply,
+              ),
+            ],
+          ),
+          const SizedBox(height: 22),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              token('Primary', s.primary, s.onPrimary),
+              token('Container', s.primaryContainer, s.onPrimaryContainer),
+              token('Secondary', s.secondary, s.onSecondary),
+              token('Accent', s.tertiary, s.onTertiary),
+              token('Surface', s.surfaceContainerHigh, s.onSurface),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget token(String name, Color c, Color fg) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+    decoration: BoxDecoration(color: c, borderRadius: BorderRadius.circular(9)),
+    child: Text(
+      name,
+      style: TextStyle(color: fg, fontSize: 11, fontWeight: FontWeight.w600),
+    ),
+  );
+  void apply() {
+    final value = controller.text.trim();
+    if (!RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(value)) {
+      setState(() => error = 'Dùng #RRGGBB');
+      return;
+    }
+    setState(() => error = null);
+    widget.onColor(Color(int.parse('FF${value.substring(1)}', radix: 16)));
+  }
+}
+
+class ButtonDemo extends StatefulWidget {
+  const ButtonDemo({super.key});
+  @override
+  State<ButtonDemo> createState() => _ButtonDemoState();
+}
+
+class _ButtonDemoState extends State<ButtonDemo> {
+  bool loading = false;
+  @override
+  Widget build(BuildContext context) => DemoBlock(
+    number: '01',
+    title: 'Buttons',
+    description:
+        'Bốn kiểu hiển thị, sáu vai trò màu. Thử hover, Tab hoặc nhấn nút.',
+    effects: 'Material ripple khi nhấn · overlay khi hover / focus · loading khóa thao tác',
+    code: "UIButton(label: 'Tiếp tục', onPressed: submit);\nUIButton(label: 'Hủy', variant: UIButtonVariant.outline, onPressed: cancel);\nUIButton(label: 'Đang lưu', loading: true);",
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            for (final v in UIButtonVariant.values)
+              UIButton(
+                label: ['Chính', 'Nền nhạt', 'Viền', 'Tối giản'][v.index],
+                variant: v,
+                onPressed: () => toast(context, 'Bạn vừa nhấn nút ${v.name}.'),
+              ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            UIButton(
+              label: 'Lưu thay đổi',
+              icon: Icons.check_rounded,
+              loading: loading,
+              onPressed: () async {
+                setState(() => loading = true);
+                await Future<void>.delayed(const Duration(milliseconds: 1300));
+                if (!mounted) return;
+                setState(() => loading = false);
+                if (context.mounted) {
+                  toast(
+                    context,
+                    'Đã chạy xong demo loading. Không gửi dữ liệu.',
+                  );
+                }
+              },
+            ),
+            UIButton(
+              label: 'Quan trọng',
+              tone: UITone.secondary,
+              onPressed: () => toast(context, 'Nút secondary.'),
+            ),
+            UIButton(
+              label: 'Nổi bật',
+              tone: UITone.accent,
+              onPressed: () => toast(context, 'Nút accent.'),
+            ),
+            const UIButton(label: 'Không khả dụng'),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+class InputDemo extends StatefulWidget {
+  const InputDemo({super.key});
+  @override
+  State<InputDemo> createState() => _InputDemoState();
+}
+
+class _InputDemoState extends State<InputDemo> {
+  final form = GlobalKey<FormState>();
+  bool checked = true, notifications = false;
+  @override
+  Widget build(BuildContext context) => DemoBlock(
+    number: '02',
+    title: 'Form & Inputs',
+    description:
+        'Các widget có validation, semantics và trạng thái tương tác thật.',
+    effects: 'Viền focus · label nổi · lỗi inline · hiện / ẩn mật khẩu · chuyển trạng thái lựa chọn',
+    code: "Form(key: formKey, child: Column(children: [\n  UITextField(label: 'Email', validator: validateEmail),\n  UIPasswordField(),\n  UISelect<String>(label: 'Đơn vị', items: items, onChanged: select),\n]));",
+    child: Form(
+      key: form,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          LayoutBuilder(
+            builder: (context, box) {
+              final fields = [
+                UITextField(
+                  label: 'Email',
+                  hint: 'ban@example.com',
+                  prefixIcon: Icons.mail_outline,
+                  keyboardType: TextInputType.emailAddress,
+                  autofillHints: const [AutofillHints.email],
+                  validator: (v) =>
+                      RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(v ?? '')
+                      ? null
+                      : 'Nhập email hợp lệ.',
+                ),
+                UIPasswordField(
+                  validator: (v) =>
+                      (v?.length ?? 0) >= 8 ? null : 'Cần ít nhất 8 ký tự.',
+                ),
+              ];
+              return box.maxWidth > 650
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: fields[0]),
+                        const SizedBox(width: 18),
+                        Expanded(child: fields[1]),
+                      ],
+                    )
+                  : Column(
+                      children: [
+                        fields[0],
+                        const SizedBox(height: 20),
+                        fields[1],
+                      ],
+                    );
+            },
+          ),
+          const SizedBox(height: 22),
+          UISelect<String>(
+            label: 'Đơn vị Đoàn',
+            items: const [
+              DropdownMenuItem(value: 'school', child: Text('Đoàn trường')),
+              DropdownMenuItem(value: 'local', child: Text('Đoàn phường / xã')),
+            ],
+            onChanged: (_) {},
+          ),
+          const SizedBox(height: 22),
+          const UITextField(
+            label: 'Giới thiệu',
+            hint: 'Chia sẻ ý tưởng của bạn…',
+            maxLines: 3,
+          ),
+          const SizedBox(height: 18),
+          const UITextField(
+            label: 'Đơn vị đã xác minh',
+            helper: 'Ví dụ trường không khả dụng',
+            enabled: false,
+          ),
+          const SizedBox(height: 12),
+          UICheckbox(
+            label: 'Nhận tin hoạt động của đơn vị',
+            value: checked,
+            onChanged: (v) => setState(() => checked = v ?? false),
+          ),
+          UISwitch(
+            label: 'Bật thông báo',
+            value: notifications,
+            onChanged: (v) => setState(() => notifications = v),
+          ),
+          const SizedBox(height: 12),
+          UIButton(
+            label: 'Kiểm tra biểu mẫu',
+            onPressed: () {
+              if (form.currentState!.validate()) {
+                toast(
+                  context,
+                  'Dữ liệu hợp lệ. Đây là demo, không tạo tài khoản.',
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class CardDemo extends StatelessWidget {
+  const CardDemo({super.key});
+  @override
+  Widget build(BuildContext context) => DemoBlock(
+    number: '03',
+    title: 'Cards & Badges',
+    description: 'Nhóm nội dung và thể hiện trạng thái bằng ngôn ngữ thị giác nhất quán.',
+    effects: 'Card có onTap nâng nhẹ khi hover · ripple khi nhấn · badge đổi theo theme',
+    code: "UICard(onTap: openDetail, child: content);\nUIBadge(label: 'Đã xác nhận', tone: UITone.success);",
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: const [
+            UIBadge(label: 'Đoàn viên'),
+            UIBadge(
+              label: 'Đã xác nhận',
+              tone: UITone.success,
+              icon: Icons.check,
+            ),
+            UIBadge(label: 'Chờ duyệt', tone: UITone.warning),
+            UIBadge(label: 'Cần bổ sung', tone: UITone.danger),
+          ],
+        ),
+        const SizedBox(height: 24),
+        UICard(
+          onTap: () => toast(context, 'Bạn đã mở thẻ hoạt động demo.'),
+          child: Row(
+            children: [
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  Icons.volunteer_activism_outlined,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                ),
+              ),
+              const SizedBox(width: 18),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Ngày hội tình nguyện',
+                      style: TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      'Chạm để thử hiệu ứng của thẻ',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_rounded),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class FeedbackDemo extends StatelessWidget {
+  const FeedbackDemo({super.key});
+  @override
+  Widget build(BuildContext context) => DemoBlock(
+    number: '04',
+    title: 'Alerts & Dialog',
+    description: 'Thông điệp rõ ràng, màu theo vai trò và phản hồi ngay tại nơi tương tác.',
+    effects: 'SnackBar xuất hiện / ẩn · dialog chuyển cảnh Material · thông báo có live-region',
+    code: "UIAlert(message: 'Đã lưu.', tone: UITone.success);\nScaffoldMessenger.of(context).showSnackBar(\n  const SnackBar(content: Text('Đã sao chép')),\n);",
+    child: Column(
+      children: [
+        const UIAlert(message: 'Thông tin được đồng bộ theo đơn vị Đoàn.'),
+        const SizedBox(height: 12),
+        const UIAlert(
+          message: 'Đã lưu thay đổi của bạn.',
+          tone: UITone.success,
+        ),
+        const SizedBox(height: 12),
+        const UIAlert(
+          message: 'Kiểm tra thông tin trước khi gửi.',
+          tone: UITone.warning,
+        ),
+        const SizedBox(height: 12),
+        const UIAlert(
+          message: 'Chưa thể hoàn tất yêu cầu. Vui lòng thử lại.',
+          tone: UITone.danger,
+        ),
+        const SizedBox(height: 20),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            UIButton(
+              label: 'Thử SnackBar',
+              variant: UIButtonVariant.soft,
+              onPressed: () => toast(context, 'Đây là thông báo ngắn.'),
+            ),
+            UIButton(
+              label: 'Mở dialog',
+              variant: UIButtonVariant.outline,
+              onPressed: () => showDialog<void>(
+                context: context,
+                builder: (dialogContext) => AlertDialog(
+                  icon: const Icon(Icons.task_alt_rounded),
+                  title: const Text('Một kết nối mới'),
+                  content: const Text(
+                    'Dialog kế thừa màu sắc và kiểu chữ từ cùng một theme.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(dialogContext),
+                      child: const Text('Đóng'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+class MotionDemo extends StatefulWidget {
+  const MotionDemo({super.key, required this.reduce, required this.onReduce});
+  final bool reduce;
+  final ValueChanged<bool> onReduce;
+  @override
+  State<MotionDemo> createState() => _MotionDemoState();
+}
+
+class _MotionDemoState extends State<MotionDemo> {
+  int replay = 0, step = 0;
+  @override
+  Widget build(BuildContext context) => DemoBlock(
+    number: '05',
+    title: 'Motion & Animation',
+    description:
+        'Chuyển động nhẹ giúp nhận biết thay đổi, giữ nội dung là trọng tâm.',
+    effects: 'Entrance: fade + dịch 18px, 450ms easeOutCubic · đổi nội dung: fade + scale 250ms · tôn trọng reduced motion',
+    code: "UIEntrance(\n  key: ValueKey(replay),\n  child: yourWidget,\n);\nUIAnimatedContent(\n  child: Text('Bước \$step', key: ValueKey(step)),\n);",
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        UISwitch(
+          label: 'Giảm chuyển động',
+          value: widget.reduce,
+          onChanged: widget.onReduce,
+        ),
+        const SizedBox(height: 18),
+        LayoutBuilder(
+          builder: (context, box) {
+            final children = [
+              motionTile(
+                context,
+                'Xuất hiện nhẹ nhàng',
+                UIEntrance(
+                  key: ValueKey(replay),
+                  child: const UIBadge(
+                    label: 'Xin chào, thanh niên!',
+                    icon: Icons.waving_hand_outlined,
+                  ),
+                ),
+                UIButton(
+                  label: 'Chạy lại',
+                  icon: Icons.replay_rounded,
+                  variant: UIButtonVariant.soft,
+                  onPressed: () => setState(() => replay++),
+                ),
+              ),
+              motionTile(
+                context,
+                'Chuyển nội dung',
+                UIAnimatedContent(
+                  child: UIBadge(
+                    key: ValueKey(step),
+                    label: ['Khám phá', 'Kết nối', 'Cùng tiến bước'][step],
+                    tone: [
+                      UITone.primary,
+                      UITone.success,
+                      UITone.secondary,
+                    ][step],
+                  ),
+                ),
+                UIButton(
+                  label: 'Đổi nội dung',
+                  icon: Icons.swap_horiz_rounded,
+                  variant: UIButtonVariant.soft,
+                  onPressed: () => setState(() => step = (step + 1) % 3),
+                ),
+              ),
+            ];
+            return box.maxWidth > 650
+                ? Row(
+                    children: [
+                      Expanded(child: children[0]),
+                      const SizedBox(width: 18),
+                      Expanded(child: children[1]),
+                    ],
+                  )
+                : Column(
+                    children: [
+                      children[0],
+                      const SizedBox(height: 18),
+                      children[1],
+                    ],
+                  );
+          },
+        ),
+      ],
+    ),
+  );
+  Widget motionTile(
+    BuildContext context,
+    String title,
+    Widget demo,
+    Widget action,
+  ) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(20),
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(18),
+    ),
+    child: Column(
+      children: [
+        Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        SizedBox(height: 100, child: Center(child: demo)),
+        action,
+      ],
+    ),
+  );
+}
+
+class UsageDemo extends StatelessWidget {
+  const UsageDemo({super.key});
+  @override
+  Widget build(BuildContext context) => const DemoBlock(
+    number: 'START',
+    title: 'Khởi tạo một lần',
+    description: 'Dùng package cục bộ hoặc Git dependency. Không cần truyền màu cho từng widget.',
+    effects: 'Theme dùng chung cho Youth UI và widget Material · hỗ trợ light / dark · không phụ thuộc React',
+    code: "// pubspec.yaml\ndependencies:\n  youth_ui:\n    git:\n      url: https://github.com/HYowshi/flutter-ui.git\n      ref: main\n\n// main.dart\nimport 'package:youth_ui/youth_ui.dart';\n\nMaterialApp(\n  theme: YouthUI.init(\n    primary: const Color(0xFF1565C0),\n    secondary: const Color(0xFFDA251D),\n    accent: const Color(0xFFF9C846),\n  ),\n  home: const HomePage(),\n);\n\n// Trong HomePage\nUIButton(label: 'Tiếp tục', onPressed: submit);\nUITextField(label: 'Email');\nUIPasswordField();\nUIBadge(label: 'Đã duyệt', tone: UITone.success);",
+    child: UIAlert(
+      title: 'Một nguồn màu duy nhất',
+      message: 'Đặt YouthUI.init() tại MaterialApp. Các màn hình phía dưới tự kế thừa theme. Đổi seed để đổi toàn bộ bộ UI.',
+    ),
+  );
+}
