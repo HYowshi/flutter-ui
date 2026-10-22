@@ -1,4 +1,4 @@
-# Flutter UI · Youth UI 0.3
+# Flutter UI · Youth UI 0.4
 
 Bộ Flutter/Dart UI dùng lại cho mobile, desktop và web, không gắn với một ứng dụng hay một bộ màu thương hiệu. Truyền **một hoặc hai màu**, nhận theme sáng/tối và để widget tự chọn màu theo vai trò.
 
@@ -76,19 +76,75 @@ Nếu tạo container riêng có màu nền khác, bọc `UISurfaceScope(color: 
 
 | Widget | Chức năng |
 | --- | --- |
-| UIButton | solid/soft/outline/ghost, tone, icon, loading, disabled, state colors và focus |
+| UIButton | solid/soft/outline/ghost, state colors; tự giãn trong vùng hẹp và xuống dòng nhãn dài |
 | UITextField | Form validation, multiline, controller, keyboard, autofill |
 | UIPasswordField | Hiện/ẩn mật khẩu, validation, controller |
 | UISelect<T> | Dropdown có nhãn và validation |
 | UICheckbox / UISwitch | Control gọn, nhãn tùy chọn, hover/focus cục bộ, bàn phím, disabled |
 | UIToggleButton | Nút bật/tắt độc lập với icon và trạng thái được chọn |
 | UISegmentedControl<T> / UIOption<T> | Nhóm chọn một giá trị, hỗ trợ khóa từng lựa chọn |
-| UICard | Surface context, hover lift và ripple khi có onTap |
+| UICard | Padding theo vùng chứa, surface context, hover/ripple khi có onTap |
 | UIBadge / UIAlert | Status theo cặp màu, icon và nội dung |
 | UIEntrance | Fade + dịch lên, mặc định 450ms |
 | UIAnimatedContent | Fade + scale, mặc định 250ms |
+| UIPage | Safe area, cuộn trang, giới hạn chiều rộng trên desktop |
+| UIForm / UIGrid | Tự chia cột theo vùng chứa và cỡ chữ, chiều cao theo nội dung |
+| UIActions | Nút xếp dọc trong vùng hẹp, tự wrap trong vùng rộng |
+| UIAdaptiveBuilder | Dữ liệu adaptive cho component tự viết |
 
 `UITone`: primary, secondary, accent, success, warning, danger. Tone là vai trò, không gán lại màu cho mỗi widget. Trạng thái phải có label/icon phù hợp, không dựa riêng vào hue.
+
+## Tự thích ứng PC / mobile
+
+Không cần truyền `isMobile` hoặc kích thước vào từng widget. Mặc định các widget đọc **constraints của vùng chứa**, text scaler của hệ thống và trạng thái kết nối chuột. Một panel 360px trên desktop cũng dùng layout gọn, dù cửa sổ ngoài rộng 1440px. Resize không nhân toàn bộ kích thước UI theo tỷ lệ màn hình.
+
+```dart
+// Vẫn chỉ một lần khởi tạo; cấu hình adaptive có mặc định sẵn.
+final ui = YouthUI.colors(primary: const Color(0xFF1565C0));
+
+// Trong màn hình: không viết breakpoint, Row/Column hay media query.
+Scaffold(
+  body: UIPage(children: [
+    UICard(child: UIForm(formKey: formKey, children: [
+      UITextField(label: 'Tên hiển thị'),
+      UITextField(label: 'Email', validator: validateEmail),
+      UIPasswordField(),
+    ])),
+    UIActions(children: [
+      UIButton(label: 'Lưu thay đổi', onPressed: save),
+      UIButton(label: 'Hủy', variant: UIButtonVariant.outline, onPressed: cancel),
+    ]),
+  ]),
+);
+```
+
+| Thành phần | Tự thích ứng |
+| --- | --- |
+| Button / toggle | Vùng chứa <600px: giãn rộng nếu width hữu hạn; vùng rộng: ôm nội dung. Nhãn dài xuống dòng, không ellipsis; target tối thiểu 48px. |
+| Segmented control | Đo nhãn với font và text scaler thực tế; nếu nhóm không vừa chiều ngang, chuyển sang các nút chọn xếp dọc. Giữ giá trị và disabled. |
+| Text / password / select | Padding theo vùng chứa và chuột; dropdown giới hạn chiều cao theo viewport, item có chiều cao theo nội dung; helper/lỗi hỗ trợ tối đa 6 dòng. |
+| Checkbox / switch | Nhãn xuống dòng, control giữ vùng chạm 48px; không nở vùng hover sang nhãn hoặc cả hàng. |
+| Card / badge / alert | Card giảm padding trong vùng hẹp; badge và nội dung alert xuống dòng. |
+| UIForm / UIGrid | 1–2 / 1–4 cột mặc định. Chữ lớn làm giảm số cột, giữ cỡ chữ người dùng; không ép chiều cao tile. |
+| UIPage / UIActions | Trang cuộn, safe area, padding 16/24/32px, nội dung tối đa 1120px; actions xếp dọc dưới 600px, wrap ở vùng rộng. |
+
+Tùy chỉnh một lần nếu dự án cần:
+
+```dart
+final ui = YouthUI.colors(
+  primary: Colors.indigo,
+  adaptive: const UIAdaptiveConfig(
+    compactBreakpoint: 640,
+    expandedBreakpoint: 1100,
+    minColumnWidth: 300,
+    maxContentWidth: 1200,
+  ),
+);
+```
+
+`UIButton(fullWidth: false)` và `UICard(padding: ...)` vẫn cho phép ghi đè có chủ ý. Trong `Row` không có width hữu hạn, button giữ kích thước nội dung; muốn tự chuyển cả nhóm giữa hàng/cột thì dùng `UIActions`. `UIGrid` dành cho form/nhóm nội dung nhỏ; danh sách dữ liệu lớn vẫn cần ListView/GridView dạng lazy. Đặt `UIPage` trong vùng có chiều cao hữu hạn như `Scaffold.body`, vì nó quản lý cuộn của trang.
+
+Bộ UI tự xử lý các component và khối bố cục ở trên; không thể sửa overflow do một `Row`, fixed height hoặc widget tùy chỉnh do ứng dụng bên ngoài áp đặt. Với `IntrinsicWidth`/`IntrinsicHeight`, tránh bọc các component dựa trên LayoutBuilder; dùng constraint hữu hạn. Các quy tắc và phạm vi kiểm tra được ghi trong [thiết kế adaptive](docs/adaptive-design.vi.md).
 
 ## Lựa chọn và vùng tương tác
 
@@ -123,7 +179,7 @@ Button chỉ phản hồi trong hình nút, input trong ô nhập. `UICard` ch�
 
 ## Website showcase
 
-Thử một seed hoặc hai seed; nhập HEX; chọn profile; đổi light/dark; tăng tương phản; xem kết quả audit theo từng cặp; chạy component/animation và sao chép mã Dart. Demo không đăng ký tài khoản hoặc gửi dữ liệu.
+Thử một seed hoặc hai seed; nhập HEX; chọn profile; đổi light/dark; tăng tương phản; xem kết quả audit theo từng cặp; chạy component/animation và sao chép mã Dart. Mục **Adaptive UI** có preview 360/768/1080px và chế độ chữ lớn 200%; cùng một màn hình mẫu không chứa nhánh kiểm tra thiết bị. Demo không đăng ký tài khoản hoặc gửi dữ liệu.
 
 ```sh
 flutter pub get

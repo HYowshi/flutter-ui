@@ -114,4 +114,50 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+  testWidgets(
+    'adaptive preview preserves form edits across presets and large text',
+    (tester) async {
+      tester.view.physicalSize = const Size(1600, 1200);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(const ShowcaseApp());
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(ListTile, 'Adaptive UI'));
+      await tester.pumpAndSettle();
+      final name = find.descendant(
+        of: find.byKey(const ValueKey('adaptive-name')),
+        matching: find.byType(TextFormField),
+      );
+      await tester.ensureVisible(name);
+      await tester.enterText(name, 'Carry across resize');
+      await tester.ensureVisible(find.text('Desktop · 1080'));
+      await tester.tap(find.text('Desktop · 1080'));
+      await tester.pumpAndSettle();
+      expect(find.text('Carry across resize'), findsOneWidget);
+      final fields = find.descendant(
+        of: find.byType(AdaptiveSample),
+        matching: find.byType(TextFormField),
+      );
+      expect(
+        tester.getTopLeft(fields.first).dy,
+        tester.getTopLeft(fields.last).dy,
+      );
+      await tester.tap(find.text('Mobile · 360'));
+      await tester.pumpAndSettle();
+      final largeText = find.descendant(
+        of: find.widgetWithText(UISwitch, 'Chữ lớn 200%'),
+        matching: find.byType(Switch),
+      );
+      await tester.ensureVisible(largeText);
+      await tester.tap(largeText);
+      await tester.pumpAndSettle();
+      expect(find.text('Carry across resize'), findsOneWidget);
+      expect(
+        tester.getTopLeft(fields.last).dy,
+        greaterThan(tester.getTopLeft(fields.first).dy),
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

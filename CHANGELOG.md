@@ -1,3 +1,14 @@
+## 0.4.0
+
+- Automatic local-width adaptation, mouse-aware spacing and system text scaling.
+- UIPage / UIForm / UIGrid / UIActions remove repeated page and form breakpoint code.
+- Buttons auto-fill narrow bounded regions; long button/badge text wraps instead of truncating.
+- Segmented controls measure label width and switch to stacked choices when needed.
+- Adaptive field/card padding, content-height dropdown items and bounded dropdown menus.
+- UIAdaptiveConfig is optional in the existing one-time initializer, with defaults for all widgets.
+- Interactive mobile/tablet/desktop preview, resize/state-preservation and large-text regression tests.
+- Migration: UIButton.fullWidth defaults to auto (nullable); UICard.padding defaults to adaptive (nullable). Explicit existing overrides remain supported.
+
 ## 0.3.0
 
 - Add UIToggleButton and typed UISegmentedControl / UIOption.

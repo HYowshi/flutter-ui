@@ -98,6 +98,7 @@ class _StudioState extends State<Studio> {
     'Animation',
     'Bắt đầu sử dụng',
     'Selection controls',
+    'Adaptive UI',
   ];
   static const icons = [
     Icons.grid_view_rounded,
@@ -109,6 +110,7 @@ class _StudioState extends State<Studio> {
     Icons.auto_awesome_outlined,
     Icons.code_rounded,
     Icons.toggle_on_outlined,
+    Icons.devices_rounded,
   ];
   @override
   void dispose() {
@@ -256,6 +258,7 @@ class _StudioState extends State<Studio> {
                                 const ButtonDemo(),
                               if (selected == 0 || selected == 8)
                                 const SelectionDemo(),
+                              if (selected == 9) const AdaptiveDemo(),
                               if (selected == 0 || selected == 3)
                                 const InputDemo(),
                               if (selected == 0 || selected == 4)
@@ -321,6 +324,7 @@ class _StudioState extends State<Studio> {
     'Chuyển động có mục đích, có thể chạy lại và giảm chuyển động.',
     'Khởi tạo theme một lần. Sau đó chỉ gọi widget.',
     'Checkbox, switch, toggle và nhóm chọn. Hiệu ứng gọn trong từng control.',
+    'Cùng một mã Dart tự thay đổi theo vùng chứa, chuột và cỡ chữ.',
   ];
   Widget sidebar(BuildContext context, {bool closeDrawer = false}) {
     final s = Theme.of(context).colorScheme;
@@ -415,7 +419,7 @@ class _StudioState extends State<Studio> {
           ),
           const SizedBox(height: 20),
           Text(
-            'v0.3.0 · Reusable Flutter controls',
+            'v0.4.0 · Adaptive Flutter controls',
             style: TextStyle(fontSize: 10, color: s.onSurfaceVariant),
           ),
         ],
@@ -1175,6 +1179,164 @@ class _SelectionDemoState extends State<SelectionDemo> {
   );
 }
 
+class AdaptiveDemo extends StatefulWidget {
+  const AdaptiveDemo({super.key});
+  @override
+  State<AdaptiveDemo> createState() => _AdaptiveDemoState();
+}
+
+class _AdaptiveDemoState extends State<AdaptiveDemo> {
+  double width = 360;
+  bool largeText = false;
+  @override
+  Widget build(BuildContext context) => DemoBlock(
+    number: '08',
+    title: 'Một mã nguồn. Nhiều không gian.',
+    description: 'Thay chiều rộng vùng chứa bên dưới. Form tự chia cột, nút tự giãn, nhóm chọn tự xếp dọc khi không đủ chỗ. Bật chữ lớn để kiểm tra khả năng đọc.',
+    effects: 'Local constraints · giữ dữ liệu khi resize · chữ theo hệ thống · vùng chạm ≥ 48px',
+    code: "UIPage(children: [\n  UICard(child: UIForm(children: [\n    UITextField(label: 'Tên hiển thị'),\n    UITextField(label: 'Email'),\n  ])),\n  UIActions(children: [\n    UIButton(label: 'Lưu', onPressed: save),\n    UIButton(label: 'Hủy', onPressed: cancel),\n  ]),\n]);",
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            for (final size in [360.0, 768.0, 1080.0])
+              UIToggleButton(
+                label:
+                    '${size == 360
+                        ? 'Mobile'
+                        : size == 768
+                        ? 'Tablet'
+                        : 'Desktop'} · ${size.toInt()}',
+                value: width == size,
+                onChanged: (_) => setState(() => width = size),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        UISwitch(
+          label: 'Chữ lớn 200%',
+          value: largeText,
+          onChanged: (v) => setState(() => largeText = v),
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          'Đây là chiều rộng vùng preview, không đổi kích thước trình duyệt. Có thể cuộn ngang khi preview rộng hơn màn hình.',
+        ),
+        const SizedBox(height: 16),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(
+            key: const ValueKey('adaptive-preview'),
+            width: width,
+            height: 560,
+            child: MediaQuery(
+              data: MediaQuery.of(context).copyWith(
+                size: Size(width, 560),
+                textScaler: largeText
+                    ? const TextScaler.linear(2)
+                    : MediaQuery.textScalerOf(context),
+              ),
+              child: Material(
+                color: YouthColors.of(context).canvas,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: Theme.of(context).colorScheme.outlineVariant,
+                  ),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: const AdaptiveSample(),
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class AdaptiveSample extends StatefulWidget {
+  const AdaptiveSample({super.key});
+  @override
+  State<AdaptiveSample> createState() => _AdaptiveSampleState();
+}
+
+class _AdaptiveSampleState extends State<AdaptiveSample> {
+  final form = GlobalKey<FormState>();
+  bool notify = true;
+  String period = 'week';
+  @override
+  Widget build(BuildContext context) => UIPage(
+    children: [
+      Text(
+        'Không gian của bạn',
+        style: Theme.of(context).textTheme.headlineSmall,
+      ),
+      const Text('Không viết điều kiện PC/mobile trong màn hình này.'),
+      UICard(
+        child: UIForm(
+          formKey: form,
+          children: [
+            const UITextField(
+              key: ValueKey('adaptive-name'),
+              label: 'Tên hiển thị',
+              prefixIcon: Icons.person_outline,
+            ),
+            UITextField(
+              label: 'Email liên hệ',
+              keyboardType: TextInputType.emailAddress,
+              validator: (v) => (v ?? '').contains('@')
+                  ? null
+                  : 'Nhập email để lưu thông tin.',
+            ),
+          ],
+        ),
+      ),
+      UICard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Tần suất cập nhật'),
+            const SizedBox(height: 12),
+            UISegmentedControl<String>(
+              options: const [
+                UIOption(value: 'day', label: 'Hàng ngày'),
+                UIOption(value: 'week', label: 'Hàng tuần'),
+                UIOption(value: 'month', label: 'Hàng tháng'),
+              ],
+              value: period,
+              onChanged: (v) => setState(() => period = v),
+            ),
+            const SizedBox(height: 12),
+            UICheckbox(
+              label: 'Nhận thông báo khi có cập nhật mới trong không gian làm việc',
+              value: notify,
+              onChanged: (v) => setState(() => notify = v ?? false),
+            ),
+          ],
+        ),
+      ),
+      UIActions(
+        children: [
+          UIButton(
+            label: 'Lưu thay đổi của bạn',
+            icon: Icons.check_rounded,
+            onPressed: () => form.currentState!.validate(),
+          ),
+          UIButton(
+            label: 'Để sau',
+            variant: UIButtonVariant.outline,
+            onPressed: () {},
+          ),
+        ],
+      ),
+    ],
+  );
+}
+
 class InputDemo extends StatefulWidget {
   const InputDemo({super.key});
   @override
@@ -1197,42 +1359,25 @@ class _InputDemoState extends State<InputDemo> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          LayoutBuilder(
-            builder: (context, box) {
-              final fields = [
-                UITextField(
-                  label: 'Email',
-                  hint: 'ban@example.com',
-                  prefixIcon: Icons.mail_outline,
-                  keyboardType: TextInputType.emailAddress,
-                  autofillHints: const [AutofillHints.email],
-                  validator: (v) =>
-                      RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(v ?? '')
-                      ? null
-                      : 'Nhập email hợp lệ.',
-                ),
-                UIPasswordField(
-                  validator: (v) =>
-                      (v?.length ?? 0) >= 8 ? null : 'Cần ít nhất 8 ký tự.',
-                ),
-              ];
-              return box.maxWidth > 650
-                  ? Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(child: fields[0]),
-                        const SizedBox(width: 18),
-                        Expanded(child: fields[1]),
-                      ],
-                    )
-                  : Column(
-                      children: [
-                        fields[0],
-                        const SizedBox(height: 20),
-                        fields[1],
-                      ],
-                    );
-            },
+          UIGrid(
+            maxColumns: 2,
+            children: [
+              UITextField(
+                label: 'Email',
+                hint: 'ban@example.com',
+                prefixIcon: Icons.mail_outline,
+                keyboardType: TextInputType.emailAddress,
+                autofillHints: const [AutofillHints.email],
+                validator: (v) =>
+                    RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(v ?? '')
+                    ? null
+                    : 'Nhập email hợp lệ.',
+              ),
+              UIPasswordField(
+                validator: (v) =>
+                    (v?.length ?? 0) >= 8 ? null : 'Cần ít nhất 8 ký tự.',
+              ),
+            ],
           ),
           const SizedBox(height: 22),
           UISelect<String>(

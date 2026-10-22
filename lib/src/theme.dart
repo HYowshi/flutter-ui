@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'color_engine.dart';
+import 'adaptive.dart';
 
 /// Theme pair for MaterialApp(theme: ui.light, darkTheme: ui.dark).
 class YouthThemeSet {
@@ -11,6 +12,7 @@ class YouthThemeSet {
     UIProfile profile = UIProfile.balanced,
     double contrastLevel = 0,
     String? fontFamily,
+    UIAdaptiveConfig adaptive = const UIAdaptiveConfig(),
   }) {
     light = YouthUI.init(
       primary: primary,
@@ -19,6 +21,7 @@ class YouthThemeSet {
       profile: profile,
       contrastLevel: contrastLevel,
       fontFamily: fontFamily,
+      adaptive: adaptive,
     );
     dark = YouthUI.init(
       primary: primary,
@@ -27,6 +30,7 @@ class YouthThemeSet {
       profile: profile,
       contrastLevel: contrastLevel,
       fontFamily: fontFamily,
+      adaptive: adaptive,
       brightness: Brightness.dark,
     );
   }
@@ -42,6 +46,7 @@ abstract final class YouthUI {
     UIProfile profile = UIProfile.balanced,
     double contrastLevel = 0,
     String? fontFamily,
+    UIAdaptiveConfig adaptive = const UIAdaptiveConfig(),
   }) => YouthThemeSet(
     primary: primary,
     secondary: secondary,
@@ -49,6 +54,7 @@ abstract final class YouthUI {
     profile: profile,
     contrastLevel: contrastLevel,
     fontFamily: fontFamily,
+    adaptive: adaptive,
   );
 
   static ThemeData init({
@@ -61,6 +67,7 @@ abstract final class YouthUI {
     String? fontFamily,
     UIProfile profile = UIProfile.balanced,
     double contrastLevel = 0,
+    UIAdaptiveConfig adaptive = const UIAdaptiveConfig(),
   }) {
     final colors = buildYouthColors(
       primary: primary,
@@ -94,6 +101,8 @@ abstract final class YouthUI {
         prefixIconColor: s.onSurfaceVariant,
         suffixIconColor: s.onSurfaceVariant,
         errorStyle: TextStyle(color: s.error),
+        errorMaxLines: 6,
+        helperMaxLines: 6,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 18,
           vertical: 18,
@@ -137,6 +146,7 @@ abstract final class YouthUI {
         ),
       ),
       extensions: [
+        adaptive,
         colors,
         YouthPalette(
           success: colors.tones[UITone.success]!.solid,

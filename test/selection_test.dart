@@ -65,6 +65,39 @@ void main() {
     );
   }
 
+  testWidgets(
+    'control semantics stay separate from neighboring content in cards',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      await tester.pumpWidget(
+        host(
+          UICard(
+            child: Column(
+              children: [
+                const Text('Notification preferences'),
+                UIToggleButton(label: 'Daily', value: true, onChanged: (_) {}),
+                UICheckbox(
+                  label: 'Email updates',
+                  value: true,
+                  onChanged: (_) {},
+                ),
+                UISwitch(
+                  label: 'Push updates',
+                  value: false,
+                  onChanged: (_) {},
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      expect(tester.getSemantics(find.byType(Checkbox)).label, 'Email updates');
+      expect(tester.getSemantics(find.byType(Switch)).label, 'Push updates');
+      expect(tester.getSemantics(find.byType(Checkbox)).childrenCount, 0);
+      semantics.dispose();
+    },
+  );
+
   testWidgets('toggle persists selected state and disabled blocks callbacks', (
     tester,
   ) async {
