@@ -9,6 +9,8 @@ Phạm vi: mã thư viện và showcase, Form/Thông báo mới, hàng đợi d�
 3. **Table quét dữ liệu lại khi chuyển trang.** Với 10.000 dòng, thao tác chuyển trang gọi rowKey 10.010 lần. Nay cache kiểm tra khoá khi rows/rowKey không đổi; regression yêu cầu dưới 100 lần gọi cho cùng thao tác, vẫn kiểm tra trùng khi thay dataset. Không sort lại danh sách index đã đúng thứ tự khi chưa chọn cột sort. Dữ liệu vẫn theo hợp đồng bất biến; sort toàn bộ là tác vụ trong bộ nhớ, không biến thành server pagination.
 4. **Fallback ảnh demo tràn ngang ở 320 px/chữ 200%.** Row chứa Text không có flex nên đo theo chiều rộng tự nhiên. Nay giới hạn phần chữ bằng Flexible để xuống dòng trong khung.
 
+5. **Mất nội dung field khi đổi thứ tự UIGrid.** Widget con có key nhưng SizedBox bao ngoài không có key, khiến Flutter tái tạo field khi reorder. Nay key được giữ ở lớp bao ngoài, bao gồm GlobalKey được bọc bằng local key để không trùng key trong cây; regression xác nhận nội dung nhập được giữ.
+
 ## Ranh giới tích hợp
 
 `UINotice.clear` chỉ xoá các notice của helper. Native Flutter không hoàn tất future `closed` của các mục đang chờ bị loại bằng `ScaffoldMessenger.clearSnackBars()`. Vì vậy khi trộn hai API và cần xoá tất cả, dùng **`UINotice.clearAll(context)`** để reset cả hai hàng đợi cùng lúc. Không dùng riêng native `clearSnackBars()` cho một hàng đợi đang có helper notice. Không cần poll hay timer để đoán trạng thái native.
@@ -17,7 +19,7 @@ Notice có Hoàn tác hoặc lỗi quan trọng được giữ đến khi xử l
 
 ## Kiểm chứng
 
-- 153 bài kiểm thử thư viện và 13 bài kiểm thử showcase: tổng 166.
+- 154 bài kiểm thử thư viện và 13 bài kiểm thử showcase: tổng 167.
 - Toàn bộ 15 mục showcase ở 320 px/chữ 200% và 1440 px/chữ mặc định, gồm điều hướng và nội dung cuộn.
 - Regression cho native/helper queue, huỷ và thêm notice mới, reset toàn bộ, response cũ sau đổi identity, công việc chuyển trang, lỗi duplicate key trên dữ liệu mới, notice đang hiện khi thu cửa sổ từ desktop xuống 280 px.
 - Kiểm tra trước đó vẫn bao gồm theme, selection, dropdown/keyboard, image lifecycle/fallback/retry, wireframe inference, adaptive scaffold, RTL và keyboard insets.

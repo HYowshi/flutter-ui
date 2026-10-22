@@ -164,7 +164,14 @@ class UIGrid extends StatelessWidget {
         spacing: ui.gap,
         runSpacing: ui.gap,
         children: [
-          for (final child in children) SizedBox(width: width, child: child),
+          for (final child in children)
+            SizedBox(
+              // Preserve keyed children when fields/cards change order. Wrap
+              // GlobalKeys in a local key instead of assigning one twice.
+              key: child.key == null ? null : ValueKey(child.key),
+              width: width,
+              child: child,
+            ),
         ],
       );
     },

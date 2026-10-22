@@ -1,5 +1,7 @@
 ## 0.11.1
 
+- Preserve keyed input state when UIGrid children are reordered.
+
 - Prevent helper queue cancellation from closing unrelated native SnackBars; add clearAll for atomic mixed-queue reset.
 - Ignore async form responses after switching FormState identity, including late field errors.
 - Cache table row-key validation for unchanged data and avoid sorting an already ordered unsorted index list.

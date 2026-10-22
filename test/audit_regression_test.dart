@@ -10,6 +10,42 @@ Widget host(Widget child) => MaterialApp(
 );
 
 void main() {
+  testWidgets('keyed inputs keep edits when UIGrid fields are reordered', (
+    tester,
+  ) async {
+    Widget fields(bool reversed) => host(
+      UIGrid(
+        children: [
+          if (!reversed)
+            const UITextField(key: ValueKey('first'), label: 'First'),
+          const UITextField(key: ValueKey('second'), label: 'Second'),
+          if (reversed)
+            const UITextField(key: ValueKey('first'), label: 'First'),
+        ],
+      ),
+    );
+    final first = find.descendant(
+      of: find.byKey(const ValueKey('first')),
+      matching: find.byType(TextFormField),
+    );
+    await tester.pumpWidget(fields(false));
+    await tester.enterText(first, 'Keep this edit');
+    await tester.pumpWidget(fields(true));
+    expect(find.text('Keep this edit'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextField>(
+            find.descendant(
+              of: find.byKey(const ValueKey('first')),
+              matching: find.byType(TextField),
+            ),
+          )
+          .controller!
+          .text,
+      'Keep this edit',
+    );
+  });
+
   testWidgets(
     'clearAll resets mixed native queue without stranding helper notices',
     (tester) async {
