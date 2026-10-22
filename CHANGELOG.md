@@ -1,3 +1,11 @@
+## 0.7.0
+
+- Add UIWireframe.auto / inspect / fromPlan with bounded structural inference, evidence levels and reasons; neutral fallback for ambiguous data.
+- Expand from 3 to 14 layouts, including profile, article, product, gallery, chat, table, settings, timeline, detail, list and empty.
+- Infer field roles from English/Vietnamese keys and conservative value checks; explicit layout, schema and field type overrides take precedence.
+- Adapt tables to cards on narrow regions/large text; retain static, theme-aware, non-interactive placeholders without displaying sample values.
+- Add interactive JSON playground, malformed input feedback and regression tests for inference, bounds, semantics and responsive layouts.
+
 ## 0.6.0
 
 - UIApp caches a light/dark theme pair and provides controller/system mode and UIThemeToggle.

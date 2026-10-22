@@ -213,8 +213,14 @@ void main() {
           expect(find.byIcon(Icons.broken_image_outlined), findsOneWidget);
         } else {
           expect(find.byType(UIWireframe), findsWidgets);
-          await tester.ensureVisible(find.text('dashboard'));
-          await tester.tap(find.text('dashboard'));
+          await tester.ensureVisible(find.text('Phân tích dữ liệu'));
+          await tester.tap(find.text('Phân tích dữ liệu'));
+          await tester.pumpAndSettle();
+          expect(find.textContaining('article · high'), findsOneWidget);
+          await tester.enterText(find.byType(TextFormField).last, '{broken');
+          await tester.tap(find.text('Phân tích dữ liệu'));
+          await tester.pumpAndSettle();
+          expect(find.textContaining('JSON chưa hợp lệ.'), findsOneWidget);
           await tester.pumpAndSettle();
         }
         expect(tester.takeException(), isNull);

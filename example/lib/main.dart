@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:youth_ui/youth_ui.dart';
@@ -329,7 +331,7 @@ class _StudioState extends State<Studio> {
     'Cùng một mã Dart tự thay đổi theo vùng chứa, chuột và cỡ chữ.',
     'Một ô chọn, hai cách mở phù hợp với PC và mobile. Màu và trạng thái thống nhất.',
     'Gọi ảnh một dòng: giữ khung, decode theo vùng hiển thị, có loading và fallback.',
-    'Khối phác thảo tĩnh, tự chia cột theo vùng chứa. Không tải dữ liệu, không có shimmer.',
+    'Nhận diện cấu trúc dữ liệu, chọn bố cục và tự thích ứng theo vùng chứa.',
   ];
   Widget sidebar(BuildContext context, {bool closeDrawer = false}) {
     final s = Theme.of(context).colorScheme;
@@ -424,7 +426,7 @@ class _StudioState extends State<Studio> {
           ),
           const SizedBox(height: 20),
           Text(
-            'v0.6.0 · Ready-to-use Flutter UI',
+            'v0.7.0 · Ready-to-use Flutter UI',
             style: TextStyle(fontSize: 10, color: s.onSurfaceVariant),
           ),
         ],
@@ -1864,27 +1866,150 @@ class WireframeDemo extends StatefulWidget {
 }
 
 class _WireframeDemoState extends State<WireframeDemo> {
-  UIWireframeLayout layout = UIWireframeLayout.feed;
+  static const samples = <String, Object?>{
+    'Bài viết': {'title': 'Tiêu đề', 'body': 'Nội dung', 'cover': 'cover.png'},
+    'Bảng tin': [
+      {'title': 'Tin mới', 'image': 'photo.png', 'body': 'Nội dung'},
+    ],
+    'Hồ sơ': {
+      'name': 'Thanh niên',
+      'avatar': null,
+      'email': 'user@example.test',
+    },
+    'Sản phẩm': {
+      'name': 'Sách',
+      'price': 50000,
+      'currency': 'VND',
+      'image': 'book.png',
+    },
+    'Thư viện ảnh': ['a.png', 'b.webp', 'c.jpg'],
+    'Hội thoại': [
+      {'sender': 'An', 'text': 'Xin chào', 'timestamp': '2026-10-22'},
+    ],
+    'Bảng dữ liệu': [
+      {'id': 1, 'name': 'An', 'score': 8},
+      {'id': 2, 'name': 'Bình', 'score': 9},
+    ],
+    'Cài đặt': {'notifications': true, 'sound': false, 'language': 'vi'},
+    'Dòng thời gian': [
+      {'date': '2026-10-22', 'event': 'Tạo hoạt động'},
+    ],
+    'Dashboard': {
+      'stats': {'members': 120},
+      'series': [10, 20, 30],
+    },
+    'Chưa rõ loại': {'reference': 'X123', 'value': null},
+    'Dữ liệu rỗng': [],
+  };
+  String sampleName = 'Bài viết';
+  UIWireframeLayout? layoutOverride;
+  late Object? data = samples[sampleName];
+  late final input = TextEditingController(
+    text: const JsonEncoder.withIndent('  ').convert(data),
+  );
+  late UIWireframePlan plan = UIWireframe.inspect(data);
+  String? error;
+
+  @override
+  void dispose() {
+    input.dispose();
+    super.dispose();
+  }
+
+  void apply() {
+    if (input.text.length > 20000) {
+      setState(() => error = 'Bản demo giới hạn JSON ở 20.000 ký tự.');
+      return;
+    }
+    try {
+      final parsed = jsonDecode(input.text);
+      setState(() {
+        data = parsed;
+        plan = UIWireframe.inspect(data, layout: layoutOverride);
+        error = null;
+      });
+    } on FormatException {
+      setState(
+        () => error = 'JSON chưa hợp lệ. Bản xem trước giữ kết quả gần nhất.',
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) => DemoBlock(
     number: '11',
-    title: 'Wireframe · phác bố cục nhanh',
-    description: 'Feed, dashboard và form dùng các khối tĩnh theo theme, tự chia cột. Dùng để thử bố cục hoặc làm placeholder trước khi có nội dung.',
-    effects: 'Không ticker · không network · responsive · block nhỏ dùng lại độc lập',
-    code: "UIWireframe.page();\nUIWireframe.page(layout: UIWireframeLayout.dashboard);\nUIWireframe.card();\nUIWireframe.list();\nUIWireframe.line(widthFactor: .7);",
+    title: 'Wireframe · nhận diện cấu trúc dữ liệu',
+    description: '14 bố cục. Phân tích dữ liệu mẫu, kiểu trường và dấu hiệu ngữ nghĩa; tự đổi cách sắp xếp theo vùng hiển thị. Không hiển thị giá trị đầu vào.',
+    effects: 'Phân tích có giới hạn · có lý do lựa chọn · không AI/network · không ticker',
+    code: "UIWireframe.auto(data: sample);\n\n// Biết rõ màn hình: ưu tiên chỉ định.\nUIWireframe.auto(data: sample, layout: UIWireframeLayout.profile);\n\n// Chưa có dữ liệu, dùng schema form:\nUIWireframe.auto(fields: const [\n  UIWireframeField('email', type: UIWireframeFieldType.email),\n  UIWireframeField('password', type: UIWireframeFieldType.password),\n]);\n\nfinal plan = UIWireframe.inspect(sample);\nUIWireframe.fromPlan(plan: plan);",
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        UISegmentedControl<UIWireframeLayout>(
-          options: [
-            for (final item in UIWireframeLayout.values)
-              UIOption(value: item, label: item.name),
+        UIGrid(
+          maxColumns: 2,
+          children: [
+            UISelect<String>(
+              label: 'Dữ liệu mẫu',
+              initialValue: sampleName,
+              options: [
+                for (final name in samples.keys)
+                  UIOption(value: name, label: name),
+              ],
+              onChanged: (name) {
+                if (name == null) return;
+                setState(() {
+                  sampleName = name;
+                  data = samples[name];
+                  input.text = const JsonEncoder.withIndent('  ').convert(data);
+                  plan = UIWireframe.inspect(data, layout: layoutOverride);
+                  error = null;
+                });
+              },
+            ),
+            UISelect<String>(
+              label: 'Bố cục',
+              initialValue: layoutOverride?.name ?? 'auto',
+              options: [
+                const UIOption(value: 'auto', label: 'Tự nhận diện'),
+                for (final item in UIWireframeLayout.values)
+                  UIOption(value: item.name, label: item.name),
+              ],
+              onChanged: (name) => setState(() {
+                layoutOverride = name == null || name == 'auto'
+                    ? null
+                    : UIWireframeLayout.values.byName(name);
+                plan = UIWireframe.inspect(data, layout: layoutOverride);
+              }),
+            ),
           ],
-          value: layout,
-          onChanged: (v) => setState(() => layout = v),
         ),
-        const SizedBox(height: 20),
-        UIWireframe.page(layout: layout),
+        const SizedBox(height: 16),
+        UITextField(
+          label: 'JSON mẫu · chỉnh sửa rồi bấm Phân tích',
+          controller: input,
+          maxLines: 6,
+          keyboardType: TextInputType.multiline,
+        ),
+        const SizedBox(height: 12),
+        UIButton(label: 'Phân tích dữ liệu', onPressed: apply),
+        if (error != null) ...[
+          const SizedBox(height: 12),
+          UIAlert(message: error!, tone: UITone.danger),
+        ],
+        const SizedBox(height: 16),
+        UIAlert(
+          title: '${plan.layout.name} · ${plan.confidence.name}',
+          message:
+              '${plan.reasons.join(' ')}\nMức bằng chứng là heuristic, không phải xác suất chính xác. Dữ liệu khó phân biệt sẽ dùng detail/list; có thể chọn bố cục thủ công.',
+        ),
+        const SizedBox(height: 16),
+        if (plan.fields.isNotEmpty) ...[
+          Text(
+            'Kiểu trường: ${plan.fields.map((f) => '${f.name}: ${f.type.name}').join(' · ')}',
+          ),
+          const SizedBox(height: 16),
+        ],
+        UIWireframe.fromPlan(plan: plan),
       ],
     ),
   );

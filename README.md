@@ -49,6 +49,7 @@ UIImage.thumbnail('assets/photo.png');
 UIImage.banner('assets/photo.png');       // 16:9 gọn, 21:9 vùng rộng
 UIImage.provider(MemoryImage(bytes));     // provider tùy chọn
 
+UIWireframe.auto(data: sample); // JSON-like mẫu, tự nhận diện bố cục
 UIWireframe.page();
 UIWireframe.page(layout: UIWireframeLayout.dashboard);
 UIWireframe.page(layout: UIWireframeLayout.form);
@@ -75,7 +76,31 @@ UIImage('https://cdn.example.com/photo-1280.jpg', variants: const {
 
 Thư viện chọn biến thể theo vùng hiển thị và DPR, không tự sửa URL tùy ý hoặc vượt CORS. Không cung cấp cache ổ đĩa/offline; dùng ImageCache của Flutter. Raster có dạng rất khác khung crop có thể cần provider/chất lượng riêng (`optimizeDecode: false`). SVG dùng provider/giải pháp phù hợp riêng, không phải định dạng ảnh raster được hỗ trợ tự động.
 
-**Wireframe:** mẫu phác thảo/placeholder tĩnh, theo theme và responsive; không phải mô hình AI hoặc công cụ thiết kế kéo thả. Không ticker/shimmer hoặc request dữ liệu. Dành cho bố cục nhỏ; danh sách dữ liệu lớn vẫn cần widget lazy.
+**Wireframe:** `UIWireframe.auto(data: sample)` nhận Map/List/giá trị JSON-like, nhận diện bố cục từ cấu trúc + kiểu trường + tên khóa Việt/Anh. Có 14 bố cục: feed, dashboard, form, profile, article, product, gallery, chat, table, settings, timeline, detail, list, empty. Bảng tự thành thẻ ở vùng hẹp/chữ lớn; bố cục dùng constraint của vùng chứa.
+
+```dart
+UIWireframe.auto(data: {'name': 'An', 'avatar': null, 'email': null});
+// Khi biết ý định màn hình, chỉ định để không cần đoán:
+UIWireframe.auto(data: sample, layout: UIWireframeLayout.profile);
+UIWireframe.auto(fields: const [
+  UIWireframeField('Email', type: UIWireframeFieldType.email),
+  UIWireframeField('Password', type: UIWireframeFieldType.password),
+  UIWireframeField('Category', type: UIWireframeFieldType.choice),
+]);
+UIWireframe.auto(data: sample, fieldTypes: const {
+  'portrait': UIWireframeFieldType.avatar,
+});
+// Phân tích một lần, tái sử dụng kết quả bất biến:
+final plan = UIWireframe.inspect(sample);
+print(plan.layout); print(plan.confidence); print(plan.reasons);
+UIWireframe.fromPlan(plan: plan);
+```
+
+Đây là wireframe/placeholder tĩnh, không phải UI chức năng hay mô hình AI. `high/medium/low` là mức bằng chứng của heuristic, **không phải xác suất chính xác**. Dữ liệu mơ hồ dùng detail/list, dữ liệu rỗng dùng empty; khi đang tải mà chưa biết nội dung, cung cấp schema/preset thay vì kỳ vọng đoán từ null. Không đọc màn hình, không gọi mạng, không hiển thị giá trị đầu vào. Ảnh là khối giả lập; không tải URL. Không tự sinh validator hay logic đăng nhập từ dữ liệu.
+
+Giới hạn mỗi lần: 3 tầng envelope (`data/items/results`), 8 phần tử mẫu, 64 khóa/bản ghi và tối đa 12 trường đầu ra; `itemCount` 0–12 (mặc định 3, số khối xem trước, không phải số bản ghi thực tế). Không duyệt đệ quy; trường lồng nhau dùng khối section. Dữ liệu sau mẫu có thể khác nên chỉ định layout cho production khi đã biết màn hình. Danh sách lớn vẫn dùng lazy widget; parent quản lý cuộn. Nếu input thay đổi, tạo widget/plan mới; không giữ dữ liệu mutable rồi mong plan tự đổi.
+
+Xem [quy tắc, ví dụ và giới hạn nhận diện](docs/wireframe.vi.md).
 
 Xem [rà soát độ ổn định và hiệu năng](docs/reliability-review.vi.md) cho test, phạm vi và giới hạn đo.
 
@@ -117,7 +142,7 @@ Nếu tạo container riêng có màu nền khác, bọc `UISurfaceScope(color: 
 | Widget | Chức năng |
 | UIApp / UIThemeToggle | Khởi tạo một lần, giữ theme pair và chuyển light/dark |
 | UIImage | Asset/URL/provider, avatar/banner/thumbnail, placeholder/lỗi và decode hint |
-| UIWireframe | Các block tĩnh và mẫu feed/dashboard/form responsive |
+| UIWireframe | 14 bố cục, nhận diện dữ liệu/schema, giải thích lựa chọn và tự thích ứng |
 | --- | --- |
 | UIButton | solid/soft/outline/ghost, state colors; tự giãn trong vùng hẹp và xuống dòng nhãn dài |
 | UITextField | Form validation, multiline, controller, keyboard, autofill |
