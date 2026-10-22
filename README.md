@@ -1,6 +1,6 @@
-# Flutter UI · Youth UI 0.2
+# Flutter UI · Youth UI 0.3
 
-Bộ Flutter/Dart UI dùng lại. Truyền **một hoặc hai màu**, nhận theme sáng/tối và để widget tự chọn màu theo vai trò.
+Bộ Flutter/Dart UI dùng lại cho mobile, desktop và web, không gắn với một ứng dụng hay một bộ màu thương hiệu. Truyền **một hoặc hai màu**, nhận theme sáng/tối và để widget tự chọn màu theo vai trò.
 
 **[Website tương tác](https://hyowshi.github.io/flutter-ui/)** · **[Nghiên cứu và quyết định thuật toán](docs/color-research.vi.md)**
 
@@ -80,13 +80,46 @@ Nếu tạo container riêng có màu nền khác, bọc `UISurfaceScope(color: 
 | UITextField | Form validation, multiline, controller, keyboard, autofill |
 | UIPasswordField | Hiện/ẩn mật khẩu, validation, controller |
 | UISelect<T> | Dropdown có nhãn và validation |
-| UICheckbox / UISwitch | Lựa chọn với nhãn |
+| UICheckbox / UISwitch | Control gọn, nhãn tùy chọn, hover/focus cục bộ, bàn phím, disabled |
+| UIToggleButton | Nút bật/tắt độc lập với icon và trạng thái được chọn |
+| UISegmentedControl<T> / UIOption<T> | Nhóm chọn một giá trị, hỗ trợ khóa từng lựa chọn |
 | UICard | Surface context, hover lift và ripple khi có onTap |
 | UIBadge / UIAlert | Status theo cặp màu, icon và nội dung |
 | UIEntrance | Fade + dịch lên, mặc định 450ms |
 | UIAnimatedContent | Fade + scale, mặc định 250ms |
 
 `UITone`: primary, secondary, accent, success, warning, danger. Tone là vai trò, không gán lại màu cho mỗi widget. Trạng thái phải có label/icon phù hợp, không dựa riêng vào hue.
+
+## Lựa chọn và vùng tương tác
+
+```dart
+UICheckbox(
+  label: 'Nhận thông báo qua email', // có thể bỏ nhãn
+  value: checked,
+  onChanged: (v) => setState(() => checked = v ?? false),
+);
+UISwitch(value: notifications, onChanged: setNotifications);
+UIToggleButton(
+  label: 'Lưu mục này',
+  icon: Icons.bookmark_border_rounded,
+  value: saved,
+  onChanged: setSaved,
+);
+UISegmentedControl<String>(
+  options: const [
+    UIOption(value: 'list', label: 'Danh sách'),
+    UIOption(value: 'grid', label: 'Lưới'),
+  ],
+  value: view,
+  onChanged: setView,
+);
+```
+
+Các widget được điều khiển bằng state của ứng dụng; truyền `onChanged: null` để vô hiệu hóa. `UICheckbox` và `UISwitch` hỗ trợ `focusNode`/`autofocus`. Toggle độc lập dùng cho bật/tắt; segmented control dùng khi chỉ chọn một trong các phương án.
+
+Checkbox và switch không tô nền hoặc bắt bấm trên cả hàng: chỉ control nhận tương tác, nhãn chỉ hiển thị và được gắn vào semantics của control. Vẫn giữ vùng chạm cao 48 logical pixel quanh hình vẽ nhỏ để dễ bấm trên mobile. Hover/focus nằm trong vùng này; Tab và Space vẫn hoạt động. Đây là thay đổi hành vi so với 0.2: bấm nhãn không đổi lựa chọn nữa.
+
+Button chỉ phản hồi trong hình nút, input trong ô nhập. `UICard` chỉ có hiệu ứng tương tác khi truyền `onTap`; nếu có, cả card là một hành động. Khi card chứa các control độc lập, hãy để `onTap` trống.
 
 ## Website showcase
 

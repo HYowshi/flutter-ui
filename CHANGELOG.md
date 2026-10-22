@@ -1,3 +1,11 @@
+## 0.3.0
+
+- Add UIToggleButton and typed UISegmentedControl / UIOption.
+- Redesign checkbox and switch with compact local hover/focus, optional labels and 48px-high touch targets.
+- Preserve native keyboard interaction and named control semantics; labels and unused row space no longer toggle controls.
+- Generic reusable showcase examples and a dedicated selection-controls gallery.
+- Regression coverage for control-only hit regions, keyboard activation, disabled options and selected state.
+
 ## 0.2.0
 
 - One/two seed theme-pair initialization with YouthUI.colors.

@@ -13,6 +13,7 @@ class UIButton extends StatelessWidget {
     this.icon,
     this.loading = false,
     this.fullWidth = false,
+    this.selected,
   });
   final String label;
   final VoidCallback? onPressed;
@@ -20,13 +21,14 @@ class UIButton extends StatelessWidget {
   final UITone tone;
   final IconData? icon;
   final bool loading, fullWidth;
+  final bool? selected;
   @override
   Widget build(BuildContext context) {
     final tokens = YouthColors.of(context);
     UIControlColors resolve(Set<WidgetState> states) => tokens.button(
       tone,
       variant,
-      states,
+      {...states, if (selected == true) WidgetState.selected},
       surface: UISurfaceScope.of(context),
     );
     final style = ButtonStyle(
@@ -86,10 +88,12 @@ class UIButton extends StatelessWidget {
         child: content,
       ),
     };
-    return Semantics(
+    final result = Semantics(
       liveRegion: loading,
+      toggled: selected,
       child: fullWidth ? SizedBox(width: double.infinity, child: child) : child,
     );
+    return selected == null ? result : MergeSemantics(child: result);
   }
 }
 
@@ -353,43 +357,306 @@ class UIAlert extends StatelessWidget {
   }
 }
 
+/// Compact control: only the 48px checkbox target is interactive.
+/// The label and unused row space never paint hover or trigger a toggle.
 class UICheckbox extends StatelessWidget {
   const UICheckbox({
     super.key,
-    required this.label,
+    this.label,
     required this.value,
     required this.onChanged,
+    this.focusNode,
+    this.autofocus = false,
   });
-  final String label;
+  final String? label;
   final bool value;
   final ValueChanged<bool?>? onChanged;
+  final FocusNode? focusNode;
+  final bool autofocus;
   @override
-  Widget build(BuildContext context) => CheckboxListTile(
-    contentPadding: EdgeInsets.zero,
-    controlAffinity: ListTileControlAffinity.leading,
-    title: Text(label, style: const TextStyle(fontSize: 14)),
-    value: value,
-    onChanged: onChanged,
-  );
+  Widget build(BuildContext context) {
+    final s = Theme.of(context).colorScheme;
+    final colors = YouthColors.of(context);
+    final control = Semantics(
+      label: label,
+      child: SizedBox(
+        width: 48,
+        height: 48,
+        child: Checkbox(
+          value: value,
+          onChanged: onChanged,
+          focusNode: focusNode,
+          autofocus: autofocus,
+          materialTapTargetSize: MaterialTapTargetSize.padded,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+          splashRadius: 21,
+          side: WidgetStateBorderSide.resolveWith(
+            (states) => BorderSide(
+              width: states.contains(WidgetState.focused) ? 2.5 : 1.7,
+              color: states.contains(WidgetState.disabled)
+                  ? s.onSurface.withValues(alpha: .25)
+                  : states.contains(WidgetState.selected)
+                  ? s.primary
+                  : colors.fieldBorder,
+            ),
+          ),
+          fillColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled)
+                ? s.onSurface.withValues(
+                    alpha: states.contains(WidgetState.selected) ? .38 : .08,
+                  )
+                : states.contains(WidgetState.selected)
+                ? s.primary
+                : s.surfaceContainerLowest,
+          ),
+          checkColor: onChanged == null ? s.surface : s.onPrimary,
+          overlayColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled)
+                ? Colors.transparent
+                : s.primary.withValues(
+                    alpha: states.contains(WidgetState.focused)
+                        ? .16
+                        : states.contains(WidgetState.pressed)
+                        ? .12
+                        : states.contains(WidgetState.hovered)
+                        ? .08
+                        : 0,
+                  ),
+          ),
+        ),
+      ),
+    );
+    if (label == null) return control;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        control,
+        const SizedBox(width: 4),
+        Flexible(
+          child: ExcludeSemantics(
+            child: Text(
+              label!,
+              style: TextStyle(
+                fontSize: 14,
+                color: onChanged == null ? s.onSurfaceVariant : s.onSurface,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
+/// Label is separate from the switch hit target. Works with or without a label.
 class UISwitch extends StatelessWidget {
   const UISwitch({
+    super.key,
+    this.label,
+    required this.value,
+    required this.onChanged,
+    this.focusNode,
+    this.autofocus = false,
+  });
+  final String? label;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+  final FocusNode? focusNode;
+  final bool autofocus;
+  @override
+  Widget build(BuildContext context) {
+    final s = Theme.of(context).colorScheme;
+    final tokens = YouthColors.of(context);
+    final control = Semantics(
+      label: label,
+      child: SizedBox(
+        width: 60,
+        height: 48,
+        child: Switch(
+          value: value,
+          onChanged: onChanged,
+          focusNode: focusNode,
+          autofocus: autofocus,
+          materialTapTargetSize: MaterialTapTargetSize.padded,
+          thumbColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled)
+                ? s.onSurface.withValues(alpha: .38)
+                : states.contains(WidgetState.selected)
+                ? s.onPrimary
+                : s.onSurfaceVariant,
+          ),
+          trackColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled)
+                ? s.onSurface.withValues(alpha: .08)
+                : states.contains(WidgetState.selected)
+                ? s.primary
+                : s.surfaceContainerHigh,
+          ),
+          trackOutlineColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled)
+                ? s.onSurface.withValues(alpha: .25)
+                : states.contains(WidgetState.selected)
+                ? s.primary
+                : tokens.fieldBorder,
+          ),
+          trackOutlineWidth: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.focused) ? 2 : 1.5,
+          ),
+          thumbIcon: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? Icon(
+                    Icons.check_rounded,
+                    size: 14,
+                    color: states.contains(WidgetState.disabled)
+                        ? s.onSurfaceVariant
+                        : s.primary,
+                  )
+                : null,
+          ),
+          overlayColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.disabled)
+                ? Colors.transparent
+                : s.primary.withValues(
+                    alpha: states.contains(WidgetState.focused)
+                        ? .16
+                        : states.contains(WidgetState.pressed)
+                        ? .12
+                        : states.contains(WidgetState.hovered)
+                        ? .08
+                        : 0,
+                  ),
+          ),
+        ),
+      ),
+    );
+    if (label == null) return control;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        control,
+        const SizedBox(width: 12),
+        Flexible(
+          child: ExcludeSemantics(
+            child: Text(
+              label!,
+              style: TextStyle(
+                fontSize: 14,
+                color: onChanged == null ? s.onSurfaceVariant : s.onSurface,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// A reusable selected/unselected button with inherited theme and semantics.
+class UIToggleButton extends StatelessWidget {
+  const UIToggleButton({
     super.key,
     required this.label,
     required this.value,
     required this.onChanged,
+    this.icon,
+    this.selectedIcon,
+    this.tone = UITone.primary,
   });
   final String label;
   final bool value;
   final ValueChanged<bool>? onChanged;
+  final IconData? icon, selectedIcon;
+  final UITone tone;
   @override
-  Widget build(BuildContext context) => SwitchListTile(
-    contentPadding: EdgeInsets.zero,
-    title: Text(label, style: const TextStyle(fontSize: 14)),
-    value: value,
-    onChanged: onChanged,
+  Widget build(BuildContext context) => UIButton(
+    label: label,
+    selected: value,
+    tone: tone,
+    variant: value ? UIButtonVariant.soft : UIButtonVariant.outline,
+    icon: value ? selectedIcon ?? Icons.check_rounded : icon,
+    onPressed: onChanged == null ? null : () => onChanged!(!value),
   );
+}
+
+@immutable
+class UIOption<T> {
+  const UIOption({
+    required this.value,
+    required this.label,
+    this.icon,
+    this.enabled = true,
+  });
+  final T value;
+  final String label;
+  final IconData? icon;
+  final bool enabled;
+}
+
+/// Mutually exclusive choices. Effects are clipped to each actual segment.
+class UISegmentedControl<T> extends StatelessWidget {
+  const UISegmentedControl({
+    super.key,
+    required this.options,
+    required this.value,
+    required this.onChanged,
+  });
+  final List<UIOption<T>> options;
+  final T value;
+  final ValueChanged<T>? onChanged;
+  @override
+  Widget build(BuildContext context) {
+    if (options.isEmpty ||
+        options.where((o) => o.value == value).length != 1 ||
+        options.map((o) => o.value).toSet().length != options.length) {
+      throw ArgumentError(
+        'Use unique, nonempty options containing the selected value.',
+      );
+    }
+    final tokens = YouthColors.of(context);
+    UIControlColors resolve(Set<WidgetState> states) => tokens.button(
+      UITone.primary,
+      UIButtonVariant.outline,
+      states,
+      surface: UISurfaceScope.of(context),
+    );
+    return SegmentedButton<T>(
+      segments: [
+        for (final option in options)
+          ButtonSegment<T>(
+            value: option.value,
+            label: Text(option.label),
+            enabled: option.enabled,
+            icon: option.icon == null ? null : Icon(option.icon),
+          ),
+      ],
+      selected: {value},
+      onSelectionChanged: onChanged == null
+          ? null
+          : (v) => onChanged!(v.single),
+      style: ButtonStyle(
+        minimumSize: const WidgetStatePropertyAll(Size(0, 48)),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        ),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+        foregroundColor: WidgetStateProperty.resolveWith(
+          (states) => resolve(states).foreground,
+        ),
+        backgroundColor: WidgetStateProperty.resolveWith(
+          (states) => resolve(states).background,
+        ),
+        side: WidgetStateProperty.resolveWith(
+          (states) => BorderSide(
+            color: resolve(states).border,
+            width: states.contains(WidgetState.focused) ? 2 : 1,
+          ),
+        ),
+        overlayColor: const WidgetStatePropertyAll(Colors.transparent),
+      ),
+    );
+  }
 }
 
 class UISelect<T> extends StatelessWidget {

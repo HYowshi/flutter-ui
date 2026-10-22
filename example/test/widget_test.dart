@@ -54,7 +54,10 @@ void main() {
     expect(before.brandSecondary, isNull);
     await tester.ensureVisible(find.text('Dùng thêm màu thứ hai'));
     await tester.tap(
-      find.widgetWithText(SwitchListTile, 'Dùng thêm màu thứ hai'),
+      find.descendant(
+        of: find.widgetWithText(UISwitch, 'Dùng thêm màu thứ hai'),
+        matching: find.byType(Switch),
+      ),
     );
     await tester.pumpAndSettle();
     final after = YouthColors.of(tester.element(find.byType(ThemeEditor)));
@@ -65,7 +68,10 @@ void main() {
     );
     await tester.ensureVisible(find.text('Tăng tương phản chữ lên 7:1'));
     await tester.tap(
-      find.widgetWithText(SwitchListTile, 'Tăng tương phản chữ lên 7:1'),
+      find.descendant(
+        of: find.widgetWithText(UISwitch, 'Tăng tương phản chữ lên 7:1'),
+        matching: find.byType(Switch),
+      ),
     );
     await tester.pumpAndSettle();
     expect(
@@ -74,4 +80,38 @@ void main() {
     );
     expect(tester.takeException(), isNull);
   });
+  testWidgets(
+    'mobile selection gallery changes toggle and view without overflow',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(const ShowcaseApp());
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Open navigation menu'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.widgetWithText(ListTile, 'Selection controls'),
+        180,
+        scrollable: find
+            .descendant(
+              of: find.byType(Drawer),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await tester.tap(find.widgetWithText(ListTile, 'Selection controls'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Lưu mục này'));
+      await tester.tap(find.text('Lưu mục này'));
+      await tester.pumpAndSettle();
+      expect(find.text('Đã lưu'), findsOneWidget);
+      await tester.ensureVisible(find.text('Lưới'));
+      await tester.tap(find.text('Lưới'));
+      await tester.pumpAndSettle();
+      expect(find.text('Chế độ: Lưới'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

@@ -1,6 +1,6 @@
 name: youth_ui
 description: Reusable Flutter components, seed-based themes and accessible motion.
-version: 0.2.0
+version: 0.3.0
 repository: https://github.com/HYowshi/flutter-ui
 homepage: https://hyowshi.github.io/flutter-ui/
 environment:

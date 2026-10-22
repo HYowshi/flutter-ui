@@ -97,6 +97,7 @@ class _StudioState extends State<Studio> {
     'Thông báo',
     'Animation',
     'Bắt đầu sử dụng',
+    'Selection controls',
   ];
   static const icons = [
     Icons.grid_view_rounded,
@@ -107,6 +108,7 @@ class _StudioState extends State<Studio> {
     Icons.notifications_none_rounded,
     Icons.auto_awesome_outlined,
     Icons.code_rounded,
+    Icons.toggle_on_outlined,
   ];
   @override
   void dispose() {
@@ -252,6 +254,8 @@ class _StudioState extends State<Studio> {
                               ],
                               if (selected == 0 || selected == 2)
                                 const ButtonDemo(),
+                              if (selected == 0 || selected == 8)
+                                const SelectionDemo(),
                               if (selected == 0 || selected == 3)
                                 const InputDemo(),
                               if (selected == 0 || selected == 4)
@@ -316,6 +320,7 @@ class _StudioState extends State<Studio> {
     'Phản hồi rõ ràng cho mỗi hành động của người dùng.',
     'Chuyển động có mục đích, có thể chạy lại và giảm chuyển động.',
     'Khởi tạo theme một lần. Sau đó chỉ gọi widget.',
+    'Checkbox, switch, toggle và nhóm chọn. Hiệu ứng gọn trong từng control.',
   ];
   Widget sidebar(BuildContext context, {bool closeDrawer = false}) {
     final s = Theme.of(context).colorScheme;
@@ -408,36 +413,9 @@ class _StudioState extends State<Studio> {
               ),
             ),
           ),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: s.primaryContainer.withValues(alpha: .25),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.auto_awesome, size: 19, color: s.primary),
-                const SizedBox(height: 10),
-                const Text(
-                  'Một theme. Mọi component.',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'Màu sắc được kế thừa tự động từ YouthUI.init().',
-                  style: TextStyle(
-                    color: s.onSurfaceVariant,
-                    height: 1.6,
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
           const SizedBox(height: 20),
           Text(
-            'v0.2.0 · HCT color engine',
+            'v0.3.0 · Reusable Flutter controls',
             style: TextStyle(fontSize: 10, color: s.onSurfaceVariant),
           ),
         ],
@@ -1094,6 +1072,109 @@ class _ButtonDemoState extends State<ButtonDemo> {
   );
 }
 
+class SelectionDemo extends StatefulWidget {
+  const SelectionDemo({super.key});
+  @override
+  State<SelectionDemo> createState() => _SelectionDemoState();
+}
+
+class _SelectionDemoState extends State<SelectionDemo> {
+  bool checked = true, notifications = false, saved = false;
+  String view = 'list';
+  @override
+  Widget build(BuildContext context) => DemoBlock(
+    number: '07',
+    title: 'Selection controls',
+    description: 'Các lựa chọn dùng lại cho mọi ứng dụng Flutter. Nhãn và khoảng trống không bắt tương tác; hover chỉ hiện quanh control.',
+    effects: 'Hover cục bộ · focus bàn phím · dấu chọn rõ ràng · disabled · chuyển trạng thái',
+    code: "UICheckbox(value: checked, onChanged: setChecked);\nUISwitch(value: enabled, onChanged: setEnabled);\nUIToggleButton(label: 'Đã lưu', value: saved, onChanged: setSaved);\nUISegmentedControl<String>(options: options, value: view, onChanged: setView);",
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Checkbox', style: TextStyle(fontWeight: FontWeight.w700)),
+        const SizedBox(height: 8),
+        UICheckbox(
+          label: 'Nhận thông báo qua email',
+          value: checked,
+          onChanged: (v) => setState(() => checked = v ?? false),
+        ),
+        const UICheckbox(
+          label: 'Lựa chọn không khả dụng',
+          value: false,
+          onChanged: null,
+        ),
+        const UICheckbox(
+          label: 'Đã chọn · không khả dụng',
+          value: true,
+          onChanged: null,
+        ),
+        const SizedBox(height: 20),
+        const Text('Switch', style: TextStyle(fontWeight: FontWeight.w700)),
+        const SizedBox(height: 8),
+        UISwitch(
+          label: 'Bật thông báo',
+          value: notifications,
+          onChanged: (v) => setState(() => notifications = v),
+        ),
+        const UISwitch(label: 'Không khả dụng', value: false, onChanged: null),
+        const UISwitch(
+          label: 'Đang bật · không khả dụng',
+          value: true,
+          onChanged: null,
+        ),
+        const SizedBox(height: 20),
+        const Text(
+          'Toggle button',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            UIToggleButton(
+              label: saved ? 'Đã lưu' : 'Lưu mục này',
+              icon: Icons.bookmark_border_rounded,
+              selectedIcon: Icons.bookmark_rounded,
+              value: saved,
+              onChanged: (v) => setState(() => saved = v),
+            ),
+            const UIToggleButton(
+              label: 'Không khả dụng',
+              value: false,
+              onChanged: null,
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+        const Text(
+          'Chọn một chế độ',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 12),
+        UISegmentedControl<String>(
+          options: const [
+            UIOption(
+              value: 'list',
+              label: 'Danh sách',
+              icon: Icons.view_list_rounded,
+            ),
+            UIOption(
+              value: 'grid',
+              label: 'Lưới',
+              icon: Icons.grid_view_rounded,
+            ),
+          ],
+          value: view,
+          onChanged: (v) => setState(() => view = v),
+        ),
+        const SizedBox(height: 12),
+        Text('Chế độ: ${view == 'list' ? 'Danh sách' : 'Lưới'}'),
+      ],
+    ),
+  );
+}
+
 class InputDemo extends StatefulWidget {
   const InputDemo({super.key});
   @override
@@ -1155,10 +1236,10 @@ class _InputDemoState extends State<InputDemo> {
           ),
           const SizedBox(height: 22),
           UISelect<String>(
-            label: 'Đơn vị Đoàn',
+            label: 'Không gian làm việc',
             items: const [
-              DropdownMenuItem(value: 'school', child: Text('Đoàn trường')),
-              DropdownMenuItem(value: 'local', child: Text('Đoàn phường / xã')),
+              DropdownMenuItem(value: 'school', child: Text('Cá nhân')),
+              DropdownMenuItem(value: 'local', child: Text('Nhóm')),
             ],
             onChanged: (_) {},
           ),
@@ -1170,13 +1251,13 @@ class _InputDemoState extends State<InputDemo> {
           ),
           const SizedBox(height: 18),
           const UITextField(
-            label: 'Đơn vị đã xác minh',
+            label: 'Thông tin đã xác minh',
             helper: 'Ví dụ trường không khả dụng',
             enabled: false,
           ),
           const SizedBox(height: 12),
           UICheckbox(
-            label: 'Nhận tin hoạt động của đơn vị',
+            label: 'Nhận thông báo qua email',
             value: checked,
             onChanged: (v) => setState(() => checked = v ?? false),
           ),
@@ -1219,7 +1300,7 @@ class CardDemo extends StatelessWidget {
           spacing: 8,
           runSpacing: 8,
           children: const [
-            UIBadge(label: 'Đoàn viên'),
+            UIBadge(label: 'Thành viên'),
             UIBadge(
               label: 'Đã xác nhận',
               tone: UITone.success,
@@ -1252,7 +1333,7 @@ class CardDemo extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Ngày hội tình nguyện',
+                      'Dự án sáng tạo',
                       style: TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w700,
@@ -1286,7 +1367,9 @@ class FeedbackDemo extends StatelessWidget {
     code: "UIAlert(message: 'Đã lưu.', tone: UITone.success);\nScaffoldMessenger.of(context).showSnackBar(\n  const SnackBar(content: Text('Đã sao chép')),\n);",
     child: Column(
       children: [
-        const UIAlert(message: 'Thông tin được đồng bộ theo đơn vị Đoàn.'),
+        const UIAlert(
+          message: 'Thông tin được đồng bộ trong không gian làm việc.',
+        ),
         const SizedBox(height: 12),
         const UIAlert(
           message: 'Đã lưu thay đổi của bạn.',
@@ -1375,7 +1458,7 @@ class _MotionDemoState extends State<MotionDemo> {
                 UIEntrance(
                   key: ValueKey(replay),
                   child: const UIBadge(
-                    label: 'Xin chào, thanh niên!',
+                    label: 'Xin chào, sáng tạo!',
                     icon: Icons.waving_hand_outlined,
                   ),
                 ),
