@@ -97,6 +97,8 @@ class _StudioState extends State<Studio> {
     'Dropdown menu',
     'Images',
     'Wireframe',
+    'Table',
+    'Radio',
   ];
   static const icons = [
     Icons.grid_view_rounded,
@@ -112,6 +114,8 @@ class _StudioState extends State<Studio> {
     Icons.unfold_more_rounded,
     Icons.image_outlined,
     Icons.view_quilt_outlined,
+    Icons.table_chart_outlined,
+    Icons.radio_button_checked,
   ];
   @override
   void dispose() {
@@ -263,6 +267,8 @@ class _StudioState extends State<Studio> {
                               if (selected == 10) const DropdownDemo(),
                               if (selected == 11) const ImageDemo(),
                               if (selected == 12) const WireframeDemo(),
+                              if (selected == 13) const TableDemo(),
+                              if (selected == 14) const RadioDemo(),
                               if (selected == 0 || selected == 3)
                                 const InputDemo(),
                               if (selected == 0 || selected == 4)
@@ -332,6 +338,8 @@ class _StudioState extends State<Studio> {
     'Một ô chọn, hai cách mở phù hợp với PC và mobile. Màu và trạng thái thống nhất.',
     'Gọi ảnh một dòng: giữ khung, decode theo vùng hiển thị, có loading và fallback.',
     'Nhận diện cấu trúc dữ liệu, chọn bố cục và tự thích ứng theo vùng chứa.',
+    'Bảng có sắp xếp, phân trang và chọn dòng; tự thành thẻ khi vùng hiển thị hẹp.',
+    'Chọn một phương án, dùng bàn phím và kế thừa màu từ theme.',
   ];
   Widget sidebar(BuildContext context, {bool closeDrawer = false}) {
     final s = Theme.of(context).colorScheme;
@@ -426,7 +434,7 @@ class _StudioState extends State<Studio> {
           ),
           const SizedBox(height: 20),
           Text(
-            'v0.8.0 · Ready-to-use Flutter UI',
+            'v0.9.0 · Ready-to-use Flutter UI',
             style: TextStyle(fontSize: 10, color: s.onSurfaceVariant),
           ),
         ],
@@ -2093,6 +2101,151 @@ class UsageDemo extends StatelessWidget {
     child: UIAlert(
       title: 'Màu gốc khác vai trò tương tác',
       message: 'Seed được giữ trong YouthColors.brandPrimary. Action, container, chữ, viền và trạng thái được sinh theo chế độ và kiểm tra tương phản.',
+    ),
+  );
+}
+
+class RadioDemo extends StatefulWidget {
+  const RadioDemo({super.key});
+  @override
+  State<RadioDemo> createState() => _RadioDemoState();
+}
+
+class _RadioDemoState extends State<RadioDemo> {
+  String? value = 'weekly';
+  bool disabled = false;
+  @override
+  Widget build(BuildContext context) => DemoBlock(
+    number: '13',
+    title: 'Radio · chọn một phương án',
+    description: 'Chỉ vùng control 48px nhận bấm/hover. Tab vào nhóm, phím mũi tên đổi phương án, Space chọn. Nhãn dài tự xuống dòng.',
+    effects: 'Native RadioGroup · focus bàn phím · disabled · theme · ngang/dọc thích ứng',
+    code: "UIRadioGroup<String>(\n  label: 'Tần suất',\n  value: frequency,\n  options: const [\n    UIOption(value: 'daily', label: 'Hàng ngày'),\n    UIOption(value: 'weekly', label: 'Hàng tuần'),\n  ],\n  onChanged: (value) => setState(() => frequency = value),\n);",
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        UISwitch(
+          value: disabled,
+          label: 'Khóa nhóm lựa chọn',
+          onChanged: (v) => setState(() => disabled = v),
+        ),
+        const SizedBox(height: 16),
+        UIRadioGroup<String>(
+          label: 'Tần suất nhận tin',
+          value: value,
+          direction: Axis.horizontal,
+          options: const [
+            UIOption(value: 'daily', label: 'Hàng ngày'),
+            UIOption(value: 'weekly', label: 'Hàng tuần'),
+            UIOption(value: 'monthly', label: 'Hàng tháng'),
+            UIOption(
+              value: 'locked',
+              label: 'Phương án không khả dụng',
+              enabled: false,
+            ),
+          ],
+          onChanged: disabled ? null : (v) => setState(() => value = v),
+        ),
+        const SizedBox(height: 16),
+        Text('Lựa chọn hiện tại: $value'),
+        const SizedBox(height: 20),
+        UIRadioGroup<int>(
+          label: 'Nhóm độc lập',
+          value: 1,
+          onChanged: null,
+          options: const [
+            UIOption(value: 1, label: 'Lựa chọn đã chọn · bị khóa'),
+            UIOption(
+              value: 2,
+              label: 'Nhãn dài tự xuống dòng khi không gian hiển thị nhỏ hoặc người dùng tăng cỡ chữ',
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+typedef _DemoMember = ({int id, String name, int points, bool active});
+
+class TableDemo extends StatefulWidget {
+  const TableDemo({super.key});
+  @override
+  State<TableDemo> createState() => _TableDemoState();
+}
+
+class _TableDemoState extends State<TableDemo> {
+  static final rows = List.generate(
+    23,
+    (i) => (
+      id: i + 1,
+      name: ['An', 'Bình', 'Chi', 'Dũng'][i % 4],
+      points: (i * 17 + 8) % 100,
+      active: i.isEven,
+    ),
+  );
+  Set<Object> selected = {};
+  bool loading = false, empty = false;
+  @override
+  Widget build(BuildContext context) => DemoBlock(
+    number: '12',
+    title: 'Table · bảng dữ liệu thích ứng',
+    description: 'Bấm tiêu đề để sắp xếp, chọn từng dòng và chuyển trang. Mobile/chữ lớn tự dùng thẻ có nhãn cột. Chỉ dựng ô của trang hiện tại.',
+    effects: 'Sort ổn định · phân trang · chọn dòng · ô tùy biến · empty/loading · RTL',
+    code: "UITable<Person>(\n  rows: people,\n  columns: [\n    UITableColumn(label: 'Tên', value: (p) => p.name,\n      compare: (a, b) => a.name.compareTo(b.name)),\n    UITableColumn(label: 'Điểm', value: (p) => '\${p.points}',\n      numeric: true, compare: (a, b) => a.points.compareTo(b.points)),\n  ],\n  rowKey: (p) => p.id,\n  selectedKeys: selected,\n  onSelectionChanged: (keys) => setState(() => selected = keys),\n);",
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Wrap(
+          spacing: 20,
+          runSpacing: 8,
+          children: [
+            UISwitch(
+              value: loading,
+              label: 'Đang tải',
+              onChanged: (v) => setState(() => loading = v),
+            ),
+            UISwitch(
+              value: empty,
+              label: 'Dữ liệu rỗng',
+              onChanged: (v) => setState(() => empty = v),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        UITable<_DemoMember>(
+          label: 'Danh sách thành viên',
+          rows: empty ? rows.take(0).toList() : rows,
+          pageSize: 5,
+          loading: loading,
+          rowKey: (p) => p.id,
+          selectedKeys: selected,
+          onSelectionChanged: (keys) => setState(() => selected = keys),
+          columns: [
+            UITableColumn(
+              label: 'Tên',
+              value: (p) => p.name,
+              compare: (a, b) => a.name.compareTo(b.name),
+            ),
+            UITableColumn(
+              label: 'Điểm',
+              value: (p) => '${p.points}',
+              numeric: true,
+              compare: (a, b) => a.points.compareTo(b.points),
+            ),
+            UITableColumn(
+              label: 'Trạng thái',
+              value: (p) => p.active ? 'Hoạt động' : 'Chờ duyệt',
+              cellBuilder: (context, p) => UIBadge(
+                label: p.active ? 'Hoạt động' : 'Chờ duyệt',
+                tone: p.active ? UITone.success : UITone.warning,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Text('Đã chọn: ${selected.length} dòng'),
+      ],
     ),
   );
 }

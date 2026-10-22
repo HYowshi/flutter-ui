@@ -4,6 +4,55 @@ import 'package:youth_ui/youth_ui.dart';
 import 'package:flutter_ui_showcase/main.dart';
 
 void main() {
+  testWidgets('table and radio galleries work on desktop and mobile', (
+    tester,
+  ) async {
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    for (final width in [1440.0, 390.0]) {
+      tester.view.physicalSize = Size(width, 1000);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpWidget(const ShowcaseApp());
+      await tester.pumpAndSettle();
+      for (final label in ['Table', 'Radio']) {
+        if (width < 1000) {
+          await tester.tap(find.byTooltip('Open navigation menu'));
+          await tester.pumpAndSettle();
+        }
+        await tester.scrollUntilVisible(
+          find.widgetWithText(ListTile, label),
+          200,
+          scrollable: find
+              .descendant(
+                of: width < 1000
+                    ? find.byType(Drawer)
+                    : find.byType(Scaffold).first,
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
+        await tester.tap(find.widgetWithText(ListTile, label));
+        await tester.pumpAndSettle();
+        if (label == 'Table') {
+          final sort = find.text(width < 1000 ? 'Sắp xếp Điểm' : 'Điểm');
+          await tester.ensureVisible(sort);
+          await tester.tap(sort);
+          await tester.pumpAndSettle();
+          await tester.ensureVisible(find.byType(Checkbox).first);
+          await tester.tap(find.byType(Checkbox).first);
+          await tester.pumpAndSettle();
+          expect(find.text('Đã chọn: 1 dòng'), findsOneWidget);
+        } else {
+          await tester.ensureVisible(find.byType(Radio<String>).first);
+          await tester.tap(find.byType(Radio<String>).first);
+          await tester.pumpAndSettle();
+          expect(find.text('Lựa chọn hiện tại: daily'), findsOneWidget);
+        }
+        expect(tester.takeException(), isNull);
+      }
+    }
+  });
   testWidgets('showcase navigates to motion and disables animations', (
     tester,
   ) async {

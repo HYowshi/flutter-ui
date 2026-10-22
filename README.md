@@ -164,6 +164,8 @@ Nếu tạo container riêng có màu nền khác, bọc `UISurfaceScope(color: 
 
 | Widget | Chức năng |
 | UIApp / UIThemeToggle | Khởi tạo một lần, giữ theme pair và chuyển light/dark |
+| UIRadio / UIRadioGroup | Chọn một phương án, bàn phím native, disabled và bố cục thích ứng |
+| UITable / UITableColumn | Bảng/thẻ thích ứng, sort, phân trang, chọn dòng và ô tùy biến |
 | UIImage | Asset/URL/provider, fallbackSource/widget/errorBuilder, placeholder, retry và khung thích ứng |
 | UIWireframe | 14 bố cục, nhận diện dữ liệu/schema, giải thích lựa chọn và tự thích ứng |
 | --- | --- |
@@ -324,3 +326,39 @@ Push main sẽ chạy kiểm tra và xuất bản GitHub Pages. Package chưa ph
 `YouthPalette` vẫn có để tương thích các getter success/warning. Các component mới đọc nhóm màu từ `YouthColors`; muốn thay engine nên tạo theme nhất quán, không chỉ ghi đè một trường ThemeExtension cũ.
 
 **Giới hạn:** audit đo các role/state endpoint, không mọi pixel của mọi layout và mọi frame nội suy. Không bảo đảm mọi custom style, đồ thị, nền ảnh hay gradient. Xem đầy đủ phạm vi và nguồn trong [tài liệu nghiên cứu](docs/color-research.vi.md).
+
+
+## Table và Radio
+
+```dart
+UIRadioGroup<String>(
+  label: 'Tần suất',
+  value: frequency,
+  options: const [
+    UIOption(value: 'daily', label: 'Hàng ngày'),
+    UIOption(value: 'weekly', label: 'Hàng tuần'),
+    UIOption(value: 'locked', label: 'Không khả dụng', enabled: false),
+  ],
+  onChanged: (value) => setState(() => frequency = value),
+);
+
+UITable<Person>(
+  rows: people,
+  columns: [
+    UITableColumn(label: 'Tên', value: (p) => p.name,
+      compare: (a, b) => a.name.compareTo(b.name)),
+    UITableColumn(label: 'Điểm', value: (p) => '${p.points}', numeric: true,
+      compare: (a, b) => a.points.compareTo(b.points)),
+  ],
+  pageSize: 10,
+  rowKey: (p) => p.id,
+  selectedKeys: selected,
+  onSelectionChanged: (keys) => setState(() => selected = keys),
+);
+```
+
+`UIRadioGroup` là nhóm chọn một phương án; `onChanged: null` khóa nhóm. Từng option có `enabled`. `direction: Axis.horizontal` yêu cầu bố cục ngang khi đủ chỗ, tự xếp dọc ở vùng compact/chữ lớn. Tab/phím mũi tên/Space theo RadioGroup native. Nhãn/khoảng trống không bắt bấm hay hover; mục tiêu control là 48px. `UIRadio<T>(value:, label:)` dùng riêng bên trong Flutter RadioGroup nếu cần layout tùy biến. Các value cần khác nhau và không null; null ở group value nghĩa là chưa chọn. UIOption.icon hiện không được dùng bởi Radio.
+
+`UITable` tự đổi bảng thành thẻ có nhãn ở vùng compact hoặc text scale >1.5. Desktop nhiều cột có thanh cuộn ngang; parent quản lý cuộn dọc. Chỉ dựng ô của trang hiện tại (pageSize 1–100, mặc định10). Header có compare thì được sắp xếp, null thì chỉ đọc; numeric chỉ căn số, muốn sort số phải truyền comparator số. Sort ổn định, không thay đổi danh sách gốc. Mobile có nút sắp xếp tương đương. `cellBuilder(context, row)` cho badge, ảnh, nút thao tác; widget tùy biến vẫn phải tuân theo constraint.
+
+Chọn dòng là tùy chọn: cần rowKey duy nhất, selectedKeys và onSelectionChanged; chỉ checkbox nhận thao tác chọn. Set trả về bất biến, giữ lựa chọn qua các trang. Ứng dụng tự loại bỏ khóa của bản ghi đã xóa/đổi bộ dữ liệu khi cần. Loading tĩnh (`loading: true`) và trạng thái rỗng (`empty: widget`) được hỗ trợ. Tạo danh sách rows/columns mới khi dữ liệu thay đổi, tránh sửa tại chỗ vì thứ tự sort được cache. Table xử lý dữ liệu trong bộ nhớ, sort toàn danh sách; phân trang không phải server paging hay bảng ảo hóa cho dữ liệu cực lớn. Xem [chi tiết Table và Radio](docs/table-radio.vi.md).

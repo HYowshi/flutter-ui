@@ -1,3 +1,10 @@
+## 0.9.0
+
+- Add UIRadio / UIRadioGroup with native group keyboard navigation, local 48px hit targets, labeled semantics, disabled options and adaptive layout.
+- Add typed UITable / UITableColumn with stable in-memory sorting, bounded page rendering, controlled row selection, custom cells and loading/empty states.
+- Adaptive labeled cards on compact regions/large text, horizontal scrolling for wide desktop tables, automatic theme roles and RTL support.
+- Interactive Table and Radio galleries, usage docs and keyboard/selection/pagination/responsive regressions.
+
 ## 0.8.0
 
 - UIImage accepts absent/blank sources without asset requests; adds fallbackSource, fallback, placeholder and errorBuilder to all constructors.
