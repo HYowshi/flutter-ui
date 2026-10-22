@@ -463,7 +463,7 @@ class _StudioState extends State<Studio> {
               ),
               const SizedBox(height: 23),
               Text(
-                'Một hệ UI.\nVô hạn sắc thái.',
+                'UI đồng bộ.\nBắt đầu từ một màu.',
                 style: TextStyle(
                   fontSize: box.maxWidth > 700 ? 43 : 32,
                   fontWeight: FontWeight.w900,
@@ -473,7 +473,7 @@ class _StudioState extends State<Studio> {
               ),
               const SizedBox(height: 18),
               Text(
-                'Tập trung vào ý tưởng của bạn.\nĐể theme, component và chuyển động lo phần còn lại.',
+                'Khởi tạo theme từ màu thương hiệu, rồi ghép các component\ncho ứng dụng Flutter trên mobile, desktop và web.',
                 style: TextStyle(
                   color: s.onSurfaceVariant,
                   height: 1.8,
@@ -486,14 +486,16 @@ class _StudioState extends State<Studio> {
                 runSpacing: 12,
                 children: [
                   UIButton(
-                    label: 'Khám phá component',
-                    icon: Icons.arrow_downward_rounded,
-                    onPressed: () => select(2),
+                    label: 'Bắt đầu sử dụng',
+                    fullWidth: false,
+                    icon: Icons.arrow_forward_rounded,
+                    onPressed: () => select(7),
                   ),
                   UIButton(
-                    label: 'Bắt đầu sử dụng',
+                    label: 'Xem component',
+                    fullWidth: false,
                     variant: UIButtonVariant.outline,
-                    onPressed: () => select(7),
+                    onPressed: () => select(2),
                   ),
                 ],
               ),
@@ -516,14 +518,14 @@ class _StudioState extends State<Studio> {
                             CircleAvatar(
                               backgroundColor: s.primaryContainer,
                               child: Icon(
-                                Icons.waving_hand_rounded,
+                                Icons.palette_outlined,
                                 color: s.primary,
                               ),
                             ),
                             const SizedBox(width: 12),
                             const Expanded(
                               child: Text(
-                                'Xin chào, sáng tạo!',
+                                'Một theme nhất quán',
                                 style: TextStyle(fontWeight: FontWeight.w700),
                               ),
                             ),
@@ -531,7 +533,7 @@ class _StudioState extends State<Studio> {
                         ),
                         const SizedBox(height: 20),
                         const Text(
-                          'Sẵn sàng cho ý tưởng tiếp theo?',
+                          'Từ màu thương hiệu đến từng component.',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
@@ -543,16 +545,44 @@ class _StudioState extends State<Studio> {
                           spacing: 7,
                           runSpacing: 7,
                           children: [
-                            UIBadge(label: 'Reusable'),
-                            UIBadge(label: 'Theme-ready', tone: UITone.success),
+                            UIBadge(label: 'Light / Dark'),
+                            UIBadge(
+                              label: 'Mobile / Desktop',
+                              tone: UITone.success,
+                            ),
                           ],
                         ),
                         const SizedBox(height: 22),
-                        UIButton(
-                          label: 'Thử ngay',
-                          fullWidth: true,
-                          icon: Icons.arrow_forward_rounded,
-                          onPressed: () => select(6),
+                        Text(
+                          'Chữ, nền, viền và trạng thái tương tác cùng kế thừa bộ màu.',
+                          style: TextStyle(
+                            color: s.onSurfaceVariant,
+                            height: 1.6,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        ExcludeSemantics(
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final color in [
+                                s.primary,
+                                s.secondary,
+                                s.tertiary,
+                                s.primaryContainer,
+                              ])
+                                Container(
+                                  width: 32,
+                                  height: 32,
+                                  decoration: BoxDecoration(
+                                    color: color,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: s.outlineVariant),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ],
                     ),

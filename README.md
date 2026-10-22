@@ -1,8 +1,8 @@
-# Flutter UI · Youth UI 0.6
+# Flutter UI · Youth UI
 
 Bộ Flutter/Dart UI dùng lại cho mobile, desktop và web, không gắn với một ứng dụng hay một bộ màu thương hiệu. Truyền **một hoặc hai màu**, nhận theme sáng/tối và để widget tự chọn màu theo vai trò.
 
-**[Website tương tác](https://hyowshi.github.io/flutter-ui/)** · **[Nghiên cứu và quyết định thuật toán](docs/color-research.vi.md)**
+**[Website tương tác](https://hyowshi.github.io/flutter-ui/)** · **[Nghiên cứu và quyết định thuật toán](docs/color-research.vi.md)** · **[Thiết kế truyền thông và UI](docs/visual-communication.vi.md)**
 
 ## Dùng nhanh
 
