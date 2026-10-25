@@ -7,6 +7,55 @@ import 'package:flutter_ui_showcase/usage_samples.dart';
 
 void main() {
   testWidgets(
+    'date gallery validates required date and opens localized calendar',
+    (tester) async {
+      tester.view.physicalSize = const Size(900, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        const UIApp(
+          primary: Colors.blue,
+          home: Scaffold(body: SingleChildScrollView(child: DatePickerDemo())),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Kiểm tra ngày đã chọn'));
+      await tester.tap(find.text('Kiểm tra ngày đã chọn'));
+      await tester.pumpAndSettle();
+      expect(find.text('Hãy chọn một ngày làm việc.'), findsOneWidget);
+      await tester.ensureVisible(find.byType(UIDateField).first);
+      await tester.tap(find.byType(UIDateField).first);
+      await tester.pumpAndSettle();
+      expect(find.byType(DatePickerDialog), findsOneWidget);
+      expect(
+        Localizations.localeOf(tester.element(find.byType(DatePickerDialog)))
+            .languageCode,
+        'vi',
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('dialog gallery returns a confirmation result', (tester) async {
+    await tester.pumpWidget(
+      const UIApp(
+        primary: Colors.blue,
+        home: Scaffold(
+          body: SingleChildScrollView(child: AdaptiveDialogDemo()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Xác nhận thao tác'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lưu'));
+    await tester.pumpAndSettle();
+    expect(find.text('Đã xác nhận lưu'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
     'usage modes show the selected recipe and complete runnable page',
     (tester) async {
       await tester.pumpWidget(

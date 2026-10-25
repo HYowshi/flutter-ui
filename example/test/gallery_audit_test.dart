@@ -31,6 +31,9 @@ void main() {
           'Wireframe',
           'Table',
           'Radio',
+          'Trạng thái màn hình',
+          'Dialog & Sheet',
+          'Date Picker',
         ]) {
           final mobile = configuration.$1 < 1000;
           if (mobile) {

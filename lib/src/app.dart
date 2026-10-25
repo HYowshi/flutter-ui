@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/rendering.dart';
 
 import 'adaptive.dart';
@@ -52,8 +53,14 @@ class UIApp extends StatefulWidget {
     this.initialThemeMode = ThemeMode.system,
     this.reduceMotion = false,
     this.title = '',
+    this.locale,
+    this.supportedLocales = const [Locale('en'), Locale('vi')],
+    this.localizationsDelegates = const [],
     this.debugShowCheckedModeBanner = false,
   });
+  final Locale? locale;
+  final Iterable<Locale> supportedLocales;
+  final Iterable<LocalizationsDelegate<dynamic>> localizationsDelegates;
   final Color primary;
   final Color? secondary, accent;
   final Widget home;
@@ -142,6 +149,12 @@ class _UIAppState extends State<UIApp> {
       listenable: _controller,
       builder: (context, _) => MaterialApp(
         title: widget.title,
+        locale: widget.locale,
+        supportedLocales: widget.supportedLocales,
+        localizationsDelegates: [
+          ...widget.localizationsDelegates,
+          ...GlobalMaterialLocalizations.delegates,
+        ],
         debugShowCheckedModeBanner: widget.debugShowCheckedModeBanner,
         theme: _themes.light,
         darkTheme: _themes.dark,

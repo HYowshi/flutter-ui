@@ -8,6 +8,8 @@ Bộ Flutter/Dart UI dùng lại cho mobile, desktop và web, không gắn với
 
 **Mới 0.14:** Floating Action Button, ButtonStyle tùy biến, Table có tìm kiếm/chọn trang/đổi số dòng/lỗi thử lại và mã sử dụng ba mức. [Hướng dẫn tùy chỉnh](docs/customization.vi.md) · [Trang mẫu chạy được](example/lib/customization_example.dart).
 
+**Mới 0.15:** trạng thái màn hình dùng lại, Dialog/Sheet thích ứng, trường ngày tích hợp form và lịch/khoảng ngày native. `UIApp` hỗ trợ locale en/vi. [Hướng dẫn](docs/states-dialog-date.vi.md).
+
 ## Dùng nhanh
 
 **Mới 0.13:** animation mở/thu giữ state, textbox tìm kiếm/nhập nhiều dòng, notice có tiêu đề và nội dung dài. [Cách dùng animation, textbox và thông báo](docs/motion-input-notice.vi.md).

@@ -1,3 +1,12 @@
+## 0.15.0
+
+- Add UIStateView presets for loading/empty/error/offline/forbidden/success, custom illustrations/actions, bounded scrolling and reduced-motion handling.
+- Add UIAdaptiveDialog.show/confirm with native dialog or bottom-sheet routes, typed results, explicit dismissal policy, keyboard-safe scrolling and shared motion timings.
+- Add UIDateField with controlled date-only values, clear/cancel, bounds/predicate validation, native keyboard/calendar modes and named UIForm errors/submit locking.
+- Add UIDatePicker.show/range with release-mode bounds validation and customizable native picker text/locale.
+- Add optional UIApp locale/delegates/supportedLocales, built-in Material/Widgets/Cupertino localization delegates and en/vi defaults.
+- Add three interactive galleries and customization recipes; expand accessibility, narrow/high-text, keyboard, form and lifecycle regression coverage.
+
 ## 0.14.0
 
 - Add adaptive UIFloatingActionButton with three sizes, optional extended label, loading/reduced-motion handling, custom colors/shape/elevation/focus and opt-in Hero tags.

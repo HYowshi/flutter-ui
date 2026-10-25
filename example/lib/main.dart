@@ -101,6 +101,9 @@ class _StudioState extends State<Studio> {
     'Wireframe',
     'Table',
     'Radio',
+    'Trạng thái màn hình',
+    'Dialog & Sheet',
+    'Date Picker',
   ];
   static const icons = [
     Icons.grid_view_rounded,
@@ -118,6 +121,9 @@ class _StudioState extends State<Studio> {
     Icons.view_quilt_outlined,
     Icons.table_chart_outlined,
     Icons.radio_button_checked,
+    Icons.info_outline_rounded,
+    Icons.web_asset_outlined,
+    Icons.date_range_outlined,
   ];
   @override
   void dispose() {
@@ -272,6 +278,9 @@ class _StudioState extends State<Studio> {
                               if (selected == 12) const WireframeDemo(),
                               if (selected == 13) const TableDemo(),
                               if (selected == 14) const RadioDemo(),
+                              if (selected == 15) const StateViewDemo(),
+                              if (selected == 16) const AdaptiveDialogDemo(),
+                              if (selected == 17) const DatePickerDemo(),
                               if (selected == 0 || selected == 3)
                                 const InputDemo(),
                               if (selected == 0 || selected == 4)
@@ -343,6 +352,9 @@ class _StudioState extends State<Studio> {
     'Nhận diện cấu trúc dữ liệu, chọn bố cục và tự thích ứng theo vùng chứa.',
     'Bảng có sắp xếp, phân trang và chọn dòng; tự thành thẻ khi vùng hiển thị hẹp.',
     'Chọn một phương án, dùng bàn phím và kế thừa màu từ theme.',
+    'Loading, dữ liệu rỗng, lỗi, ngoại tuyến và quyền truy cập có cùng ngôn ngữ thiết kế.',
+    'Popup tự chọn dialog hoặc bottom sheet, giữ nội dung và thao tác rõ ràng.',
+    'Chọn ngày, khoảng ngày, giới hạn hợp lệ và dùng cùng form.',
   ];
   Widget sidebar(BuildContext context, {bool closeDrawer = false}) {
     final s = Theme.of(context).colorScheme;
@@ -437,7 +449,7 @@ class _StudioState extends State<Studio> {
           ),
           const SizedBox(height: 20),
           Text(
-            'v0.14.0 · Ready-to-use Flutter UI',
+            'v0.15.0 · Ready-to-use Flutter UI',
             style: TextStyle(fontSize: 10, color: s.onSurfaceVariant),
           ),
         ],
@@ -2848,6 +2860,258 @@ class _TableDemoState extends State<TableDemo> {
         const SizedBox(height: 16),
         Text('Đã chọn: ${selected.length} dòng'),
       ],
+    ),
+  );
+}
+
+class StateViewDemo extends StatefulWidget {
+  const StateViewDemo({super.key});
+  @override
+  State<StateViewDemo> createState() => _StateViewDemoState();
+}
+
+class _StateViewDemoState extends State<StateViewDemo> {
+  UIStateKind kind = UIStateKind.empty;
+  bool custom = false;
+  static const names = [
+    'Đang tải',
+    'Dữ liệu rỗng',
+    'Có lỗi',
+    'Ngoại tuyến',
+    'Thiếu quyền',
+    'Hoàn tất',
+  ];
+  @override
+  Widget build(BuildContext context) => DemoBlock(
+    number: '14',
+    title: 'Trạng thái màn hình',
+    description: 'Một component cho từng tình huống. Ứng dụng chủ động truyền trạng thái, nội dung và callback.',
+    effects: 'Tôn trọng reduced motion · cuộn khi chữ lớn · thay hình minh họa · hành động tùy chọn',
+    code: "UIStateView.empty(message: 'Thêm dự án đầu tiên của bạn.',\n  onAction: createProject);\nUIStateView.error(message: errorMessage, onAction: retry);\nUIStateView.loading(progress: .65);",
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        UISelect<UIStateKind>(
+          label: 'Tình huống',
+          initialValue: kind,
+          options: [
+            for (final value in UIStateKind.values)
+              UIOption(value: value, label: names[value.index]),
+          ],
+          onChanged: (value) {
+            if (value != null) setState(() => kind = value);
+          },
+        ),
+        const SizedBox(height: 16),
+        UISwitch(
+          label: 'Hình minh họa tùy chỉnh',
+          value: custom,
+          onChanged: (v) => setState(() => custom = v),
+        ),
+        const SizedBox(height: 16),
+        UICard(
+          child: UIStateView(
+            kind: kind,
+            message: switch (kind) {
+              UIStateKind.loading =>
+                'Đã xử lý 65% nội dung. Bạn có thể hủy thao tác.',
+              UIStateKind.empty =>
+                'Tạo dự án đầu tiên để bắt đầu cộng tác với đội của bạn.',
+              UIStateKind.error =>
+                'Nội dung chưa tải được. Hãy thử lại sau một chút.',
+              UIStateKind.offline =>
+                'Bản nháp vẫn được giữ trên thiết bị trong ví dụ này.',
+              UIStateKind.forbidden =>
+                'Liên hệ người quản lý để được cấp quyền phù hợp.',
+              UIStateKind.success =>
+                'Bạn đã hoàn tất bước này. Có thể tiếp tục công việc.',
+            },
+            illustration: custom
+                ? const Icon(Icons.auto_awesome_rounded, size: 64)
+                : null,
+            progress: kind == UIStateKind.loading ? .65 : null,
+            onAction: () => toast(
+              context,
+              'Đã gọi callback của trạng thái ${names[kind.index].toLowerCase()}.',
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class AdaptiveDialogDemo extends StatefulWidget {
+  const AdaptiveDialogDemo({super.key});
+  @override
+  State<AdaptiveDialogDemo> createState() => _AdaptiveDialogDemoState();
+}
+
+class _AdaptiveDialogDemoState extends State<AdaptiveDialogDemo> {
+  String result = 'Chưa có kết quả';
+  Future<void> open(UIPresentation presentation) async {
+    final answer = await UIAdaptiveDialog.show<String>(
+      context,
+      title: 'Gửi phản hồi',
+      presentation: presentation,
+      builder: (_) => const Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Popup tự cuộn khi nội dung dài hoặc bàn phím mở. Chọn Lưu để trả kết quả về trang.',
+          ),
+          SizedBox(height: 16),
+          UITextField(label: 'Nội dung phản hồi', minLines: 3, maxLines: 6),
+        ],
+      ),
+      actionsBuilder: (routeContext) => [
+        UIButton(
+          label: 'Hủy',
+          variant: UIButtonVariant.ghost,
+          onPressed: () => Navigator.pop(routeContext),
+        ),
+        UIButton(
+          label: 'Lưu phản hồi mẫu',
+          onPressed: () => Navigator.pop(routeContext, 'Đã lưu phản hồi mẫu'),
+        ),
+      ],
+    );
+    if (mounted) setState(() => result = answer ?? 'Đã đóng, không lưu');
+  }
+
+  @override
+  Widget build(BuildContext context) => DemoBlock(
+    number: '15',
+    title: 'Dialog & Sheet',
+    description: 'Mobile mở sheet, vùng rộng mở dialog. Có thể chọn kiểu trình bày, nội dung, thao tác và kết quả trả về.',
+    effects: 'Route native · focus bàn phím · tránh bàn phím · giới hạn vùng cuộn · reduced motion',
+    code: "final accepted = await UIAdaptiveDialog.confirm(context,\n  title: 'Lưu thay đổi?', message: 'Nội dung đã sẵn sàng.',\n  confirmLabel: 'Lưu');\nif (accepted) { await save(); }",
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        UIActions(
+          children: [
+            UIButton(
+              label: 'Mở tự động',
+              icon: Icons.open_in_new,
+              onPressed: () => open(UIPresentation.auto),
+            ),
+            UIButton(
+              label: 'Dialog',
+              variant: UIButtonVariant.outline,
+              onPressed: () => open(UIPresentation.dialog),
+            ),
+            UIButton(
+              label: 'Bottom Sheet',
+              variant: UIButtonVariant.outline,
+              onPressed: () => open(UIPresentation.sheet),
+            ),
+            UIButton(
+              label: 'Xác nhận thao tác',
+              variant: UIButtonVariant.soft,
+              onPressed: () async {
+                final answer = await UIAdaptiveDialog.confirm(
+                  context,
+                  title: 'Lưu thay đổi?',
+                  message: 'Đây là ví dụ xác nhận, không gửi dữ liệu thật.',
+                  confirmLabel: 'Lưu',
+                );
+                if (mounted) {
+                  setState(
+                    () =>
+                        result = answer ? 'Đã xác nhận lưu' : 'Đã hủy xác nhận',
+                  );
+                }
+              },
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Text(result),
+      ],
+    ),
+  );
+}
+
+class DatePickerDemo extends StatefulWidget {
+  const DatePickerDemo({super.key});
+  @override
+  State<DatePickerDemo> createState() => _DatePickerDemoState();
+}
+
+class _DatePickerDemoState extends State<DatePickerDemo> {
+  DateTime? date;
+  DateTimeRange? range;
+  int submitted = 0;
+  String format(DateTime value) => '${value.day}/${value.month}/${value.year}';
+  @override
+  Widget build(BuildContext context) => Localizations.override(
+    context: context,
+    locale: const Locale('vi'),
+    child: Builder(
+      builder: (context) => DemoBlock(
+        number: '16',
+        title: 'Date Picker',
+        description: 'Chọn ngày hoặc khoảng ngày bằng lịch native. Trường ngày tích hợp validation, xóa lựa chọn và lỗi theo tên trong UIForm.',
+        effects: 'Ngày không kèm giờ · giới hạn khoảng · loại trừ ngày · bàn phím · tiếng Việt / locale ứng dụng',
+        code: "UIDateField(label: 'Ngày bắt đầu', value: startDate,\n  onChanged: (date) => setState(() => startDate = date),\n  firstDate: DateTime(2026), lastDate: DateTime(2030, 12, 31),\n  validator: (date) => date == null ? 'Hãy chọn ngày' : null);\n\nfinal range = await UIDatePicker.range(context);",
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            UIForm(
+              submitLabel: 'Kiểm tra ngày đã chọn',
+              maxColumns: 1,
+              onSubmit: () async {
+                setState(() => submitted++);
+              },
+              children: [
+                UIDateField(
+                  name: 'startDate',
+                  label: 'Ngày bắt đầu',
+                  value: date,
+                  onChanged: (value) => setState(() => date = value),
+                  firstDate: DateTime(2026),
+                  lastDate: DateTime(2030, 12, 31),
+                  helper: 'Trong năm 2026–2030, chỉ chọn thứ Hai đến thứ Sáu.',
+                  selectableDayPredicate: (value) =>
+                      value.weekday <= DateTime.friday,
+                  validator: (value) =>
+                      value == null ? 'Hãy chọn một ngày làm việc.' : null,
+                ),
+                UIDateField(
+                  label: 'Ngày chỉ đọc',
+                  value: DateTime(2026, 11, 25),
+                  helper: 'Không có callback nên không thể sửa.',
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Text('Đã xác thực: $submitted lần'),
+            const SizedBox(height: 16),
+            UIButton(
+              label: 'Chọn khoảng ngày',
+              icon: Icons.date_range_outlined,
+              variant: UIButtonVariant.outline,
+              onPressed: () async {
+                final selected = await UIDatePicker.range(
+                  context,
+                  initialRange: range,
+                  firstDate: DateTime(2026),
+                  lastDate: DateTime(2030, 12, 31),
+                  title: 'Khoảng thời gian',
+                );
+                if (mounted && selected != null) {
+                  setState(() => range = selected);
+                }
+              },
+            ),
+            if (range != null) ...[
+              const SizedBox(height: 12),
+              Text('${format(range!.start)} — ${format(range!.end)}'),
+            ],
+          ],
+        ),
+      ),
     ),
   );
 }

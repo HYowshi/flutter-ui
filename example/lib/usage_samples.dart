@@ -4,6 +4,45 @@ import 'package:youth_ui/youth_ui.dart';
 
 // Copyable partial recipes. App-owned callbacks/models are named explicitly.
 const customizationSamples = <String, String>{
+  'Trạng thái màn hình': r'''UIStateView(
+  kind: UIStateKind.offline,
+  title: 'Chưa có kết nối', message: 'Nội dung đã lưu vẫn có thể xem.',
+  illustration: const Icon(Icons.cloud_off_outlined, size: 64),
+  actionLabel: 'Thử kết nối', onAction: reconnect,
+  secondaryActionLabel: 'Xem bản đã lưu', onSecondaryAction: openCache,
+);
+// Tự truyền trạng thái sau khi nhận kết quả API; không tự dò mạng/quyền.
+UIStateView.loading(progress: uploadProgress, onAction: cancelUpload);''',
+  'Dialog & Sheet':
+      r'''final result = await UIAdaptiveDialog.show<String>(context,
+  title: 'Chọn chế độ', presentation: UIPresentation.auto,
+  dismissible: true, maxWidth: 600,
+  builder: (routeContext) => const Text('Nội dung của ứng dụng'),
+  actionsBuilder: (routeContext) => [
+    UIButton(label: 'Áp dụng',
+      onPressed: () => Navigator.pop(routeContext, 'custom')),
+  ],
+);
+// Dùng routeContext để đóng đúng popup, kể cả khi có Navigator lồng nhau.
+// Nội dung cần đổi state: dùng widget Stateful riêng hoặc StatefulBuilder.
+// Route chọn kiểu lúc mở; resize không dựng lại route nên giữ dữ liệu.''',
+  'Date Picker':
+      r'''// UIApp có mặc định delegates en/vi. Tùy chọn locale cho toàn app:
+UIApp(primary: Colors.indigo, locale: const Locale('vi'), home: home);
+
+UIDateField(label: 'Ngày hẹn', name: 'appointment', value: appointment,
+  onChanged: (value) => setState(() => appointment = value),
+  firstDate: DateTime(2026), lastDate: DateTime(2030, 12, 31),
+  selectableDayPredicate: (day) => day.weekday <= DateTime.friday,
+  validator: (day) => day == null ? 'Hãy chọn ngày' : null,
+  format: (day) => '${day.day}/${day.month}/${day.year}',
+  clearable: true, helper: 'Chỉ nhận lịch ngày làm việc.',
+);
+// Hoặc mở riêng, null nghĩa là đã hủy:
+final date = await UIDatePicker.show(context);
+final range = await UIDatePicker.range(context, initialRange: currentRange);
+// Giá trị date-only, không phải timestamp hay múi giờ của lịch hẹn.''',
+
   'Buttons': r'''// Màu vai trò tự theo theme. style chỉ ghi đè phần bạn truyền.
 UIButton(
   label: 'Xuất báo cáo', icon: Icons.download_outlined,
