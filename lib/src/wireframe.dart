@@ -293,6 +293,50 @@ class _WireframeContent extends StatelessWidget {
       Widget records() => UIWireframe.list(count: plan.itemCount);
       // The parent still owns scrolling. No nested viewport or intrinsic sizing.
       if (ui.width < 48) return const SizedBox.shrink();
+      Widget action() => Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: slab(44, width: 144),
+      );
+      final hasMedia = plan.fields.any(
+        (f) => f.type == UIWireframeFieldType.image,
+      );
+      Widget productCard() => panel(
+        stack([
+          const AspectRatio(aspectRatio: 4 / 3, child: UIWireframe.image()),
+          title,
+          const UIWireframe.line(widthFactor: .3, height: 22),
+          action(),
+        ]),
+      );
+      Widget heroCopy() => stack([
+        const UIWireframe.line(widthFactor: .28, height: 8),
+        const UIWireframe.line(widthFactor: .92, height: 30),
+        const UIWireframe.line(widthFactor: .65, height: 30),
+        paragraph(),
+        action(),
+      ], gap: 20);
+      Widget hero() {
+        final copy = heroCopy();
+        final media = const AspectRatio(
+          aspectRatio: 4 / 3,
+          child: UIWireframe.image(),
+        );
+        return panel(
+          hasMedia
+              ? ui.width >= 720 && ui.textScale <= 1.5
+                    ? Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(flex: 5, child: copy),
+                          const SizedBox(width: 32),
+                          Expanded(flex: 4, child: media),
+                        ],
+                      )
+                    : stack([copy, media], gap: 24)
+              : copy,
+        );
+      }
+
       final content = switch (plan.layout) {
         UIWireframeLayout.feed => UIGrid(
           maxColumns: 3,
@@ -353,20 +397,99 @@ class _WireframeContent extends StatelessWidget {
             paragraph(),
           ]),
         ),
-        UIWireframeLayout.product => UIGrid(
-          maxColumns: 2,
-          children: [
-            const UIWireframe.image(height: 240),
-            panel(
-              stack([
-                title,
-                const UIWireframe.line(widthFactor: .3, height: 24),
-                paragraph(),
-                slab(44),
-              ]),
+        UIWireframeLayout.landing => stack([
+          hero(),
+          UIGrid(
+            maxColumns: 3,
+            children: [
+              for (var i = 0; i < plan.itemCount; i++)
+                panel(stack([slab(32, width: 32), title, paragraph()])),
+            ],
+          ),
+        ], gap: 28),
+        UIWireframeLayout.event => panel(
+          stack([
+            if (hasMedia)
+              const AspectRatio(
+                aspectRatio: 16 / 9,
+                child: UIWireframe.image(),
+              ),
+            title,
+            Wrap(
+              spacing: 24,
+              runSpacing: 12,
+              children: [
+                for (final icon in [
+                  Icons.calendar_today_outlined,
+                  Icons.place_outlined,
+                ])
+                  SizedBox(
+                    width: ui.width < 240 ? 100 : 160,
+                    child: Row(
+                      children: [
+                        Icon(icon, size: 20, color: scheme.onSurfaceVariant),
+                        const SizedBox(width: 12),
+                        const Expanded(child: UIWireframe.line(height: 10)),
+                      ],
+                    ),
+                  ),
+              ],
             ),
+            paragraph(),
+            action(),
+            if (plan.isCollection) records(),
+          ], gap: 24),
+        ),
+        UIWireframeLayout.pricing => UIGrid(
+          maxColumns: 3,
+          minItemWidth: 240,
+          children: [
+            for (var i = 0; i < plan.itemCount; i++)
+              panel(
+                stack([
+                  const UIWireframe.line(widthFactor: .4, height: 10),
+                  const UIWireframe.line(widthFactor: .65, height: 28),
+                  const UIWireframe.line(widthFactor: .3, height: 8),
+                  const Divider(),
+                  for (var j = 0; j < 3; j++)
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.check_rounded,
+                          size: 16,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 10),
+                        const Expanded(child: UIWireframe.line(height: 8)),
+                      ],
+                    ),
+                  action(),
+                ], gap: 20),
+              ),
           ],
         ),
+        UIWireframeLayout.product =>
+          plan.isCollection
+              ? UIGrid(
+                  maxColumns: 3,
+                  children: [
+                    for (var i = 0; i < plan.itemCount; i++) productCard(),
+                  ],
+                )
+              : UIGrid(
+                  maxColumns: 2,
+                  children: [
+                    const UIWireframe.image(height: 240),
+                    panel(
+                      stack([
+                        title,
+                        const UIWireframe.line(widthFactor: .3, height: 24),
+                        paragraph(),
+                        slab(44),
+                      ]),
+                    ),
+                  ],
+                ),
         UIWireframeLayout.gallery => UIGrid(
           maxColumns: 4,
           minItemWidth: 160,

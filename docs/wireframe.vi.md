@@ -2,6 +2,12 @@
 
 `UIWireframe.auto(data: sample)` tạo phác thảo tĩnh theo dữ liệu mẫu. Đây là công cụ chọn bố cục có quy tắc, không phải AI và không thể suy ra chính xác ý định sản phẩm chỉ từ JSON. Không chuyển dữ liệu thành các điều khiển hoạt động.
 
+## Mới trong 0.12
+
+Thêm `landing`, `event`, `pricing` (tổng 17 bố cục). `UIWireframe.auto(data: payload)` vẫn chỉ cần một lệnh; không cần chọn loại trước. Nhận root hoặc `hero` một cấp cho trang giới thiệu; ngày + địa điểm + tổ chức/đăng ký cho sự kiện; `plans/packages/goidichvu` hoặc list gói có giá + chu kỳ + tính năng cho pricing. `plan.isCollection` phân biệt danh sách sản phẩm với một chi tiết. Xem [thiết kế và giới hạn nhận diện](wireframe-design-research.vi.md).
+
+Dấu hiệu được quét trên tối đa 64 khoá và dùng bằng chứng đồng xuất hiện trong các bản ghi, độc lập giới hạn 12 trường preview. Một nhánh hero có tối đa 32 khoá; pricing có tối đa 8×32 khoá, không duyệt đệ quy. Metadata `pagination/count/hasNext/nextCursor` được chấp nhận khi bóc envelope. Tên ảnh như `heroImage/poster/banner/coverImage` hỗ trợ CDN không có đuôi; URL tùy ý vẫn cần hint. Demo tự phân tích sau 350 ms dừng nhập, giữ plan cũ khi JSON chưa hợp lệ.
+
 ## Thứ tự quyết định
 
 1. `layout` do người gọi chỉ định luôn thắng.
@@ -15,7 +21,7 @@
 
 ## Loại trường và schema
 
-12 loại: text, paragraph, number, date, email, phone, image, avatar, toggle, choice, password, section. Nhận diện giá trị bool/num/DateTime; chuỗi dài; email, số điện thoại quốc tế có dấu `+`, ngày ISO hợp lệ và URL/path đuôi ảnh. Các định dạng mơ hồ như ngày `01/02/2026`, mã số có toàn chữ số, ảnh CDN không có đuôi cần `fieldTypes`.
+12 loại: text, paragraph, number, date, email, phone, image, avatar, toggle, choice, password, section. Nhận diện giá trị bool/num/DateTime; chuỗi dài; email, số điện thoại quốc tế có dấu `+`, ngày ISO hợp lệ và URL/path đuôi ảnh. Các định dạng mơ hồ như ngày `01/02/2026`, mã số có toàn chữ số, ảnh CDN không có đuôi và tên trường không gợi ý ảnh cần `fieldTypes`.
 
 ```dart
 UIWireframe.auto(data: payload, fieldTypes: const {

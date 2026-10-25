@@ -4,6 +4,8 @@ Bộ Flutter/Dart UI dùng lại cho mobile, desktop và web, không gắn với
 
 **[Website tương tác](https://hyowshi.github.io/flutter-ui/)** · **[Nghiên cứu và quyết định thuật toán](docs/color-research.vi.md)** · **[Thiết kế truyền thông và UI](docs/visual-communication.vi.md)**
 
+**Mới 0.12:** wireframe tự nhận diện thêm trang quảng bá, sự kiện và gói dịch vụ; demo tự phân tích khi nhập. Xem [nghiên cứu và thay đổi nhận diện](docs/wireframe-design-research.vi.md).
+
 ## Dùng nhanh
 
 **Mới 0.11:** form tự quản lý gửi, validation theo thời điểm, lỗi server theo trường; thông báo có hàng đợi và Hoàn tác. Xem [cách dùng form và thông báo](docs/forms-feedback.vi.md).
@@ -101,7 +103,7 @@ UIImage('https://cdn.example.com/photo-1280.jpg', variants: const {
 
 Thư viện chọn biến thể theo vùng hiển thị và DPR, không tự sửa URL tùy ý hoặc vượt CORS. Không cung cấp cache ổ đĩa/offline; dùng ImageCache của Flutter. Raster có dạng rất khác khung crop có thể cần provider/chất lượng riêng (`optimizeDecode: false`). SVG dùng provider/giải pháp phù hợp riêng, không phải định dạng ảnh raster được hỗ trợ tự động.
 
-**Wireframe:** `UIWireframe.auto(data: sample)` nhận Map/List/giá trị JSON-like, nhận diện bố cục từ cấu trúc + kiểu trường + tên khóa Việt/Anh. Có 14 bố cục: feed, dashboard, form, profile, article, product, gallery, chat, table, settings, timeline, detail, list, empty. Bảng tự thành thẻ ở vùng hẹp/chữ lớn; bố cục dùng constraint của vùng chứa.
+**Wireframe:** `UIWireframe.auto(data: sample)` nhận Map/List/giá trị JSON-like, nhận diện bố cục từ cấu trúc + kiểu trường + tên khóa Việt/Anh. Có 17 bố cục: feed, dashboard, form, profile, article, product, gallery, chat, table, settings, timeline, detail, list, empty, landing, event, pricing. Bảng tự thành thẻ ở vùng hẹp/chữ lớn; bố cục dùng constraint của vùng chứa.
 
 ```dart
 UIWireframe.auto(data: {'name': 'An', 'avatar': null, 'email': null});
@@ -169,7 +171,7 @@ Nếu tạo container riêng có màu nền khác, bọc `UISurfaceScope(color: 
 | UIRadio / UIRadioGroup | Chọn một phương án, bàn phím native, disabled và bố cục thích ứng |
 | UITable / UITableColumn | Bảng/thẻ thích ứng, sort, phân trang, chọn dòng và ô tùy biến |
 | UIImage | Asset/URL/provider, fallbackSource/widget/errorBuilder, placeholder, retry và khung thích ứng |
-| UIWireframe | 14 bố cục, nhận diện dữ liệu/schema, giải thích lựa chọn và tự thích ứng |
+| UIWireframe | 17 bố cục, nhận diện dữ liệu/schema, giải thích lựa chọn và tự thích ứng |
 | --- | --- |
 | UIButton | solid/soft/outline/ghost, state colors; tự giãn trong vùng hẹp và xuống dòng nhãn dài |
 | UITextField | Form validation, multiline, controller, keyboard, autofill |

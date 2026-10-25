@@ -4,6 +4,42 @@ import 'package:youth_ui/youth_ui.dart';
 import 'package:flutter_ui_showcase/main.dart';
 
 void main() {
+  testWidgets(
+    'wireframe automatically reanalyses edits and keeps last valid plan',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: YouthUI.init(primary: Colors.blue),
+          home: const Scaffold(
+            body: SingleChildScrollView(child: WireframeDemo()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final input = find.byType(TextFormField);
+      await tester.enterText(
+        input,
+        '{"headline":"Campaign", "subtitle":"Benefit", "cta":"/go", "heroImage":"/cdn/123"}',
+      );
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+      expect(find.text('landing · high'), findsOneWidget);
+      await tester.enterText(input, '{broken');
+      await tester.pump(const Duration(milliseconds: 400));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('JSON chưa hợp lệ.'), findsOneWidget);
+      expect(find.text('landing · high'), findsOneWidget);
+      await tester.enterText(
+        input,
+        '{"title":"A", "date":"2026-11-25", "location":"B", "organizer":"C"}',
+      );
+      // Dispose before debounce: no state update after unmount.
+      await tester.pumpWidget(const SizedBox());
+      await tester.pump(const Duration(seconds: 1));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('input gallery simulates failure and retains values for retry', (
     tester,
   ) async {

@@ -15,6 +15,9 @@ enum UIWireframeLayout {
   detail,
   list,
   empty,
+  landing,
+  event,
+  pricing,
 }
 
 /// Evidence strength, not a calibrated probability of correctness.
@@ -51,6 +54,7 @@ class UIWireframePlan {
     required List<String> reasons,
     required List<UIWireframeField> fields,
     required this.itemCount,
+    this.isCollection = false,
   }) : reasons = List.unmodifiable(reasons),
        fields = List.unmodifiable(fields.take(12)) {
     if (itemCount < 0 || itemCount > 12) {
@@ -62,6 +66,7 @@ class UIWireframePlan {
   final List<String> reasons;
   final List<UIWireframeField> fields;
   final int itemCount;
+  final bool isCollection;
 }
 
 /// Bounded structural heuristics. Never traverses arbitrary object graphs,
@@ -98,10 +103,12 @@ class UIWireframeInference {
     if (named('password|matkhau|confirmpassword')) {
       return UIWireframeFieldType.password;
     }
-    if (named('avatar|avatarurl|anhdaidien')) {
+    if (named('avatar|avatarurl|profilepicture|anhdaidien')) {
       return UIWireframeFieldType.avatar;
     }
-    if (named('image|imageurl|thumbnail|cover|photo|anh|hinhanh') ||
+    if (named(
+          'image|imageurl|thumbnail|thumbnailurl|cover|coverimage|heroimage|banner|poster|photo|anh|hinhanh|anhbia',
+        ) ||
         _image(value)) {
       return UIWireframeFieldType.image;
     }
@@ -111,7 +118,9 @@ class UIWireframeInference {
     }
     if (value is bool) return UIWireframeFieldType.toggle;
     if (value is DateTime ||
-        named('date|createdat|updatedat|timestamp|startdate|ngay|ngaytao')) {
+        named(
+          'date|createdat|updatedat|timestamp|startdate|startsat|enddate|endsat|ngay|ngaytao|ngaybatdau',
+        )) {
       return UIWireframeFieldType.date;
     }
     if (value is num) return UIWireframeFieldType.number;
@@ -167,6 +176,10 @@ class UIWireframeInference {
                   'limit',
                   'meta',
                   'success',
+                  'pagination',
+                  'count',
+                  'hasnext',
+                  'nextcursor',
                 ].contains(_key(k)),
           )) {
         break;
@@ -185,29 +198,78 @@ class UIWireframeInference {
     final collection = source is List;
     final sample = source is List ? source.take(8).toList() : <Object?>[source];
     final records = sample.whereType<Map>().toList();
+    // Normalize sampled records once and reuse for every candidate rule.
+    final normalizedRecords = [
+      for (final record in records)
+        <String, Object?>{
+          for (final entry in record.entries.take(64))
+            if (entry.key is String) _key(entry.key as String): entry.value,
+        },
+    ];
     final entries = <String, Object?>{};
-    for (final record in records) {
-      for (final entry in record.entries.take(64)) {
-        if (entry.key is String && entries.length < 64) {
-          final key = _key(entry.key as String);
-          if (!entries.containsKey(key) || entries[key] == null) {
-            entries[key] = entry.value;
-          }
+    for (final record in normalizedRecords) {
+      for (final entry in record.entries) {
+        if (entries.length < 64 &&
+            (!entries.containsKey(entry.key) || entries[entry.key] == null)) {
+          entries[entry.key] = entry.value;
         }
       }
     }
+    // Only look inside a specifically named hero section, never arbitrary graphs.
+    final hero = entries['hero'];
+    final heroRecord = hero is Map
+        ? <String, Object?>{
+            for (final e in hero.entries.take(32))
+              if (e.key is String) _key(e.key as String): e.value,
+          }
+        : <String, Object?>{};
     final hints = {
       for (final e in fieldTypes.entries.take(64)) _key(e.key): e.value,
     };
+    // Inspect all bounded keys; rendering is limited separately to 12 fields.
+    final allFields = [
+      for (final entry in entries.entries)
+        UIWireframeField(
+          entry.key,
+          type: hints[entry.key] ?? _type(entry.key, entry.value),
+        ),
+    ];
+    if (heroRecord.isNotEmpty) {
+      allFields.addAll([
+        for (final entry in heroRecord.entries)
+          UIWireframeField(
+            'hero.${entry.key}',
+            type: _type(entry.key, entry.value),
+          ),
+      ]);
+    }
+    if (allFields.length > 12) {
+      int priority(UIWireframeField f) =>
+          f.type == UIWireframeFieldType.text ||
+              f.type == UIWireframeFieldType.number
+          ? ([
+                  'title',
+                  'headline',
+                  'name',
+                  'price',
+                  'cta',
+                  'primaryaction',
+                ].contains(f.name)
+                ? 0
+                : 1)
+          : 0;
+      final indexed = allFields.indexed.toList()
+        ..sort((a, b) {
+          final order = priority(a.$2).compareTo(priority(b.$2));
+          return order == 0 ? a.$1.compareTo(b.$1) : order;
+        });
+      allFields
+        ..clear()
+        ..addAll(indexed.map((e) => e.$2));
+    }
     final inferred = fields.isNotEmpty
         ? fields.take(12).toList()
-        : [
-            for (final entry in entries.entries.take(12))
-              UIWireframeField(
-                entry.key,
-                type: hints[entry.key] ?? _type(entry.key, entry.value),
-              ),
-          ];
+        : allFields.take(12).toList();
     UIWireframePlan result(
       UIWireframeLayout selected,
       UIWireframeConfidence confidence,
@@ -218,6 +280,7 @@ class UIWireframeInference {
       reasons: [layout == null ? reason : 'Bố cục do người gọi chỉ định.'],
       fields: inferred,
       itemCount: itemCount,
+      isCollection: collection,
     );
     if (layout != null) {
       return result(layout, UIWireframeConfidence.explicit, '');
@@ -238,7 +301,7 @@ class UIWireframeInference {
     }
     bool has(String aliases) => aliases.split('|').any(entries.containsKey);
     bool typed(UIWireframeFieldType type) =>
-        inferred.any((f) => f.type == type);
+        allFields.any((f) => f.type == type);
     final candidates = <(UIWireframeLayout, int, String)>[];
     void vote(
       UIWireframeLayout candidate,
@@ -255,23 +318,89 @@ class UIWireframeInference {
     final image = typed(UIWireframeFieldType.image);
     final recordCollection =
         collection && records.isNotEmpty && records.length == sample.length;
+    bool coherent(bool Function(Map<String, Object?>) matches) {
+      if (records.isEmpty || collection && !recordCollection) return false;
+      final matching = normalizedRecords.where(matches).length;
+      return matching >= (records.length * .6).ceil();
+    }
+
+    bool includes(Map<String, Object?> record, String aliases) =>
+        aliases.split('|').any(record.containsKey);
+    bool actions(Map<String, Object?> record) => includes(
+      record,
+      'cta|primaryaction|actionlabel|calltoaction|registerurl|registrationurl|dangky|hanhdong',
+    );
+    bool heading(Map<String, Object?> record) =>
+        includes(record, 'title|headline|heading|tieude|name|ten');
+    bool marketing(Map<String, Object?> record) =>
+        heading(record) &&
+        actions(record) &&
+        includes(
+          record,
+          'subtitle|tagline|benefits|features|heroimage|banner|mota|loiich',
+        );
+    vote(
+      UIWireframeLayout.landing,
+      !collection && (marketing(entries) || marketing(heroRecord)),
+      108,
+      'Tiêu đề, lợi ích/ảnh chủ đạo và hành động chính gợi ý trang giới thiệu.',
+    );
+    vote(
+      UIWireframeLayout.event,
+      coherent(
+        (r) =>
+            heading(r) &&
+            includes(r, 'startsat|startdate|date|ngaybatdau|ngay') &&
+            includes(r, 'venue|location|diadiem') &&
+            (actions(r) ||
+                includes(r, 'organizer|agenda|ticketprice|bantochuc')),
+      ),
+      112,
+      'Sự kiện có tên, lịch, địa điểm và thông tin tham gia/tổ chức.',
+    );
+    final pricingRecords =
+        entries['plans'] ?? entries['packages'] ?? entries['goidichvu'];
+    bool pricePlan(Map<String, Object?> r) =>
+        heading(r) &&
+        includes(r, 'price|gia') &&
+        includes(r, 'features|benefits|loiich') &&
+        includes(r, 'billingperiod|interval|chuky');
+    final nestedPricing =
+        pricingRecords is List &&
+        pricingRecords.isNotEmpty &&
+        pricingRecords
+            .take(8)
+            .every(
+              (row) =>
+                  row is Map &&
+                  pricePlan({
+                    for (final e in row.entries.take(32))
+                      if (e.key is String) _key(e.key as String): e.value,
+                  }),
+            );
+    vote(
+      UIWireframeLayout.pricing,
+      (collection && coherent(pricePlan)) || !collection && nestedPricing,
+      114,
+      'Các gói có giá, chu kỳ thanh toán và danh sách tính năng.',
+    );
     final homogeneous =
         collection &&
         records.length == sample.length &&
         records.isNotEmpty &&
-        records.every(
-          (r) => r.keys
-              .take(64)
-              .whereType<String>()
-              .map(_key)
-              .toSet()
-              .containsAll(entries.keys),
+        normalizedRecords.every(
+          (r) => r.keys.toSet().containsAll(entries.keys),
         );
     vote(
       UIWireframeLayout.chat,
       recordCollection &&
           has('message|text|tinnhan') &&
-          has('sender|senderid|from|nguoigui'),
+          has('sender|senderid|from|nguoigui') &&
+          coherent(
+            (r) =>
+                includes(r, 'sender|senderid|from|nguoigui') &&
+                includes(r, 'message|text|tinnhan'),
+          ),
       100,
       'Nhiều tin nhắn có trường người gửi.',
     );
@@ -289,7 +418,13 @@ class UIWireframeInference {
       (!collection || recordCollection) &&
           has('price|gia') &&
           has('sku|currency|stock|giatien|tonkho') &&
-          (person || title || image),
+          (person || title || image) &&
+          coherent(
+            (r) =>
+                includes(r, 'price|gia') &&
+                includes(r, 'sku|currency|stock|giatien|tonkho') &&
+                (heading(r) || includes(r, 'image|imageurl|photo|anh')),
+          ),
       105,
       'Giá, thông tin hàng hóa và tên/ảnh sản phẩm.',
     );
@@ -310,7 +445,17 @@ class UIWireframeInference {
     );
     vote(
       UIWireframeLayout.feed,
-      recordCollection && title && (body || image),
+      recordCollection &&
+          title &&
+          (body || image) &&
+          coherent(
+            (r) =>
+                includes(r, 'title|headline|tieude') &&
+                includes(
+                  r,
+                  'body|content|noidung|image|imageurl|thumbnail|cover|photo|anh|hinhanh',
+                ),
+          ),
       85,
       'Danh sách có tiêu đề và nội dung/ảnh.',
     );
@@ -330,7 +475,7 @@ class UIWireframeInference {
       100,
       'Nhóm chỉ số và chuỗi biểu đồ.',
     );
-    final toggles = inferred
+    final toggles = allFields
         .where((f) => f.type == UIWireframeFieldType.toggle)
         .length;
     vote(

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -435,7 +436,7 @@ class _StudioState extends State<Studio> {
           ),
           const SizedBox(height: 20),
           Text(
-            'v0.11.1 · Ready-to-use Flutter UI',
+            'v0.12.0 · Ready-to-use Flutter UI',
             style: TextStyle(fontSize: 10, color: s.onSurfaceVariant),
           ),
         ],
@@ -2370,6 +2371,43 @@ class _WireframeDemoState extends State<WireframeDemo> {
       'stats': {'members': 120},
       'series': [10, 20, 30],
     },
+    'Trang quảng bá': {
+      'hero': {
+        'headline': 'Một không gian làm việc thống nhất',
+        'subtitle': 'Tập trung vào công việc quan trọng',
+        'heroImage': 'https://cdn.example.test/hero',
+        'primaryAction': {'label': 'Bắt đầu', 'href': '/start'},
+      },
+      'features': ['Cộng tác', 'Tổ chức', 'Theo dõi'],
+    },
+    'Sự kiện': {
+      'title': 'Ngày hội sáng tạo',
+      'startsAt': '2026-11-25',
+      'location': 'Đồng Nai',
+      'organizer': 'Đơn vị tổ chức',
+      'poster': 'poster.png',
+      'registrationUrl': '/register',
+    },
+    'Gói dịch vụ': {
+      'plans': [
+        {
+          'name': 'Cá nhân',
+          'price': 99000,
+          'billingPeriod': 'month',
+          'features': ['Ghi chú', 'Lưu trữ'],
+        },
+        {
+          'name': 'Nhóm',
+          'price': 199000,
+          'billingPeriod': 'month',
+          'features': ['Cộng tác', 'Quản lý'],
+        },
+      ],
+    },
+    'Danh sách sản phẩm': [
+      {'name': 'Sách A', 'price': 50000, 'currency': 'VND', 'image': 'a.png'},
+      {'name': 'Sách B', 'price': 60000, 'currency': 'VND', 'image': 'b.png'},
+    ],
     'Chưa rõ loại': {'reference': 'X123', 'value': null},
     'Dữ liệu rỗng': [],
   };
@@ -2381,14 +2419,33 @@ class _WireframeDemoState extends State<WireframeDemo> {
   );
   late UIWireframePlan plan = UIWireframe.inspect(data);
   String? error;
+  Timer? _analysisTimer;
+  String? _lastScheduledText;
+  @override
+  void initState() {
+    super.initState();
+    input.addListener(_scheduleAnalysis);
+  }
+
+  void _scheduleAnalysis() {
+    if (_lastScheduledText == input.text) return;
+    _lastScheduledText = input.text;
+    _analysisTimer?.cancel();
+    _analysisTimer = Timer(const Duration(milliseconds: 350), () {
+      if (mounted) apply();
+    });
+  }
 
   @override
   void dispose() {
+    _analysisTimer?.cancel();
+    input.removeListener(_scheduleAnalysis);
     input.dispose();
     super.dispose();
   }
 
   void apply() {
+    _analysisTimer?.cancel();
     if (input.text.length > 20000) {
       setState(() => error = 'Bản demo giới hạn JSON ở 20.000 ký tự.');
       return;
@@ -2411,7 +2468,7 @@ class _WireframeDemoState extends State<WireframeDemo> {
   Widget build(BuildContext context) => DemoBlock(
     number: '11',
     title: 'Wireframe · nhận diện cấu trúc dữ liệu',
-    description: '14 bố cục. Phân tích dữ liệu mẫu, kiểu trường và dấu hiệu ngữ nghĩa; tự đổi cách sắp xếp theo vùng hiển thị. Không hiển thị giá trị đầu vào.',
+    description: '17 bố cục. Phân tích dữ liệu mẫu, kiểu trường và dấu hiệu ngữ nghĩa; tự đổi cách sắp xếp theo vùng hiển thị. Không hiển thị giá trị đầu vào.',
     effects: 'Phân tích có giới hạn · có lý do lựa chọn · không AI/network · không ticker',
     code: "UIWireframe.auto(data: sample);\n\n// Biết rõ màn hình: ưu tiên chỉ định.\nUIWireframe.auto(data: sample, layout: UIWireframeLayout.profile);\n\n// Chưa có dữ liệu, dùng schema form:\nUIWireframe.auto(fields: const [\n  UIWireframeField('email', type: UIWireframeFieldType.email),\n  UIWireframeField('password', type: UIWireframeFieldType.password),\n]);\n\nfinal plan = UIWireframe.inspect(sample);\nUIWireframe.fromPlan(plan: plan);",
     child: Column(
@@ -2457,7 +2514,9 @@ class _WireframeDemoState extends State<WireframeDemo> {
         ),
         const SizedBox(height: 16),
         UITextField(
-          label: 'JSON mẫu · chỉnh sửa rồi bấm Phân tích',
+          label: 'JSON mẫu · tự phân tích khi ngừng nhập',
+          helper:
+              'Tự nhận diện sau 350 ms; JSON lỗi giữ bố cục hợp lệ gần nhất.',
           controller: input,
           maxLines: 6,
           keyboardType: TextInputType.multiline,

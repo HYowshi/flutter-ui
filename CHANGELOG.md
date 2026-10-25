@@ -1,3 +1,11 @@
+## 0.12.0
+
+- Add automatic landing/event/pricing wireframes and collection-aware product cards, with adaptive visual hierarchy.
+- Inspect all bounded fields independently of the 12-field render limit; reuse normalized records and require coherent per-record evidence.
+- Recognize named hero media, event dates, common API pagination metadata and one-level hero/pricing structures without recursive traversal.
+- Automatically analyse showcase JSON after a 350ms debounce, retaining the last valid plan on malformed input.
+- Add design research notes, sample presets and inference/responsive/lifecycle regressions.
+
 ## 0.11.1
 
 - Preserve keyed input state when UIGrid children are reordered.
