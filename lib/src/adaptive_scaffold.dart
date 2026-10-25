@@ -29,6 +29,8 @@ class UIAdaptiveScaffold extends StatefulWidget {
     this.supportingTitle = 'Thông tin thêm',
     this.leading,
     this.actions,
+    this.floatingActionButton,
+    this.floatingActionButtonLocation = FloatingActionButtonLocation.endFloat,
     this.contentMaxWidth = 720,
     this.supportingWidth = 240,
   });
@@ -40,6 +42,8 @@ class UIAdaptiveScaffold extends StatefulWidget {
   final ValueChanged<int> onDestinationSelected;
   final Widget child;
   final Widget? supporting, actions, leading;
+  final Widget? floatingActionButton;
+  final FloatingActionButtonLocation floatingActionButtonLocation;
   final double contentMaxWidth, supportingWidth;
   @override
   State<UIAdaptiveScaffold> createState() => _UIAdaptiveScaffoldState();
@@ -155,6 +159,39 @@ class _UIAdaptiveScaffoldState extends State<UIAdaptiveScaffold> {
             ],
           ],
         );
+        final Widget? footer = widget.actions == null
+            ? null
+            : Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(horizontal: gutter, vertical: 12),
+                decoration: BoxDecoration(
+                  color: s.surfaceContainerLowest,
+                  border: Border(top: BorderSide(color: s.outlineVariant)),
+                ),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: widget.contentMaxWidth,
+                    ),
+                    child: KeyedSubtree(key: _actions, child: widget.actions!),
+                  ),
+                ),
+              );
+        final navigation = NavigationBar(
+          selectedIndex: widget.selectedIndex,
+          onDestinationSelected: widget.onDestinationSelected,
+          height: 80 + 32 * (ui.textScale - 1).clamp(0, 2),
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          destinations: [
+            for (final d in widget.destinations)
+              NavigationDestination(
+                icon: Icon(d.icon),
+                selectedIcon: Icon(d.selectedIcon ?? d.icon),
+                label: d.label,
+              ),
+          ],
+        );
         final main = Expanded(
           child: Column(
             children: [
@@ -165,7 +202,15 @@ class _UIAdaptiveScaffoldState extends State<UIAdaptiveScaffold> {
                     controller: _scroll,
                     keyboardDismissBehavior:
                         ScrollViewKeyboardDismissBehavior.onDrag,
-                    padding: EdgeInsets.all(gutter),
+                    padding: EdgeInsets.fromLTRB(
+                      gutter,
+                      gutter,
+                      gutter,
+                      gutter +
+                          (widget.floatingActionButton == null
+                              ? 0
+                              : 112 * ui.textScale.clamp(1, 2)),
+                    ),
                     child: Align(
                       alignment: Alignment.topCenter,
                       child: ConstrainedBox(
@@ -180,35 +225,25 @@ class _UIAdaptiveScaffoldState extends State<UIAdaptiveScaffold> {
                   ),
                 ),
               ),
-              if (widget.actions != null)
-                Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: gutter,
-                    vertical: 12,
-                  ),
-                  decoration: BoxDecoration(
-                    color: s.surfaceContainerLowest,
-                    border: Border(top: BorderSide(color: s.outlineVariant)),
-                  ),
-                  child: Align(
-                    alignment: Alignment.centerRight,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxWidth: widget.contentMaxWidth,
-                      ),
-                      child: KeyedSubtree(
-                        key: _actions,
-                        child: widget.actions!,
-                      ),
-                    ),
-                  ),
-                ),
+              if (widget.actions != null && widget.floatingActionButton == null)
+                footer!,
             ],
           ),
         );
         return Scaffold(
+          floatingActionButton: widget.floatingActionButton,
+          floatingActionButtonLocation: widget.floatingActionButtonLocation,
           backgroundColor: s.surface,
+          bottomNavigationBar:
+              widget.floatingActionButton == null || (!bottom && footer == null)
+              ? null
+              : SafeArea(
+                  top: false,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [?footer, if (bottom) navigation],
+                  ),
+                ),
           body: SafeArea(
             child: Column(
               children: [
@@ -251,22 +286,7 @@ class _UIAdaptiveScaffoldState extends State<UIAdaptiveScaffold> {
                     ],
                   ),
                 ),
-                if (bottom)
-                  NavigationBar(
-                    selectedIndex: widget.selectedIndex,
-                    onDestinationSelected: widget.onDestinationSelected,
-                    height: 80 + 32 * (ui.textScale - 1).clamp(0, 2),
-                    labelBehavior:
-                        NavigationDestinationLabelBehavior.alwaysShow,
-                    destinations: [
-                      for (final d in widget.destinations)
-                        NavigationDestination(
-                          icon: Icon(d.icon),
-                          selectedIcon: Icon(d.selectedIcon ?? d.icon),
-                          label: d.label,
-                        ),
-                    ],
-                  ),
+                if (bottom && widget.floatingActionButton == null) navigation,
               ],
             ),
           ),

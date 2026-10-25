@@ -2,8 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:youth_ui/youth_ui.dart';
+
+import 'usage_samples.dart';
 
 void main() => runApp(const ShowcaseApp());
 
@@ -436,7 +437,7 @@ class _StudioState extends State<Studio> {
           ),
           const SizedBox(height: 20),
           Text(
-            'v0.13.0 · Ready-to-use Flutter UI',
+            'v0.14.0 · Ready-to-use Flutter UI',
             style: TextStyle(fontSize: 10, color: s.onSurfaceVariant),
           ),
         ],
@@ -711,25 +712,9 @@ class DemoBlock extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton.icon(
-                          onPressed: () {
-                            Clipboard.setData(ClipboardData(text: code));
-                            toast(context, 'Đã sao chép mã Dart.');
-                          },
-                          icon: const Icon(Icons.copy, size: 15),
-                          label: const Text('Sao chép'),
-                        ),
-                      ),
-                      SelectableText(
-                        code,
-                        style: TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 12,
-                          height: 1.8,
-                          color: s.onSurface,
-                        ),
+                      UsageCode(
+                        quick: code,
+                        custom: customizationSamples[title],
                       ),
                     ],
                   ),
@@ -1061,10 +1046,9 @@ class _ButtonDemoState extends State<ButtonDemo> {
   Widget build(BuildContext context) => DemoBlock(
     number: '01',
     title: 'Buttons',
-    description:
-        'Bốn kiểu hiển thị, sáu vai trò màu. Thử hover, Tab hoặc nhấn nút.',
+    description: 'Button và Floating Action Button dùng chung vai trò màu. FAB tự thu gọn nhãn trên vùng hẹp.',
     effects: 'Màu hover / pressed được kiểm tra sau phối lớp · focus có viền riêng · loading khóa thao tác',
-    code: "UIButton(label: 'Tiếp tục', onPressed: submit);\nUIButton(label: 'Hủy', variant: UIButtonVariant.outline, onPressed: cancel);\nUIButton(label: 'Đang lưu', loading: true);",
+    code: "UIButton(label: 'Tiếp tục', onPressed: submit);\nUIButton(label: 'Hủy', variant: UIButtonVariant.outline, onPressed: cancel);\nUIButton(label: 'Đang lưu', loading: true);\n\n// Đặt vào Scaffold.floatingActionButton:\nUIFloatingActionButton(icon: Icons.add, tooltip: 'Tạo mới',\n  label: 'Tạo mới', onPressed: createItem);",
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1113,6 +1097,52 @@ class _ButtonDemoState extends State<ButtonDemo> {
               onPressed: () => toast(context, 'Nút accent.'),
             ),
             const UIButton(label: 'Không khả dụng'),
+          ],
+        ),
+        const SizedBox(height: 24),
+        Text(
+          'Floating Action Button',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Tự thu nhãn ở vùng hẹp; tooltip luôn có tên hành động. Thử đổi kích thước cửa sổ.',
+        ),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 16,
+          runSpacing: 16,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            for (final size in UIFabSize.values)
+              UIFloatingActionButton(
+                icon: Icons.add_rounded,
+                tooltip: 'Tạo mục · ${size.name}',
+                size: size,
+                onPressed: () => toast(context, 'Tạo mục mới · ${size.name}'),
+              ),
+            UIFloatingActionButton(
+              icon: Icons.edit_outlined,
+              tooltip: 'Soạn nội dung',
+              label: 'Soạn nội dung',
+              tone: UITone.secondary,
+              onPressed: () => toast(context, 'Đã mở hành động soạn nội dung.'),
+            ),
+            UIFloatingActionButton(
+              icon: Icons.upload_rounded,
+              tooltip: 'Tải lên',
+              loading: loading,
+              onPressed: () async {
+                setState(() => loading = true);
+                await Future<void>.delayed(const Duration(milliseconds: 1300));
+                if (!mounted) return;
+                setState(() => loading = false);
+              },
+            ),
+            const UIFloatingActionButton(
+              icon: Icons.lock_outline,
+              tooltip: 'Chưa có quyền',
+            ),
           ],
         ),
       ],
@@ -2739,17 +2769,24 @@ class _TableDemoState extends State<TableDemo> {
     ),
   );
   Set<Object> selected = {};
-  bool loading = false, empty = false;
+  bool loading = false, empty = false, failed = false;
+  String query = '';
+  int pageSize = 5;
   @override
   Widget build(BuildContext context) => DemoBlock(
     number: '12',
     title: 'Table · bảng dữ liệu thích ứng',
     description: 'Bấm tiêu đề để sắp xếp, chọn từng dòng và chuyển trang. Mobile/chữ lớn tự dùng thẻ có nhãn cột. Chỉ dựng ô của trang hiện tại.',
-    effects: 'Sort ổn định · phân trang · chọn dòng · ô tùy biến · empty/loading · RTL',
+    effects: 'Tìm kiếm không dấu · chọn cả trang · số dòng tùy chọn · độ rộng cột · lỗi/thử lại · mobile/desktop',
     code: "UITable<Person>(\n  rows: people,\n  columns: [\n    UITableColumn(label: 'Tên', value: (p) => p.name,\n      compare: (a, b) => a.name.compareTo(b.name)),\n    UITableColumn(label: 'Điểm', value: (p) => '\${p.points}',\n      numeric: true, compare: (a, b) => a.points.compareTo(b.points)),\n  ],\n  rowKey: (p) => p.id,\n  selectedKeys: selected,\n  onSelectionChanged: (keys) => setState(() => selected = keys),\n);",
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        UITextField.search(
+          label: 'Tìm thành viên, điểm hoặc trạng thái',
+          onChanged: (value) => setState(() => query = value),
+        ),
+        const SizedBox(height: 16),
         Wrap(
           spacing: 20,
           runSpacing: 8,
@@ -2758,6 +2795,11 @@ class _TableDemoState extends State<TableDemo> {
               value: loading,
               label: 'Đang tải',
               onChanged: (v) => setState(() => loading = v),
+            ),
+            UISwitch(
+              value: failed,
+              label: 'Lỗi kết nối',
+              onChanged: (v) => setState(() => failed = v),
             ),
             UISwitch(
               value: empty,
@@ -2770,7 +2812,12 @@ class _TableDemoState extends State<TableDemo> {
         UITable<_DemoMember>(
           label: 'Danh sách thành viên',
           rows: empty ? rows.take(0).toList() : rows,
-          pageSize: 5,
+          pageSize: pageSize,
+          onPageSizeChanged: (value) => setState(() => pageSize = value),
+          searchQuery: query,
+          showSelectAll: true,
+          error: failed ? 'Không thể tải thành viên. Hãy thử lại.' : null,
+          onRetry: () => setState(() => failed = false),
           loading: loading,
           rowKey: (p) => p.id,
           selectedKeys: selected,
@@ -2783,6 +2830,7 @@ class _TableDemoState extends State<TableDemo> {
             ),
             UITableColumn(
               label: 'Điểm',
+              minWidth: 80,
               value: (p) => '${p.points}',
               numeric: true,
               compare: (a, b) => a.points.compareTo(b.points),

@@ -13,3 +13,4 @@ export 'src/image.dart';
 export 'src/wireframe.dart';
 export 'src/radio.dart';
 export 'src/table.dart';
+export 'src/floating_action_button.dart';

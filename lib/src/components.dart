@@ -9,6 +9,7 @@ import 'theme.dart';
 import 'color_engine.dart';
 import 'adaptive.dart';
 import 'motion.dart';
+import 'search_text.dart';
 
 part 'select.dart';
 part 'form.dart';
@@ -25,6 +26,11 @@ class UIButton extends StatelessWidget {
     this.loading = false,
     this.fullWidth,
     this.selected,
+    this.style,
+    this.tooltip,
+    this.focusNode,
+    this.autofocus = false,
+    this.onLongPress,
   });
   final String label;
   final VoidCallback? onPressed;
@@ -34,6 +40,13 @@ class UIButton extends StatelessWidget {
   final bool loading;
   final bool? fullWidth;
   final bool? selected;
+
+  /// Merged over the generated style; unspecified properties retain defaults.
+  final ButtonStyle? style;
+  final String? tooltip;
+  final FocusNode? focusNode;
+  final bool autofocus;
+  final VoidCallback? onLongPress;
   @override
   Widget build(BuildContext context) => UIAdaptiveBuilder(
     builder: (context, ui) {
@@ -44,7 +57,7 @@ class UIButton extends StatelessWidget {
         {...states, if (selected == true) WidgetState.selected},
         surface: UISurfaceScope.of(context),
       );
-      final style = ButtonStyle(
+      final resolvedStyle = ButtonStyle(
         minimumSize: const WidgetStatePropertyAll(Size(48, 48)),
         visualDensity: VisualDensity.standard,
         tapTargetSize: MaterialTapTargetSize.padded,
@@ -64,7 +77,7 @@ class UIButton extends StatelessWidget {
               ? BorderSide(color: resolve(states).border)
               : BorderSide.none,
         ),
-      );
+      ).merge(style);
       final content = Row(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -93,17 +106,26 @@ class UIButton extends StatelessWidget {
       final child = switch (variant) {
         UIButtonVariant.outline => OutlinedButton(
           onPressed: loading ? null : onPressed,
-          style: style,
+          style: resolvedStyle,
+          onLongPress: loading ? null : onLongPress,
+          focusNode: focusNode,
+          autofocus: autofocus,
           child: content,
         ),
         UIButtonVariant.ghost => TextButton(
           onPressed: loading ? null : onPressed,
-          style: style,
+          style: resolvedStyle,
+          onLongPress: loading ? null : onLongPress,
+          focusNode: focusNode,
+          autofocus: autofocus,
           child: content,
         ),
         _ => FilledButton(
           onPressed: loading ? null : onPressed,
-          style: style,
+          style: resolvedStyle,
+          onLongPress: loading ? null : onLongPress,
+          focusNode: focusNode,
+          autofocus: autofocus,
           child: content,
         ),
       };
@@ -114,7 +136,12 @@ class UIButton extends StatelessWidget {
             ? SizedBox(width: double.infinity, child: child)
             : child,
       );
-      return selected == null ? result : MergeSemantics(child: result);
+      final semanticResult = selected == null
+          ? result
+          : MergeSemantics(child: result);
+      return tooltip == null
+          ? semanticResult
+          : Tooltip(message: tooltip!, child: semanticResult);
     },
   );
 }

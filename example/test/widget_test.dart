@@ -2,8 +2,55 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:youth_ui/youth_ui.dart';
 import 'package:flutter_ui_showcase/main.dart';
+import 'package:flutter_ui_showcase/customization_example.dart';
+import 'package:flutter_ui_showcase/usage_samples.dart';
 
 void main() {
+  testWidgets(
+    'usage modes show the selected recipe and complete runnable page',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: UsageCode(
+                quick: 'Quick snippet',
+                custom: 'Custom snippet',
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(find.text('Quick snippet'), findsOneWidget);
+      await tester.tap(find.text('Tùy chỉnh'));
+      await tester.pumpAndSettle();
+      expect(find.text('Custom snippet'), findsOneWidget);
+      await tester.tap(find.text('Trang mẫu chạy được'));
+      await tester.pumpAndSettle();
+      expect(find.text(completeExampleCode), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'complete example adds and searches rows using its floating action',
+    (tester) async {
+      await tester.pumpWidget(
+        const UIApp(primary: Colors.indigo, home: CustomPage()),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Thêm thành viên'));
+      await tester.pumpAndSettle();
+      UINotice.clearAll(tester.element(find.byType(CustomPage)));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextFormField), 'binh');
+      await tester.pumpAndSettle();
+      expect(find.text('Bình'), findsOneWidget);
+      expect(find.text('Trang 1 / 1'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('motion gallery reveal retains the user note across collapse', (
     tester,
   ) async {
@@ -167,8 +214,8 @@ void main() {
           await tester.ensureVisible(sort);
           await tester.tap(sort);
           await tester.pumpAndSettle();
-          await tester.ensureVisible(find.byType(Checkbox).first);
-          await tester.tap(find.byType(Checkbox).first);
+          await tester.ensureVisible(find.byType(Checkbox).at(1));
+          await tester.tap(find.byType(Checkbox).at(1));
           await tester.pumpAndSettle();
           expect(find.text('Đã chọn: 1 dòng'), findsOneWidget);
         } else {

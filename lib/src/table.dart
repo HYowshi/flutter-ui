@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'adaptive.dart';
 import 'components.dart';
 import 'color_engine.dart';
+import 'search_text.dart';
 
 @immutable
 class UITableColumn<T> {
@@ -14,6 +15,7 @@ class UITableColumn<T> {
     this.cellBuilder,
     this.compare,
     this.numeric = false,
+    this.minWidth = 180,
   });
   final String label;
 
@@ -24,6 +26,9 @@ class UITableColumn<T> {
   /// Null disables sorting for this column.
   final Comparator<T>? compare;
   final bool numeric;
+
+  /// Minimum content width on desktop, excluding table cell padding.
+  final double minWidth;
 }
 
 /// In-memory, paged table. Compact regions/large text use labeled cards.
@@ -40,6 +45,13 @@ class UITable<T> extends StatefulWidget {
     this.loading = false,
     this.empty,
     this.label = 'Bảng dữ liệu',
+    this.searchQuery = '',
+    this.searchText,
+    this.showSelectAll = false,
+    this.onPageSizeChanged,
+    this.pageSizeOptions = const [5, 10, 20, 50],
+    this.error,
+    this.onRetry,
   });
   final List<UITableColumn<T>> columns;
   final List<T> rows;
@@ -50,6 +62,17 @@ class UITable<T> extends StatefulWidget {
   final bool loading;
   final Widget? empty;
   final String label;
+
+  /// Controlled local search. Default: search the plain values of all columns.
+  final String searchQuery;
+  final String Function(T row)? searchText;
+
+  /// Select only the currently displayed page, preserving other selected keys.
+  final bool showSelectAll;
+  final ValueChanged<int>? onPageSizeChanged;
+  final List<int> pageSizeOptions;
+  final String? error;
+  final VoidCallback? onRetry;
   @override
   State<UITable<T>> createState() => _UITableState<T>();
 }
@@ -60,6 +83,7 @@ class _UITableState<T> extends State<UITable<T>> {
   bool _ascending = true;
   List<int>? _order;
   bool _keysValidated = false;
+  List<String>? _searchCache;
   final _horizontal = ScrollController();
   @override
   void dispose() {
@@ -73,7 +97,14 @@ class _UITableState<T> extends State<UITable<T>> {
     if (!identical(widget.rows, oldWidget.rows) ||
         !identical(widget.columns, oldWidget.columns)) {
       _order = null;
+      _searchCache = null;
     }
+    if (oldWidget.searchText != widget.searchText) _searchCache = null;
+    if (oldWidget.searchQuery != widget.searchQuery ||
+        oldWidget.searchText != widget.searchText) {
+      _order = null;
+    }
+    if (oldWidget.searchQuery != widget.searchQuery) _page = 0;
     if (_sort != null &&
         (_sort! >= widget.columns.length ||
             widget.columns[_sort!].label != oldWidget.columns[_sort!].label ||
@@ -109,6 +140,12 @@ class _UITableState<T> extends State<UITable<T>> {
     if (widget.columns.isEmpty) {
       throw ArgumentError('UITable needs at least one column.');
     }
+    if (widget.columns.any((c) => !c.minWidth.isFinite || c.minWidth < 48)) {
+      throw ArgumentError('Column minWidth must be finite and >= 48.');
+    }
+    if (widget.pageSizeOptions.any((n) => n < 1 || n > 100)) {
+      throw ArgumentError('pageSizeOptions must be within 1–100.');
+    }
     if (widget.pageSize < 1 || widget.pageSize > 100) {
       throw RangeError.range(widget.pageSize, 1, 100, 'pageSize');
     }
@@ -136,6 +173,14 @@ class _UITableState<T> extends State<UITable<T>> {
         ),
       );
     }
+    if (widget.error != null) {
+      return UIAlert(
+        message: widget.error!,
+        tone: UITone.danger,
+        actionLabel: widget.onRetry == null ? null : 'Thử lại',
+        onAction: widget.onRetry,
+      );
+    }
     if (widget.rows.isEmpty) {
       return Semantics(
         label: widget.label,
@@ -153,7 +198,20 @@ class _UITableState<T> extends State<UITable<T>> {
       );
     }
     final order = _order ??= (() {
-      final indices = List.generate(widget.rows.length, (i) => i);
+      final needle = normalizeSearchText(widget.searchQuery);
+      if (needle.isNotEmpty) {
+        _searchCache ??= [
+          for (final row in widget.rows)
+            normalizeSearchText(
+              widget.searchText?.call(row) ??
+                  widget.columns.map((c) => c.value(row)).join(' '),
+            ),
+        ];
+      }
+      final indices = [
+        for (var i = 0; i < widget.rows.length; i++)
+          if (needle.isEmpty || _searchCache![i].contains(needle)) i,
+      ];
       if (_sort == null) return indices;
       return indices..sort((a, b) {
         final compare = widget.columns[_sort!].compare;
@@ -164,6 +222,16 @@ class _UITableState<T> extends State<UITable<T>> {
         return result == 0 ? a.compareTo(b) : result;
       });
     })();
+    if (order.isEmpty) {
+      return Semantics(
+        label: widget.label,
+        liveRegion: true,
+        child: const Padding(
+          padding: EdgeInsets.all(24),
+          child: Center(child: Text('Không có kết quả phù hợp')),
+        ),
+      );
+    }
     final pages = (order.length / widget.pageSize).ceil();
     final page = math.min(_page, pages - 1);
     final start = page * widget.pageSize;
@@ -190,7 +258,17 @@ class _UITableState<T> extends State<UITable<T>> {
           child: Builder(
             builder: (context) =>
                 column.cellBuilder?.call(context, row) ??
-                Text(column.value(row), softWrap: true),
+                Text(
+                  column.value(row),
+                  softWrap: true,
+                  style: TextStyle(
+                    color:
+                        selectable &&
+                            widget.selectedKeys.contains(widget.rowKey!(row))
+                        ? s.onPrimaryContainer
+                        : s.onSurface,
+                  ),
+                ),
           ),
         );
     return UIAdaptiveBuilder(
@@ -275,9 +353,17 @@ class _UITableState<T> extends State<UITable<T>> {
             ],
           );
         } else {
-          final minWidth =
-              widget.columns.length * 180.0 + (selectable ? 96 : 0);
-          final tableWidth = math.max(ui.width, minWidth);
+          final contentWidth = widget.columns.fold(
+            0.0,
+            (sum, c) => sum + c.minWidth,
+          );
+          final chrome =
+              32.0 +
+              (widget.columns.length - 1 + (selectable ? 1 : 0)) * 20 +
+              (selectable ? 96 : 0);
+          final tableWidth = math.max(ui.width, contentWidth + chrome);
+          final extraWidth =
+              (tableWidth - contentWidth - chrome) / widget.columns.length;
           pageContent = Scrollbar(
             controller: _horizontal,
             thumbVisibility: tableWidth > ui.width,
@@ -311,7 +397,9 @@ class _UITableState<T> extends State<UITable<T>> {
                       ),
                     for (var i = 0; i < widget.columns.length; i++)
                       DataColumn(
-                        columnWidth: const FlexColumnWidth(),
+                        columnWidth: FixedColumnWidth(
+                          widget.columns[i].minWidth + extraWidth,
+                        ),
                         numeric: widget.columns[i].numeric,
                         label: Expanded(
                           child: Text(widget.columns[i].label, softWrap: true),
@@ -367,7 +455,59 @@ class _UITableState<T> extends State<UITable<T>> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (selectable && widget.showSelectAll)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      MergeSemantics(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Checkbox(
+                              tristate: true,
+                              value:
+                                  indices.every(
+                                    (i) => widget.selectedKeys.contains(
+                                      widget.rowKey!(widget.rows[i]),
+                                    ),
+                                  )
+                                  ? true
+                                  : indices.any(
+                                      (i) => widget.selectedKeys.contains(
+                                        widget.rowKey!(widget.rows[i]),
+                                      ),
+                                    )
+                                  ? null
+                                  : false,
+                              onChanged: (_) {
+                                final pageKeys = indices
+                                    .map((i) => widget.rowKey!(widget.rows[i]))
+                                    .toSet();
+                                final keys = {...widget.selectedKeys};
+                                if (keys.containsAll(pageKeys)) {
+                                  keys.removeAll(pageKeys);
+                                } else {
+                                  keys.addAll(pageKeys);
+                                }
+                                widget.onSelectionChanged!(
+                                  Set.unmodifiable(keys),
+                                );
+                              },
+                            ),
+                            const Flexible(child: Text('Chọn trang này')),
+                          ],
+                        ),
+                      ),
+                      Text('Đã chọn: ${widget.selectedKeys.length}'),
+                    ],
+                  ),
+                ),
               pageContent,
+              const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -376,6 +516,26 @@ class _UITableState<T> extends State<UITable<T>> {
                   Text(
                     '${start + 1}–${math.min(start + widget.pageSize, order.length)} / ${order.length}',
                   ),
+                  if (widget.onPageSizeChanged != null)
+                    SizedBox(
+                      width: math.min(ui.width, 180),
+                      child: UISelect<int>(
+                        key: ValueKey(widget.pageSize),
+                        label: 'Dòng mỗi trang',
+                        initialValue: widget.pageSize,
+                        searchable: false,
+                        options:
+                            ({
+                                  ...widget.pageSizeOptions,
+                                  widget.pageSize,
+                                }.toList()..sort())
+                                .map((n) => UIOption(value: n, label: '$n'))
+                                .toList(),
+                        onChanged: (n) {
+                          if (n != null) widget.onPageSizeChanged!(n);
+                        },
+                      ),
+                    ),
                   IconButton(
                     tooltip: 'Trang trước',
                     onPressed: page == 0

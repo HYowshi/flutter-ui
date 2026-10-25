@@ -405,23 +405,7 @@ class _UISelectState<T> extends State<UISelect<T>> {
   );
 }
 
-String _selectSearchKey(String input) {
-  var result = input.toLowerCase().trim();
-  const groups = [
-    'àáạảãâầấậẩẫăằắặẳẵ',
-    'èéẹẻẽêềếệểễ',
-    'ìíịỉĩ',
-    'òóọỏõôồốộổỗơờớợởỡ',
-    'ùúụủũưừứựửữ',
-    'ỳýỵỷỹ',
-    'đ',
-  ];
-  const plain = ['a', 'e', 'i', 'o', 'u', 'y', 'd'];
-  for (var i = 0; i < groups.length; i++) {
-    result = result.replaceAll(RegExp('[${groups[i]}]'), plain[i]);
-  }
-  return result;
-}
+String _selectSearchKey(String input) => normalizeSearchText(input);
 
 class _SelectPanel<T> extends StatefulWidget {
   const _SelectPanel({

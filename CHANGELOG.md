@@ -1,3 +1,12 @@
+## 0.14.0
+
+- Add adaptive UIFloatingActionButton with three sizes, optional extended label, loading/reduced-motion handling, custom colors/shape/elevation/focus and opt-in Hero tags.
+- Add FAB slots to UIAdaptiveScaffold, reserve scroll space and position above navigation/actions using native Scaffold geometry.
+- Merge custom ButtonStyle over generated UIButton defaults; expose tooltip, focus, autofocus and long-press callbacks.
+- Add controlled accent-insensitive local table search, page-only bulk selection, page-size controls, column minimum widths and error/retry states.
+- Share Vietnamese search normalization with dropdowns; preserve cross-page selection and reset pagination on query/size changes.
+- Add per-gallery customization recipes and a complete executable example, with selectable/copyable code modes and clipboard failure feedback.
+
 ## 0.13.0
 
 - Unify motion timings, shorten entrance transitions and block invisible/outgoing interactions; animate content size without shrinking outgoing layouts.
