@@ -4,6 +4,35 @@ Bộ Flutter/Dart UI dùng lại cho mobile, desktop và web, không gắn với
 
 **[Website tương tác](https://hyowshi.github.io/flutter-ui/)** · **[Nghiên cứu và quyết định thuật toán](docs/color-research.vi.md)** · **[Thiết kế truyền thông và UI](docs/visual-communication.vi.md)**
 
+## Bắt đầu trong một phút
+
+Trong thư mục ứng dụng Flutter, chạy **một lệnh** (tự thêm dependency và tải thư viện):
+
+```sh
+flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.15.1}}"
+```
+
+Sau đó thay `lib/main.dart` của **ứng dụng mới** bằng:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:youth_ui/youth_ui.dart';
+
+void main() => runApp(UIApp(
+  primary: Colors.indigo,
+  home: Scaffold(body: UIPage(children: [
+    UITextField(label: 'Tên của bạn'),
+    UIButton(label: 'Tiếp tục', onPressed: () {}),
+  ])),
+));
+```
+
+Chỉ khởi tạo màu ở `UIApp` một lần; các UI tự lấy theme. Có thể thêm `secondary` nếu có màu thương hiệu thứ hai. Callback và dữ liệu do ứng dụng cung cấp. Cần Flutter >=3.47.0 / Dart ^3.13.0 và Git để cài bản GitHub này.
+
+Ứng dụng đã có `MaterialApp`/router: giữ cấu trúc hiện tại và tích hợp theme bằng `YouthUI.colors(...)` theo hướng dẫn bên dưới; không lồng thêm `UIApp`.
+
+Bản hiện tại phát hành trên GitHub, **chưa trên pub.dev**: dùng nguyên lệnh trên, chưa dùng `flutter pub add youth_ui`.
+
 ## Cài đặt và tải bản đóng gói
 
 Giấy phép **MIT**. Dùng Git dependency ghim `v0.15.1` theo phần Dùng nhanh bên dưới, hoặc tải ZIP/TAR.GZ tại [GitHub Releases](https://github.com/HYowshi/flutter-ui/releases/tag/v0.15.1). [Hướng dẫn cài gói đã giải nén](docs/distribution.vi.md).

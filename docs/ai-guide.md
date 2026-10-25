@@ -13,6 +13,14 @@ Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This 
 
 ## Install and import
 
+Fast installation from the consumer app directory (adds the dependency and resolves it in one command):
+
+```sh
+flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.15.1}}"
+```
+
+This release is distributed through GitHub, not pub.dev. Do not replace this command with `flutter pub add youth_ui`. Git must be installed. Alternatively, edit pubspec.yaml manually:
+
 ```yaml
 dependencies:
   youth_ui:
