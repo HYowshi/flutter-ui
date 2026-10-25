@@ -222,6 +222,7 @@ void main() {
           scale: 2,
         ),
       );
+      expect(tester.getTopLeft(find.byType(Checkbox).at(1)).dx, lessThan(48));
       await tester.ensureVisible(find.byType(UISelect<int>));
       await tester.tap(find.byType(UISelect<int>));
       await tester.pumpAndSettle();
