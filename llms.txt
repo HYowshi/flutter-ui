@@ -1,0 +1,34 @@
+# Flutter UI / youth_ui
+
+> A reusable Flutter/Dart UI library for mobile, desktop and web. Version 0.15.0; Dart ^3.13.0 and Flutter >=3.47.0. Public import: package:youth_ui/youth_ui.dart.
+
+This is a reading entry point, not a mechanism that automatically teaches every AI. Give an agent this URL or a local checkout and ask it to read the guide. Match documentation to the version resolved in the consumer's pubspec.lock; prefer that version's source over main when they differ.
+
+## Start here
+
+- [AI integration guide](https://hyowshi.github.io/flutter-ui/ai/ai-guide.md): setup, component selection, ownership, responsive behavior and common mistakes.
+- [API reference](https://hyowshi.github.io/flutter-ui/ai/api-reference.md): generated constructor/static signatures and public field types from the exported source, with links to source.
+- [Runnable cookbook](https://hyowshi.github.io/flutter-ui/ai/ai-cookbook.md): analyzed, tested example files and commands.
+- [Consumer project instructions](https://hyowshi.github.io/flutter-ui/ai/consumer-agents.md): a small template to adapt into the consuming project's AGENTS.md or equivalent.
+- [Full text bundle](https://hyowshi.github.io/flutter-ui/llms-full.txt): guide, API reference, cookbook, integration constraints and recipe source in one file.
+- [Documentation portal](https://hyowshi.github.io/flutter-ui/ai/): human-readable links and a copyable starter prompt.
+
+## Source and compatibility
+
+- [Repository](https://github.com/HYowshi/flutter-ui): source, version and checks.
+- [Public exports](https://github.com/HYowshi/flutter-ui/blob/main/lib/youth_ui.dart): library entry point; do not import internal src files in consumer code.
+- [Repository contributor rules](https://github.com/HYowshi/flutter-ui/blob/main/AGENTS.md): instructions when modifying the library itself.
+- [Showcase](https://hyowshi.github.io/flutter-ui/): interactive visual reference; APIs remain in readable source and docs.
+
+## Detailed guides
+
+- [Forms and notices](https://hyowshi.github.io/flutter-ui/ai/forms-feedback.vi.md): named server errors, validation timing, notice queue integration.
+- [Images](https://hyowshi.github.io/flutter-ui/ai/images.vi.md): fallback order, source variants, sizing, CORS and retry boundaries.
+- [Wireframes](https://hyowshi.github.io/flutter-ui/ai/wireframe.vi.md): bounded heuristic layout inference; placeholders, not functional forms or AI-generated screens.
+- [Customization and tables](https://hyowshi.github.io/flutter-ui/ai/customization.vi.md): styles, FAB, in-memory filtering/sorting/paging and caller-owned selection.
+- [States, dialogs and dates](https://hyowshi.github.io/flutter-ui/ai/states-dialog-date.vi.md): explicit states, route context, localization, date-only values and constraints.
+- [Motion and inputs](https://hyowshi.github.io/flutter-ui/ai/motion-input-notice.vi.md): state preservation, reduced motion, search/multiline presets and long notices.
+
+## Core rules
+
+Initialize UIApp once or reuse an existing MaterialApp with cached YouthUI.colors themes. Prefer existing UI widgets, tone/variant and theme roles. The application owns controllers it creates, async operations, network access and data. Keep values immutable when required by table/wireframe caches. Never infer authentication, authorization, offline storage, server paging or network caching from a visual component. Run flutter analyze and appropriate tests after integration.

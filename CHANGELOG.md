@@ -1,5 +1,7 @@
 ## 0.15.0
 
+- Add version-aware AI integration docs, generated source-signature reference, full-text bundle, consumer instruction template, tested recipes and a static AI documentation portal with CI drift checks.
+
 - Add UIStateView presets for loading/empty/error/offline/forbidden/success, custom illustrations/actions, bounded scrolling and reduced-motion handling.
 - Add UIAdaptiveDialog.show/confirm with native dialog or bottom-sheet routes, typed results, explicit dismissal policy, keyboard-safe scrolling and shared motion timings.
 - Add UIDateField with controlled date-only values, clear/cancel, bounds/predicate validation, native keyboard/calendar modes and named UIForm errors/submit locking.

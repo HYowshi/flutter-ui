@@ -4,6 +4,16 @@ Bộ Flutter/Dart UI dùng lại cho mobile, desktop và web, không gắn với
 
 **[Website tương tác](https://hyowshi.github.io/flutter-ui/)** · **[Nghiên cứu và quyết định thuật toán](docs/color-research.vi.md)** · **[Thiết kế truyền thông và UI](docs/visual-communication.vi.md)**
 
+## Dùng với AI
+
+Cho AI bắt đầu từ **[llms.txt](llms.txt)** hoặc **[cổng tài liệu đọc trực tiếp](https://hyowshi.github.io/flutter-ui/ai/)**. Có [hướng dẫn tích hợp](docs/ai-guide.md), [chữ ký API lấy từ source](docs/api-reference.md), [ví dụ chạy được](examples/README.md), [mẫu AGENTS.md cho dự án khác](docs/consumer-agents.md) và [bản gộp một tệp](llms-full.txt).
+
+Prompt dùng ngay:
+
+> Dự án dùng youth_ui từ HYowshi/flutter-ui. Đọc https://hyowshi.github.io/flutter-ui/llms.txt và ai-guide trước khi viết UI. Kiểm tra phiên bản trong pubspec.lock, dùng API đúng phiên bản, ưu tiên component có sẵn và giữ router/state/theme hiện tại.
+
+AI không nhất thiết tự phát hiện các tệp này; hãy đưa URL hoặc thêm mẫu chỉ dẫn vào dự án sử dụng. Khi thay API/tài liệu, chạy `python tool/generate_ai_docs.py`; CI kiểm tra đồng bộ và xuất bản bản văn bản bên cạnh website.
+
 **Mới 0.12:** wireframe tự nhận diện thêm trang quảng bá, sự kiện và gói dịch vụ; demo tự phân tích khi nhập. Xem [nghiên cứu và thay đổi nhận diện](docs/wireframe-design-research.vi.md).
 
 **Mới 0.14:** Floating Action Button, ButtonStyle tùy biến, Table có tìm kiếm/chọn trang/đổi số dòng/lỗi thử lại và mã sử dụng ba mức. [Hướng dẫn tùy chỉnh](docs/customization.vi.md) · [Trang mẫu chạy được](example/lib/customization_example.dart).

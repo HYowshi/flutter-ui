@@ -1,0 +1,2926 @@
+# youth_ui 0.15.0: AI full-text documentation
+
+Generated bundle; individual source/guide files remain authoritative.
+
+
+---
+
+Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/ai-guide.md
+
+# youth_ui: guide for coding agents
+
+Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This guide targets **0.15.0**, not a package named `flutter_ui` on pub.dev. The repository/folder name is Flutter UI; the Dart package/import is youth_ui.
+
+## Reading order and version matching
+
+1. Read the consumer's existing instructions, `pubspec.yaml`, `pubspec.lock`, routing/state architecture and UI entry point.
+2. Resolve youth_ui's installed source path from `.dart_tool/package_config.json`. For a Git dependency, use the lockfile's resolved commit. Do not change it merely because main has newer docs.
+3. Read this guide, then the relevant section of [API reference](api-reference.md) and [cookbook](ai-cookbook.md).
+4. Open that version's source for unfamiliar behavior. Main's docs can describe APIs absent from an older checkout. Use that older API or propose a deliberate upgrade; do not guess parameters.
+
+`llms.txt` and the full-text bundle are ordinary readable files. Agents may require an explicit prompt or URL; they are not guaranteed to auto-discover them. `AGENTS.md` at the library root guides contributors to the library; it does not automatically govern a separate consumer project.
+
+## Install and import
+
+```yaml
+dependencies:
+  youth_ui:
+    git:
+      url: https://github.com/HYowshi/flutter-ui.git
+      ref: d3989fed91c4ae7021f1a2ef6e33cc349ec9cdb3
+```
+
+That commit is an immutable 0.15.0 baseline containing the three newest UI groups. `main` follows ongoing work; pin a reviewed commit for reproducibility. Run `flutter pub get` after changing dependencies. Requirements for this version: Dart ^3.13.0; Flutter >=3.47.0. Repository CI uses Flutter 3.47.5. Do not upgrade an application's SDK or dependencies without a reason required by the task.
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:youth_ui/youth_ui.dart';
+
+void main() => runApp(const UIApp(
+  primary: Colors.indigo,
+  home: Scaffold(body: UIPage(children: [Text('Hello')])),
+));
+```
+
+All consumer APIs are exported by `lib/youth_ui.dart`. Do not import `lib/src/` implementation files. The signatures in the generated reference are declarations, not complete runnable applications; field declarations supply the types behind constructor parameters such as `this.controller`.
+
+## Existing applications
+
+Do not wrap an existing router/MaterialApp in another UIApp. UIApp creates a MaterialApp; preserve the application's navigation, providers and state management.
+
+For MaterialApp or MaterialApp.router, compute and retain a `YouthUI.colors(primary: ..., secondary: ...)` theme pair, then assign its `.light`/`.dark` to the existing app. Recompute when seed/theme configuration changes, not per animation frame. See README for optional UIThemeTransition integration; do not animate the theme twice.
+
+UIThemeToggle depends on the controller scope installed by UIApp. In an existing MaterialApp integration, keep the app's own theme switch/controller instead of assuming that scope exists.
+
+## Choose an existing component
+
+| Need | Public API |
+|---|---|
+| Theme/bootstrap | UIApp; YouthUI.colors; YouthUI.init; UIThemeController |
+| Scrolling page / grid / actions | UIPage; UIGrid; UIActions |
+| App frame with responsive navigation | UIAdaptiveScaffold + UIDestination |
+| Main/secondary action | UIButton with UIButtonVariant and UITone |
+| Floating primary action | UIFloatingActionButton in Scaffold's FAB slot |
+| Text/password/search/notes | UITextField; UIPasswordField; UITextField.search; UITextField.multiline |
+| Form submission and validation | UIForm; UIFormController; UIFormException; UIValidators |
+| Boolean / multiple choice | UICheckbox; UISwitch; UIToggleButton; UISegmentedControl |
+| Single choice / dropdown | UIRadioGroup + UIOption; UISelect + UIOption |
+| Cards / status / feedback | UICard; UIBadge; UIAlert; UINotice |
+| Image loading and fallback | UIImage; .avatar; .thumbnail; .banner; .provider |
+| Tabular in-memory data | UITable + UITableColumn |
+| Loading/empty/error/offline/access/success view | UIStateView (caller supplies state) |
+| Modal editing / confirmation | UIAdaptiveDialog.show<T>; .confirm |
+| Single date / range | UIDateField; UIDatePicker.show; .range |
+| Entrance / content change / reveal | UIEntrance; UIAnimatedContent; UIAnimatedSize; UIReveal |
+| Static layout placeholder | UIWireframe.auto; .page; .fromPlan; inspect |
+
+Use ordinary Flutter widgets for features the library does not provide. Do not invent APIs such as UIUpload, UIAutocomplete, UITable.server or UIApp.router. A new missing feature should be explicit application code or a separately authorized library addition.
+
+## Theme and layout
+
+- Seed colors belong at app initialization. Prefer `tone`, `variant`, `Theme.of(context).colorScheme` and textTheme over hardcoded per-widget colors. Keep business-status colors consistent.
+- UIButton.style merges only supplied properties over defaults. If overriding background/foreground, check the pair in light/dark, disabled and focused states. Other widgets do not automatically accept ButtonStyle or arbitrary decoration parameters.
+- Reuse local-constraint-based layout. UIPage owns vertical scrolling and limits readable width; do not casually nest it inside another vertical scroll view. UIGrid wraps columns and preserves keyed children.
+- UITable and wireframe page content expect the parent to own vertical scrolling. Use UIPage or an existing scroll view. Bound grids/navigation frames where required; do not place Expanded in an unbounded vertical scrollable.
+- UIAdaptiveScaffold requires 2–5 destinations and a valid selectedIndex. It owns a Scaffold/scrolling body; avoid nesting another Scaffold unless intentional.
+- Put UIFloatingActionButton in `Scaffold.floatingActionButton` or the matching UIAdaptiveScaffold slot. In a plain Scaffold, reserve final scroll space when content can sit underneath it. Default Hero tag is null; opt-in tags must be unique per route except the corresponding transition pair.
+
+## State and lifecycle ownership
+
+- Create TextEditingController, FocusNode, UIThemeController and UIFormController outside build (usually State.initState). Dispose those the application creates. A supplied UIFormController has only one mounted owner.
+- Keep controlled values in application state: checkbox/switch/radio/segmented values, date value, table selectedKeys/pageSize/query. Update them in callbacks.
+- `initialValue` initializes text/select fields. It is not a general controlled-value API. Do not pass a nonexistent `UISelect.value`. Reset intentionally with an appropriate key/state reset when the record changes.
+- UITextField accepts either controller or initialValue, not both. Changing initialValue does not overwrite an ongoing edit. Search/multiline convenience factories expose fewer options than the main constructor; use the main constructor when a preset lacks an option.
+- Check mounted/context.mounted after await before touching UI. Ignore stale responses when the edited record changes. Widgets guard their own lifecycles, not all caller-owned futures.
+
+## Forms and notices
+
+UIForm can be layout-only. Supplying onSubmit enables validation, loading/duplicate-submit protection, field locking and error feedback. UIFormController.submit() returns whether a managed submit succeeded. Keep network/authentication/storage in the application's callback.
+
+Match field `name` to `UIFormException(fieldErrors: {...})` keys on UITextField, UIPasswordField, UISelect or UIDateField. Treat unexpected exceptions as user-safe failures; log/report diagnostic details through application code. Do not show raw server stack traces.
+
+UIValidators.required/email/minLength/combine validate **strings**. For dates or typed choices, provide validators of the appropriate type. Do not apply UIValidators.required() to UIDateField.
+
+UINotice.show returns a bool indicating whether the notice was accepted, not an awaitable user decision. Its queue is bounded at five and deduplicates active/queued notices. Action/danger notices persist by default. UIAlert is appropriate for durable in-page errors; UIAdaptiveDialog.confirm is for an explicit decision.
+
+Use UINotice.clear for helper notices. When mixing native SnackBars and helper notices, use UINotice.clearAll for an intentional full reset; calling native clearSnackBars directly can discard helper queue futures. Neither helper sends messages or performs undo/business operations on its own.
+
+## Images, tables and wireframes
+
+UIImage source is String?; null/blank means unavailable. Error handling order: errorBuilder override, otherwise try fallbackSource once, then fallback widget, then default error UI. Assets need pubspec entries. Web HTTP images need valid server CORS; the widget cannot bypass it. Variant URLs reduce downloaded bytes; native decode hints are not a web bandwidth optimizer. No disk/offline cache is supplied.
+
+UITable uses in-memory filtering/sorting/paging, not server pagination. Provide stable unique rowKey for selection; maintain selectedKeys in the app. showSelectAll affects the displayed page and preserves other selected keys. Replace rows/columns collections when data changes; do not mutate a cached collection and expect detection. Keep definitions stable where practical to reuse caches. Supply plain column.value/searchText even when cellBuilder draws richer content.
+
+UIWireframe.auto inspects bounded JSON-like data heuristically. It renders placeholders, not data values, real forms, validators, network content or functional screens. Confidence is heuristic evidence, not an accuracy probability. Supply layout/schema overrides for known screens; inspect/fromPlan can reuse an immutable plan. Do not present this as an AI model or recursive arbitrary-data parser.
+
+## States, overlays and dates
+
+UIStateView doesn't detect connectivity, permissions or cache availability. The caller supplies kind and meaningful user-facing text/actions. A visual offline state is not offline storage.
+
+UIAdaptiveDialog chooses sheet/dialog at opening time and retains the route on resize. Use builder/actionsBuilder routeContext to pop the correct route, especially with nested navigators. Content needing local edits should be a separate StatefulWidget/StatefulBuilder. Keep children bounded/scroll-compatible. dismissible:false blocks outside/Back/drag, while explicit close/pop remains possible. The wrapper doesn't restore route state or transport every provider from below the navigator.
+
+UIDateField is controlled: update value in onChanged; cancel retains it, clear sends null. Dates/ranges are date-only, not timezone-aware timestamps. Bounds/predicate validation and UIForm name errors are supported; business rules and server validation still belong to the app. Range default input mode may adapt on narrow/large-text screens. UIApp supplies localization delegates with en/vi defaults; configure locale/supportedLocales or existing MaterialApp localization deliberately. Business strings are not automatically translated.
+
+## Motion, performance and accessibility
+
+- Respect platform reduced motion and high contrast. No new perpetual shimmer/blur effect is needed for a routine state.
+- UIReveal retains the mounted child, form validation and service work; it blocks hidden focus/pointers/semantics/tickers. It does not virtualize lists or cancel network requests.
+- Use stable keys for stateful/reordered items and changing keys to replay an entrance or distinguish AnimatedContent children.
+- Preserve native keyboard navigation, meaningful tooltips, readable labels and touch targets. Avoid overflow with narrow widths/large text/RTL. A passing test suite is not an FPS or zero-bug guarantee.
+- Use lazy lists and server-side work for genuinely large data; don't build every row in a giant Column.
+
+## Verify an integration
+
+Run `flutter analyze` and the app's appropriate tests. For repository examples, run tests from example/. Exercise changed behavior, not only compilation: submit/failure/retry, keyboard, cancellation, light/dark, constrained width and large text. Do not claim platform performance measurements that were not actually made.
+
+If editing the library, follow repository AGENTS.md, regenerate AI docs and run the documentation check. These files guide implementation; they are not permission to deploy, delete repositories or message people.
+
+
+---
+
+Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/api-reference.md
+
+# youth_ui API reference
+
+Generated for **0.15.0** from the public export/part graph of lib/youth_ui.dart.
+Source fingerprint: `440103ce7b47030b47140308f47390845a12ee1a29160280bbbecb7869c739e2`.
+
+Do not edit manually. Run `python tool/generate_ai_docs.py`; CI checks drift.
+These are source-derived declaration excerpts: explicit constructors/defaults,
+public field types, and public methods/getters declared by this package. Constructor
+initializer assertions, implementation bodies, inherited members, top-level helpers
+and routine Flutter protocol overrides are omitted. This is not a Dart type resolver
+or a replacement for source/dartdoc. If extraction cannot express a new syntax,
+update the extractor or consult source; do not infer missing APIs.
+
+`this.x` gets its type from the field declarations below. Imports are omitted for
+compactness; consumer import is `package:youth_ui/youth_ui.dart` plus Flutter imports.
+For integration constraints, limits and ownership see [AI guide](ai-guide.md) and
+its linked detailed guides. Do not copy a declaration as an executable example.
+
+- [UIAdaptiveConfig](#uiadaptiveconfig)
+- [UIAdaptiveData](#uiadaptivedata)
+- [UIAdaptiveBuilder](#uiadaptivebuilder)
+- [UIPage](#uipage)
+- [UIGrid](#uigrid)
+- [UIActions](#uiactions)
+- [UIPresentation](#uipresentation)
+- [UIAdaptiveDialog](#uiadaptivedialog)
+- [UIDestination](#uidestination)
+- [UIAdaptiveScaffold](#uiadaptivescaffold)
+- [UIThemeController](#uithemecontroller)
+- [UIApp](#uiapp)
+- [UIThemeToggle](#uithemetoggle)
+- [UIThemeTransition](#uithemetransition)
+- [UITone](#uitone)
+- [UIButtonVariant](#uibuttonvariant)
+- [UIProfile](#uiprofile)
+- [UIAccentColors](#uiaccentcolors)
+- [UIControlColors](#uicontrolcolors)
+- [UIContrastCheck](#uicontrastcheck)
+- [YouthColors](#youthcolors)
+- [UISurfaceScope](#uisurfacescope)
+- [UIButton](#uibutton)
+- [UIInputVariant](#uiinputvariant)
+- [UITextField](#uitextfield)
+- [UIPasswordField](#uipasswordfield)
+- [UICard](#uicard)
+- [UIBadge](#uibadge)
+- [UIAlert](#uialert)
+- [UICheckbox](#uicheckbox)
+- [UISwitch](#uiswitch)
+- [UIToggleButton](#uitogglebutton)
+- [UIOption](#uioption)
+- [UISegmentedControl](#uisegmentedcontrol)
+- [UIDatePicker](#uidatepicker)
+- [UIDateField](#uidatefield)
+- [UINotice](#uinotice)
+- [UIFabSize](#uifabsize)
+- [UIFloatingActionButton](#uifloatingactionbutton)
+- [UIFormException](#uiformexception)
+- [UIFormController](#uiformcontroller)
+- [UIForm](#uiform)
+- [UIValidators](#uivalidators)
+- [UIImage](#uiimage)
+- [UIMotion](#uimotion)
+- [UIAnimatedSize](#uianimatedsize)
+- [UIEntrance](#uientrance)
+- [UIAnimatedContent](#uianimatedcontent)
+- [UIReveal](#uireveal)
+- [UIRadio](#uiradio)
+- [UIRadioGroup](#uiradiogroup)
+- [UISelect](#uiselect)
+- [UIStateKind](#uistatekind)
+- [UIStateView](#uistateview)
+- [UITableColumn](#uitablecolumn)
+- [UITable](#uitable)
+- [YouthThemeSet](#youththemeset)
+- [YouthUI](#youthui)
+- [YouthPalette](#youthpalette)
+- [UIToneColor](#uitonecolor)
+- [UIWireframe](#uiwireframe)
+- [UIWireframeLayout](#uiwireframelayout)
+- [UIWireframeConfidence](#uiwireframeconfidence)
+- [UIWireframeFieldType](#uiwireframefieldtype)
+- [UIWireframeField](#uiwireframefield)
+- [UIWireframePlan](#uiwireframeplan)
+- [UIWireframeInference](#uiwireframeinference)
+
+## UIAdaptiveConfig
+
+[Source: lib/src/adaptive.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/adaptive.dart)
+
+```dart
+class UIAdaptiveConfig extends ThemeExtension<UIAdaptiveConfig> {
+  const UIAdaptiveConfig({
+    this.compactBreakpoint = 600,
+    this.expandedBreakpoint = 1024,
+    this.maxContentWidth = 1120,
+    this.minColumnWidth = 280,
+  });
+
+  final double compactBreakpoint, expandedBreakpoint;
+
+  final double maxContentWidth, minColumnWidth;
+
+  static UIAdaptiveConfig of(BuildContext context);
+}
+```
+
+## UIAdaptiveData
+
+[Source: lib/src/adaptive.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/adaptive.dart)
+
+```dart
+class UIAdaptiveData {
+  const UIAdaptiveData({
+    required this.width,
+    required this.boundedWidth,
+    required this.pointer,
+    required this.textScale,
+    required this.config,
+  });
+
+  final double width, textScale;
+
+  final bool boundedWidth, pointer;
+
+  final UIAdaptiveConfig config;
+
+  bool get compact;
+
+  bool get expanded;
+
+  double get gap;
+
+  double get pagePadding;
+
+  EdgeInsets get controlPadding;
+}
+```
+
+## UIAdaptiveBuilder
+
+[Source: lib/src/adaptive.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/adaptive.dart)
+
+```dart
+class UIAdaptiveBuilder extends StatelessWidget {
+  const UIAdaptiveBuilder({super.key, required this.builder});
+
+  final Widget Function(BuildContext, UIAdaptiveData) builder;
+}
+```
+
+## UIPage
+
+[Source: lib/src/adaptive.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/adaptive.dart)
+
+```dart
+class UIPage extends StatelessWidget {
+  const UIPage({super.key, required this.children});
+
+  final List<Widget> children;
+}
+```
+
+## UIGrid
+
+[Source: lib/src/adaptive.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/adaptive.dart)
+
+```dart
+class UIGrid extends StatelessWidget {
+  const UIGrid({
+    super.key,
+    required this.children,
+    this.maxColumns = 4,
+    this.minItemWidth,
+  });
+
+  final List<Widget> children;
+
+  final int maxColumns;
+
+  final double? minItemWidth;
+}
+```
+
+## UIActions
+
+[Source: lib/src/adaptive.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/adaptive.dart)
+
+```dart
+class UIActions extends StatelessWidget {
+  const UIActions({super.key, required this.children});
+
+  final List<Widget> children;
+}
+```
+
+## UIPresentation
+
+[Source: lib/src/adaptive_dialog.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/adaptive_dialog.dart)
+
+```dart
+enum UIPresentation { auto, dialog, sheet }
+```
+
+## UIAdaptiveDialog
+
+[Source: lib/src/adaptive_dialog.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/adaptive_dialog.dart)
+
+```dart
+abstract final class UIAdaptiveDialog {
+  static Future<T?> show<T>(
+    BuildContext context, {
+    required String title,
+    required WidgetBuilder builder,
+    List<Widget> Function(BuildContext context)? actionsBuilder,
+    UIPresentation presentation = UIPresentation.auto,
+    bool dismissible = true,
+    bool showClose = true,
+    bool useRootNavigator = true,
+    double maxWidth = 560,
+    RouteSettings? routeSettings,
+  });
+
+  static Future<bool> confirm(
+    BuildContext context, {
+    required String title,
+    required String message,
+    String confirmLabel = 'Xác nhận',
+    String cancelLabel = 'Hủy',
+    bool danger = false,
+    bool dismissible = true,
+    UIPresentation presentation = UIPresentation.auto,
+    bool useRootNavigator = true,
+  });
+}
+```
+
+## UIDestination
+
+[Source: lib/src/adaptive_scaffold.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/adaptive_scaffold.dart)
+
+```dart
+class UIDestination {
+  const UIDestination({
+    required this.label,
+    required this.icon,
+    this.selectedIcon,
+  });
+
+  final String label;
+
+  final IconData icon;
+
+  final IconData? selectedIcon;
+}
+```
+
+## UIAdaptiveScaffold
+
+[Source: lib/src/adaptive_scaffold.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/adaptive_scaffold.dart)
+
+```dart
+class UIAdaptiveScaffold extends StatefulWidget {
+  const UIAdaptiveScaffold({
+    super.key,
+    required this.title,
+    required this.child,
+    required this.destinations,
+    required this.selectedIndex,
+    required this.onDestinationSelected,
+    this.subtitle,
+    this.supporting,
+    this.supportingTitle = 'Thông tin thêm',
+    this.leading,
+    this.actions,
+    this.floatingActionButton,
+    this.floatingActionButtonLocation = FloatingActionButtonLocation.endFloat,
+    this.contentMaxWidth = 720,
+    this.supportingWidth = 240,
+  });
+
+  final String title;
+
+  final String supportingTitle;
+
+  final String? subtitle;
+
+  final List<UIDestination> destinations;
+
+  final int selectedIndex;
+
+  final ValueChanged<int> onDestinationSelected;
+
+  final Widget child;
+
+  final Widget? supporting, actions, leading;
+
+  final Widget? floatingActionButton;
+
+  final FloatingActionButtonLocation floatingActionButtonLocation;
+
+  final double contentMaxWidth, supportingWidth;
+}
+```
+
+## UIThemeController
+
+[Source: lib/src/app.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/app.dart)
+
+```dart
+class UIThemeController extends ChangeNotifier {
+  factory UIThemeController({ThemeMode mode = ThemeMode.system});
+
+  ThemeMode get mode;
+
+  set mode(ThemeMode value);
+
+  void toggle({Brightness systemBrightness = Brightness.light});
+}
+```
+
+## UIApp
+
+[Source: lib/src/app.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/app.dart)
+
+```dart
+class UIApp extends StatefulWidget {
+  const UIApp({
+    super.key,
+    required this.primary,
+    required this.home,
+    this.secondary,
+    this.accent,
+    this.profile = UIProfile.balanced,
+    this.contrastLevel = 0,
+    this.fontFamily,
+    this.adaptive = const UIAdaptiveConfig(),
+    this.controller,
+    this.initialThemeMode = ThemeMode.system,
+    this.reduceMotion = false,
+    this.title = '',
+    this.locale,
+    this.supportedLocales = const [Locale('en'), Locale('vi')],
+    this.localizationsDelegates = const [],
+    this.debugShowCheckedModeBanner = false,
+  });
+
+  final Locale? locale;
+
+  final Iterable<Locale> supportedLocales;
+
+  final Iterable<LocalizationsDelegate<dynamic>> localizationsDelegates;
+
+  final Color primary;
+
+  final Color? secondary, accent;
+
+  final Widget home;
+
+  final UIProfile profile;
+
+  final double contrastLevel;
+
+  final String? fontFamily;
+
+  final UIAdaptiveConfig adaptive;
+
+  final UIThemeController? controller;
+
+  final ThemeMode initialThemeMode;
+
+  final bool reduceMotion, debugShowCheckedModeBanner;
+
+  final String title;
+
+  static UIThemeController controllerOf(BuildContext context);
+}
+```
+
+## UIThemeToggle
+
+[Source: lib/src/app.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/app.dart)
+
+```dart
+class UIThemeToggle extends StatelessWidget {
+  const UIThemeToggle({super.key});
+}
+```
+
+## UIThemeTransition
+
+[Source: lib/src/app.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/app.dart)
+
+```dart
+class UIThemeTransition extends StatefulWidget {
+  const UIThemeTransition({
+    super.key,
+    required this.theme,
+    required this.child,
+    this.duration = const Duration(milliseconds: 220),
+  });
+
+  final ThemeData theme;
+
+  final Widget child;
+
+  final Duration duration;
+}
+```
+
+## UITone
+
+[Source: lib/src/color_engine.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/color_engine.dart)
+
+```dart
+enum UITone { primary, secondary, accent, success, warning, danger }
+```
+
+## UIButtonVariant
+
+[Source: lib/src/color_engine.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/color_engine.dart)
+
+```dart
+enum UIButtonVariant { solid, soft, outline, ghost }
+```
+
+## UIProfile
+
+[Source: lib/src/color_engine.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/color_engine.dart)
+
+```dart
+enum UIProfile { balanced, reading, expressive }
+```
+
+## UIAccentColors
+
+[Source: lib/src/color_engine.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/color_engine.dart)
+
+```dart
+class UIAccentColors {
+  const UIAccentColors({
+    required this.solid,
+    required this.onSolid,
+    required this.soft,
+    required this.onSoft,
+    required this.border,
+  });
+
+  final Color solid, onSolid, soft, onSoft, border;
+}
+```
+
+## UIControlColors
+
+[Source: lib/src/color_engine.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/color_engine.dart)
+
+```dart
+class UIControlColors {
+  const UIControlColors({
+    required this.background,
+    required this.foreground,
+    required this.border,
+  });
+
+  final Color background, foreground, border;
+}
+```
+
+## UIContrastCheck
+
+[Source: lib/src/color_engine.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/color_engine.dart)
+
+```dart
+class UIContrastCheck {
+  const UIContrastCheck(
+    this.label,
+    this.foreground,
+    this.background,
+    this.minimum,
+  );
+
+  final String label;
+
+  final Color foreground, background;
+
+  final double minimum;
+
+  double get ratio;
+
+  bool get passed;
+}
+```
+
+## YouthColors
+
+[Source: lib/src/color_engine.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/color_engine.dart)
+
+```dart
+class YouthColors extends ThemeExtension<YouthColors> {
+  YouthColors({
+    required this.scheme,
+    required this.brandPrimary,
+    this.brandSecondary,
+    this.brandAccent,
+    required Map<UITone, UIAccentColors> tones,
+    required this.canvas,
+    required this.focus,
+    required this.fieldBorder,
+    required this.profile,
+    required this.textContrast,
+  });
+
+  final ColorScheme scheme;
+
+  final Color brandPrimary;
+
+  final Color? brandSecondary, brandAccent;
+
+  final Map<UITone, UIAccentColors> tones;
+
+  final Color canvas, focus, fieldBorder;
+
+  final UIProfile profile;
+
+  final double textContrast;
+
+  static YouthColors of(BuildContext context);
+
+  List<Color> get surfaces;
+
+  UIControlColors button(
+    UITone tone,
+    UIButtonVariant variant,
+    Set<WidgetState> states, {
+    Color? surface,
+  });
+
+  List<UIContrastCheck> audit();
+}
+```
+
+## UISurfaceScope
+
+[Source: lib/src/color_engine.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/color_engine.dart)
+
+```dart
+class UISurfaceScope extends InheritedWidget {
+  const UISurfaceScope({super.key, required this.color, required super.child});
+
+  final Color color;
+
+  static Color of(BuildContext context);
+}
+```
+
+## UIButton
+
+[Source: lib/src/components.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/components.dart)
+
+```dart
+class UIButton extends StatelessWidget {
+  const UIButton({
+    super.key,
+    required this.label,
+    this.onPressed,
+    this.variant = UIButtonVariant.solid,
+    this.tone = UITone.primary,
+    this.icon,
+    this.loading = false,
+    this.fullWidth,
+    this.selected,
+    this.style,
+    this.tooltip,
+    this.focusNode,
+    this.autofocus = false,
+    this.onLongPress,
+  });
+
+  final String label;
+
+  final VoidCallback? onPressed;
+
+  final UIButtonVariant variant;
+
+  final UITone tone;
+
+  final IconData? icon;
+
+  final bool loading;
+
+  final bool? fullWidth;
+
+  final bool? selected;
+
+  final ButtonStyle? style;
+
+  final String? tooltip;
+
+  final FocusNode? focusNode;
+
+  final bool autofocus;
+
+  final VoidCallback? onLongPress;
+}
+```
+
+## UIInputVariant
+
+[Source: lib/src/components.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/components.dart)
+
+```dart
+enum UIInputVariant { outlined, filled }
+```
+
+## UITextField
+
+[Source: lib/src/components.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/components.dart)
+
+```dart
+class UITextField extends StatelessWidget {
+  const UITextField({
+    super.key,
+    required this.label,
+    this.name,
+    this.hint,
+    this.helper,
+    this.controller,
+    this.validator,
+    this.onChanged,
+    this.keyboardType,
+    this.prefixIcon,
+    this.enabled = true,
+    this.maxLines = 1,
+    this.autofillHints,
+    this.textInputAction,
+    this.focusNode,
+    this.onFieldSubmitted,
+    this.inputFormatters,
+    this.maxLength,
+    this.readOnly = false,
+    this.clearable = false,
+    this.initialValue,
+    this.minLines,
+    this.autofocus = false,
+    this.errorText,
+    this.prefixText,
+    this.suffixText,
+    this.variant = UIInputVariant.outlined,
+    this.textCapitalization = TextCapitalization.none,
+    this.autovalidateMode = AutovalidateMode.onUnfocus,
+  });
+
+  factory UITextField.search({
+    Key? key,
+    String label = 'Tìm kiếm',
+    TextEditingController? controller,
+    ValueChanged<String>? onChanged,
+    ValueChanged<String>? onFieldSubmitted,
+  });
+
+  factory UITextField.multiline({
+    Key? key,
+    required String label,
+    TextEditingController? controller,
+    String? helper,
+    int? maxLength,
+    FormFieldValidator<String>? validator,
+    ValueChanged<String>? onChanged,
+  });
+
+  final String label;
+
+  final String? name, hint, helper;
+
+  final TextEditingController? controller;
+
+  final FormFieldValidator<String>? validator;
+
+  final ValueChanged<String>? onChanged, onFieldSubmitted;
+
+  final TextInputType? keyboardType;
+
+  final IconData? prefixIcon;
+
+  final bool enabled, readOnly, clearable;
+
+  final int maxLines;
+
+  final int? maxLength;
+
+  final Iterable<String>? autofillHints;
+
+  final TextInputAction? textInputAction;
+
+  final FocusNode? focusNode;
+
+  final List<TextInputFormatter>? inputFormatters;
+
+  final AutovalidateMode autovalidateMode;
+
+  final String? initialValue, errorText, prefixText, suffixText;
+
+  final int? minLines;
+
+  final bool autofocus;
+
+  final UIInputVariant variant;
+
+  final TextCapitalization textCapitalization;
+}
+```
+
+## UIPasswordField
+
+[Source: lib/src/components.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/components.dart)
+
+```dart
+class UIPasswordField extends StatelessWidget {
+  const UIPasswordField({
+    super.key,
+    this.label = 'Mật khẩu',
+    this.name,
+    this.controller,
+    this.validator,
+    this.onChanged,
+    this.enabled = true,
+    this.autofillHints,
+    this.focusNode,
+    this.textInputAction,
+    this.onFieldSubmitted,
+    this.helper,
+    this.errorText,
+    this.variant = UIInputVariant.outlined,
+    this.autovalidateMode = AutovalidateMode.onUnfocus,
+  });
+
+  final String label;
+
+  final String? name, helper, errorText;
+
+  final UIInputVariant variant;
+
+  final TextEditingController? controller;
+
+  final FormFieldValidator<String>? validator;
+
+  final ValueChanged<String>? onChanged, onFieldSubmitted;
+
+  final bool enabled;
+
+  final Iterable<String>? autofillHints;
+
+  final FocusNode? focusNode;
+
+  final TextInputAction? textInputAction;
+
+  final AutovalidateMode autovalidateMode;
+}
+```
+
+## UICard
+
+[Source: lib/src/components.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/components.dart)
+
+```dart
+class UICard extends StatefulWidget {
+  const UICard({super.key, required this.child, this.padding, this.onTap});
+
+  final Widget child;
+
+  final EdgeInsetsGeometry? padding;
+
+  final VoidCallback? onTap;
+}
+```
+
+## UIBadge
+
+[Source: lib/src/components.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/components.dart)
+
+```dart
+class UIBadge extends StatelessWidget {
+  const UIBadge({
+    super.key,
+    required this.label,
+    this.tone = UITone.primary,
+    this.icon,
+  });
+
+  final String label;
+
+  final UITone tone;
+
+  final IconData? icon;
+}
+```
+
+## UIAlert
+
+[Source: lib/src/components.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/components.dart)
+
+```dart
+class UIAlert extends StatelessWidget {
+  const UIAlert({
+    super.key,
+    required this.message,
+    this.tone = UITone.primary,
+    this.title,
+    this.actionLabel,
+    this.onAction,
+    this.onDismiss,
+    this.liveRegion = true,
+  });
+
+  final String message;
+
+  final String? title;
+
+  final UITone tone;
+
+  final String? actionLabel;
+
+  final VoidCallback? onAction, onDismiss;
+
+  final bool liveRegion;
+}
+```
+
+## UICheckbox
+
+[Source: lib/src/components.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/components.dart)
+
+```dart
+class UICheckbox extends StatelessWidget {
+  const UICheckbox({
+    super.key,
+    this.label,
+    required this.value,
+    required this.onChanged,
+    this.focusNode,
+    this.autofocus = false,
+  });
+
+  final String? label;
+
+  final bool value;
+
+  final ValueChanged<bool?>? onChanged;
+
+  final FocusNode? focusNode;
+
+  final bool autofocus;
+}
+```
+
+## UISwitch
+
+[Source: lib/src/components.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/components.dart)
+
+```dart
+class UISwitch extends StatelessWidget {
+  const UISwitch({
+    super.key,
+    this.label,
+    required this.value,
+    required this.onChanged,
+    this.focusNode,
+    this.autofocus = false,
+  });
+
+  final String? label;
+
+  final bool value;
+
+  final ValueChanged<bool>? onChanged;
+
+  final FocusNode? focusNode;
+
+  final bool autofocus;
+}
+```
+
+## UIToggleButton
+
+[Source: lib/src/components.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/components.dart)
+
+```dart
+class UIToggleButton extends StatelessWidget {
+  const UIToggleButton({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+    this.icon,
+    this.selectedIcon,
+    this.tone = UITone.primary,
+  });
+
+  final String label;
+
+  final bool value;
+
+  final ValueChanged<bool>? onChanged;
+
+  final IconData? icon, selectedIcon;
+
+  final UITone tone;
+}
+```
+
+## UIOption
+
+[Source: lib/src/components.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/components.dart)
+
+```dart
+class UIOption<T> {
+  const UIOption({
+    required this.value,
+    required this.label,
+    this.icon,
+    this.enabled = true,
+  });
+
+  final T value;
+
+  final String label;
+
+  final IconData? icon;
+
+  final bool enabled;
+}
+```
+
+## UISegmentedControl
+
+[Source: lib/src/components.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/components.dart)
+
+```dart
+class UISegmentedControl<T> extends StatelessWidget {
+  const UISegmentedControl({
+    super.key,
+    required this.options,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final List<UIOption<T>> options;
+
+  final T value;
+
+  final ValueChanged<T>? onChanged;
+}
+```
+
+## UIDatePicker
+
+[Source: lib/src/date_field.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/date_field.dart)
+
+```dart
+abstract final class UIDatePicker {
+  static Future<DateTime?> show(
+    BuildContext context, {
+    DateTime? initialDate,
+    DateTime? firstDate,
+    DateTime? lastDate,
+    SelectableDayPredicate? selectableDayPredicate,
+    Locale? locale,
+    String? title,
+    String? confirmLabel,
+    String? cancelLabel,
+    DatePickerEntryMode entryMode = DatePickerEntryMode.calendar,
+    bool useRootNavigator = true,
+  });
+
+  static Future<DateTimeRange?> range(
+    BuildContext context, {
+    DateTimeRange? initialRange,
+    DateTime? firstDate,
+    DateTime? lastDate,
+    Locale? locale,
+    String? title,
+    String? confirmLabel,
+    String? cancelLabel,
+    DatePickerEntryMode? entryMode,
+    bool useRootNavigator = true,
+  });
+}
+```
+
+## UIDateField
+
+[Source: lib/src/date_field.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/date_field.dart)
+
+```dart
+class UIDateField extends StatefulWidget {
+  const UIDateField({
+    super.key,
+    required this.label,
+    required this.value,
+    this.onChanged,
+    this.name,
+    this.firstDate,
+    this.lastDate,
+    this.selectableDayPredicate,
+    this.validator,
+    this.errorText,
+    this.hint = 'Chọn ngày',
+    this.invalidDateMessage = 'Ngày không nằm trong lựa chọn hợp lệ',
+    this.helper,
+    this.clearable = true,
+    this.enabled = true,
+    this.format,
+    this.locale,
+    this.focusNode,
+    this.autofocus = false,
+    this.entryMode = DatePickerEntryMode.calendar,
+    this.autovalidateMode = AutovalidateMode.onUserInteraction,
+  });
+
+  final String label;
+
+  final DateTime? value, firstDate, lastDate;
+
+  final ValueChanged<DateTime?>? onChanged;
+
+  final String? name, helper, errorText;
+
+  final String hint, invalidDateMessage;
+
+  final SelectableDayPredicate? selectableDayPredicate;
+
+  final FormFieldValidator<DateTime>? validator;
+
+  final String Function(DateTime date)? format;
+
+  final Locale? locale;
+
+  final bool clearable, enabled, autofocus;
+
+  final FocusNode? focusNode;
+
+  final DatePickerEntryMode entryMode;
+
+  final AutovalidateMode autovalidateMode;
+}
+```
+
+## UINotice
+
+[Source: lib/src/feedback.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/feedback.dart)
+
+```dart
+abstract final class UINotice {
+  static bool show(
+    BuildContext context, {
+    required String message,
+    String? title,
+    String? id,
+    UITone tone = UITone.primary,
+    String? actionLabel,
+    VoidCallback? onAction,
+    bool? persistent,
+    Duration duration = const Duration(seconds: 5),
+  });
+
+  static void clear(BuildContext context);
+
+  static void clearAll(BuildContext context);
+}
+```
+
+## UIFabSize
+
+[Source: lib/src/floating_action_button.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/floating_action_button.dart)
+
+```dart
+enum UIFabSize { small, regular, large }
+```
+
+## UIFloatingActionButton
+
+[Source: lib/src/floating_action_button.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/floating_action_button.dart)
+
+```dart
+class UIFloatingActionButton extends StatelessWidget {
+  const UIFloatingActionButton({
+    super.key,
+    required this.icon,
+    required this.tooltip,
+    this.onPressed,
+    this.label,
+    this.extended,
+    this.size = UIFabSize.regular,
+    this.tone = UITone.primary,
+    this.loading = false,
+    this.heroTag,
+    this.backgroundColor,
+    this.foregroundColor,
+    this.shape,
+    this.elevation,
+    this.focusNode,
+    this.autofocus = false,
+  });
+
+  final IconData icon;
+
+  final String tooltip;
+
+  final VoidCallback? onPressed;
+
+  final String? label;
+
+  final bool? extended;
+
+  final UIFabSize size;
+
+  final UITone tone;
+
+  final bool loading;
+
+  final Object? heroTag;
+
+  final Color? backgroundColor, foregroundColor;
+
+  final ShapeBorder? shape;
+
+  final double? elevation;
+
+  final FocusNode? focusNode;
+
+  final bool autofocus;
+}
+```
+
+## UIFormException
+
+[Source: lib/src/form.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/form.dart)
+
+```dart
+class UIFormException implements Exception {
+  const UIFormException({this.message, this.fieldErrors = const {}});
+
+  final String? message;
+
+  final Map<String, String> fieldErrors;
+}
+```
+
+## UIFormController
+
+[Source: lib/src/form.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/form.dart)
+
+```dart
+class UIFormController extends ChangeNotifier {
+  bool get isSubmitting;
+
+  String? get error;
+
+  Map<String, String> get fieldErrors;
+
+  Future<bool> submit();
+}
+```
+
+## UIForm
+
+[Source: lib/src/form.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/form.dart)
+
+```dart
+class UIForm extends StatefulWidget {
+  const UIForm({
+    super.key,
+    required this.children,
+    this.formKey,
+    this.controller,
+    this.onSubmit,
+    this.onSuccess,
+    this.onError,
+    this.submitLabel = 'Lưu thay đổi',
+    this.maxColumns = 2,
+    this.failureMessage = 'Chưa thể gửi dữ liệu. Vui lòng thử lại.',
+  });
+
+  final List<Widget> children;
+
+  final GlobalKey<FormState>? formKey;
+
+  final UIFormController? controller;
+
+  final Future<void> Function()? onSubmit;
+
+  final VoidCallback? onSuccess;
+
+  final void Function(Object, StackTrace)? onError;
+
+  final String submitLabel, failureMessage;
+
+  final int maxColumns;
+}
+```
+
+## UIValidators
+
+[Source: lib/src/form.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/form.dart)
+
+```dart
+abstract final class UIValidators {
+  static FormFieldValidator<String> required({
+    String message = 'Vui lòng nhập thông tin.',
+  });
+
+  static FormFieldValidator<String> email({
+    String message = 'Nhập email hợp lệ.',
+  });
+
+  static FormFieldValidator<String> minLength(int length, {String? message});
+
+  static FormFieldValidator<String> combine(
+    List<FormFieldValidator<String>> validators,
+  );
+}
+```
+
+## UIImage
+
+[Source: lib/src/image.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/image.dart)
+
+```dart
+class UIImage extends StatefulWidget {
+  const UIImage(
+    this.source, {
+    super.key,
+    this.semanticLabel,
+    this.fallbackSource,
+    this.fallback,
+    this.placeholder,
+    this.errorBuilder,
+    this.aspectRatio = 16 / 9,
+    this.fit = BoxFit.cover,
+    this.alignment = Alignment.center,
+    this.width,
+    this.height,
+    this.borderRadius = 16,
+    this.variants = const {},
+    this.optimizeDecode = true,
+    this.allowRetry = true,
+  });
+
+  const UIImage.avatar(
+    this.source, {
+    super.key,
+    double size = 48,
+    this.fit = BoxFit.cover,
+    this.alignment = Alignment.center,
+    this.variants = const {},
+    this.optimizeDecode = true,
+    this.allowRetry = false,
+    this.semanticLabel,
+    this.fallbackSource,
+    this.fallback,
+    this.placeholder,
+    this.errorBuilder,
+  });
+
+  const UIImage.thumbnail(
+    this.source, {
+    super.key,
+    double size = 80,
+    this.fit = BoxFit.cover,
+    this.alignment = Alignment.center,
+    this.variants = const {},
+    this.optimizeDecode = true,
+    this.allowRetry = false,
+    this.semanticLabel,
+    this.fallbackSource,
+    this.fallback,
+    this.placeholder,
+    this.errorBuilder,
+  });
+
+  const UIImage.banner(
+    this.source, {
+    super.key,
+    this.semanticLabel,
+    this.fallbackSource,
+    this.fallback,
+    this.placeholder,
+    this.errorBuilder,
+    this.variants = const {},
+    this.height,
+    this.fit = BoxFit.cover,
+    this.alignment = Alignment.center,
+    this.borderRadius = 16,
+    this.optimizeDecode = true,
+    this.allowRetry = true,
+  });
+
+  const UIImage.provider(
+    this.provider, {
+    super.key,
+    this.semanticLabel,
+    this.fallbackSource,
+    this.fallback,
+    this.placeholder,
+    this.errorBuilder,
+    this.aspectRatio = 16 / 9,
+    this.width,
+    this.height,
+    this.fit = BoxFit.cover,
+    this.alignment = Alignment.center,
+    this.borderRadius = 16,
+    this.optimizeDecode = true,
+    this.allowRetry = false,
+  });
+
+  final String? source;
+
+  final String? fallbackSource;
+
+  final Widget? fallback;
+
+  final Widget? placeholder;
+
+  final ImageErrorWidgetBuilder? errorBuilder;
+
+  final ImageProvider? provider;
+
+  final String? semanticLabel;
+
+  final double aspectRatio, borderRadius;
+
+  final double? width, height;
+
+  final BoxFit fit;
+
+  final AlignmentGeometry alignment;
+
+  final Map<int, String> variants;
+
+  final bool optimizeDecode, allowRetry;
+}
+```
+
+## UIMotion
+
+[Source: lib/src/motion.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/motion.dart)
+
+```dart
+abstract final class UIMotion {
+  static const fast = Duration(milliseconds: 160);
+
+  static const standard = Duration(milliseconds: 240);
+
+  static const entrance = Duration(milliseconds: 320);
+
+  static Duration resolve(BuildContext context, Duration duration);
+}
+```
+
+## UIAnimatedSize
+
+[Source: lib/src/motion.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/motion.dart)
+
+```dart
+class UIAnimatedSize extends StatefulWidget {
+  const UIAnimatedSize({
+    super.key,
+    required this.child,
+    this.duration = UIMotion.standard,
+    this.curve = Curves.easeOutCubic,
+    this.alignment = AlignmentDirectional.topStart,
+  });
+
+  final Widget child;
+
+  final Duration duration;
+
+  final Curve curve;
+
+  final AlignmentGeometry alignment;
+}
+```
+
+## UIEntrance
+
+[Source: lib/src/motion.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/motion.dart)
+
+```dart
+class UIEntrance extends StatelessWidget {
+  const UIEntrance({
+    super.key,
+    required this.child,
+    this.duration = UIMotion.entrance,
+    this.distance = 18,
+    this.curve = Curves.easeOutCubic,
+  });
+
+  final Widget child;
+
+  final Duration duration;
+
+  final double distance;
+
+  final Curve curve;
+}
+```
+
+## UIAnimatedContent
+
+[Source: lib/src/motion.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/motion.dart)
+
+```dart
+class UIAnimatedContent extends StatelessWidget {
+  const UIAnimatedContent({
+    super.key,
+    required this.child,
+    this.duration = UIMotion.standard,
+  });
+
+  final Widget child;
+
+  final Duration duration;
+}
+```
+
+## UIReveal
+
+[Source: lib/src/motion.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/motion.dart)
+
+```dart
+class UIReveal extends StatelessWidget {
+  const UIReveal({
+    super.key,
+    required this.visible,
+    required this.child,
+    this.duration = UIMotion.standard,
+  });
+
+  final bool visible;
+
+  final Widget child;
+
+  final Duration duration;
+}
+```
+
+## UIRadio
+
+[Source: lib/src/radio.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/radio.dart)
+
+```dart
+class UIRadio<T> extends StatelessWidget {
+  const UIRadio({
+    super.key,
+    required this.value,
+    this.label,
+    this.enabled = true,
+    this.focusNode,
+    this.autofocus = false,
+  });
+
+  final T value;
+
+  final String? label;
+
+  final bool enabled, autofocus;
+
+  final FocusNode? focusNode;
+}
+```
+
+## UIRadioGroup
+
+[Source: lib/src/radio.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/radio.dart)
+
+```dart
+class UIRadioGroup<T> extends StatelessWidget {
+  const UIRadioGroup({
+    super.key,
+    required this.options,
+    required this.value,
+    required this.onChanged,
+    this.label,
+    this.direction = Axis.vertical,
+  });
+
+  final List<UIOption<T>> options;
+
+  final T? value;
+
+  final ValueChanged<T?>? onChanged;
+
+  final String? label;
+
+  final Axis direction;
+}
+```
+
+## UISelect
+
+[Source: lib/src/select.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/select.dart)
+
+```dart
+class UISelect<T> extends StatefulWidget {
+  const UISelect({
+    super.key,
+    required this.label,
+    this.name,
+    this.items = const [],
+    this.options = const [],
+    this.initialValue,
+    this.onChanged,
+    this.validator,
+    this.hint = 'Chọn một mục',
+    this.helper,
+    this.searchable,
+    this.optionLabel,
+    this.searchHint = 'Tìm lựa chọn…',
+    this.emptyLabel = 'Không tìm thấy lựa chọn',
+    this.enabled = true,
+    this.focusNode,
+    this.autofocus = false,
+    this.autovalidateMode = AutovalidateMode.disabled,
+  });
+
+  final String label, hint, searchHint, emptyLabel;
+
+  final String? helper, name;
+
+  final List<DropdownMenuItem<T>> items;
+
+  final List<UIOption<T>> options;
+
+  final T? initialValue;
+
+  final ValueChanged<T?>? onChanged;
+
+  final FormFieldValidator<T>? validator;
+
+  final bool enabled, autofocus;
+
+  final bool? searchable;
+
+  final String Function(T)? optionLabel;
+
+  final FocusNode? focusNode;
+
+  final AutovalidateMode autovalidateMode;
+}
+```
+
+## UIStateKind
+
+[Source: lib/src/state_view.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/state_view.dart)
+
+```dart
+enum UIStateKind { loading, empty, error, offline, forbidden, success }
+```
+
+## UIStateView
+
+[Source: lib/src/state_view.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/state_view.dart)
+
+```dart
+class UIStateView extends StatelessWidget {
+  const UIStateView({
+    super.key,
+    required this.kind,
+    this.title,
+    this.message,
+    this.illustration,
+    this.actionLabel,
+    this.onAction,
+    this.secondaryActionLabel,
+    this.onSecondaryAction,
+    this.progress,
+  });
+
+  const UIStateView.loading({
+    super.key,
+    this.title,
+    this.message,
+    this.progress,
+    this.illustration,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  const UIStateView.empty({
+    super.key,
+    this.title,
+    this.message,
+    this.illustration,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  const UIStateView.error({
+    super.key,
+    this.title,
+    this.message,
+    this.illustration,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  const UIStateView.offline({
+    super.key,
+    this.title,
+    this.message,
+    this.illustration,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  const UIStateView.forbidden({
+    super.key,
+    this.title,
+    this.message,
+    this.illustration,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  const UIStateView.success({
+    super.key,
+    this.title,
+    this.message,
+    this.illustration,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final UIStateKind kind;
+
+  final String? title, message, actionLabel, secondaryActionLabel;
+
+  final Widget? illustration;
+
+  final VoidCallback? onAction, onSecondaryAction;
+
+  final double? progress;
+}
+```
+
+## UITableColumn
+
+[Source: lib/src/table.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/table.dart)
+
+```dart
+class UITableColumn<T> {
+  const UITableColumn({
+    required this.label,
+    required this.value,
+    this.cellBuilder,
+    this.compare,
+    this.numeric = false,
+    this.minWidth = 180,
+  });
+
+  final String label;
+
+  final String Function(T row) value;
+
+  final Widget Function(BuildContext context, T row)? cellBuilder;
+
+  final Comparator<T>? compare;
+
+  final bool numeric;
+
+  final double minWidth;
+}
+```
+
+## UITable
+
+[Source: lib/src/table.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/table.dart)
+
+```dart
+class UITable<T> extends StatefulWidget {
+  const UITable({
+    super.key,
+    required this.columns,
+    required this.rows,
+    this.pageSize = 10,
+    this.rowKey,
+    this.selectedKeys = const {},
+    this.onSelectionChanged,
+    this.loading = false,
+    this.empty,
+    this.label = 'Bảng dữ liệu',
+    this.searchQuery = '',
+    this.searchText,
+    this.showSelectAll = false,
+    this.onPageSizeChanged,
+    this.pageSizeOptions = const [5, 10, 20, 50],
+    this.error,
+    this.onRetry,
+  });
+
+  final List<UITableColumn<T>> columns;
+
+  final List<T> rows;
+
+  final int pageSize;
+
+  final Object Function(T row)? rowKey;
+
+  final Set<Object> selectedKeys;
+
+  final ValueChanged<Set<Object>>? onSelectionChanged;
+
+  final bool loading;
+
+  final Widget? empty;
+
+  final String label;
+
+  final String searchQuery;
+
+  final String Function(T row)? searchText;
+
+  final bool showSelectAll;
+
+  final ValueChanged<int>? onPageSizeChanged;
+
+  final List<int> pageSizeOptions;
+
+  final String? error;
+
+  final VoidCallback? onRetry;
+}
+```
+
+## YouthThemeSet
+
+[Source: lib/src/theme.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/theme.dart)
+
+```dart
+class YouthThemeSet {
+  YouthThemeSet({
+    required Color primary,
+    Color? secondary,
+    Color? accent,
+    UIProfile profile = UIProfile.balanced,
+    double contrastLevel = 0,
+    String? fontFamily,
+    UIAdaptiveConfig adaptive = const UIAdaptiveConfig(),
+  });
+
+  late final ThemeData light, dark;
+}
+```
+
+## YouthUI
+
+[Source: lib/src/theme.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/theme.dart)
+
+```dart
+abstract final class YouthUI {
+  static YouthThemeSet colors({
+    required Color primary,
+    Color? secondary,
+    Color? accent,
+    UIProfile profile = UIProfile.balanced,
+    double contrastLevel = 0,
+    String? fontFamily,
+    UIAdaptiveConfig adaptive = const UIAdaptiveConfig(),
+  });
+
+  static ThemeData init({
+    required Color primary,
+    Color? secondary,
+    Color? accent,
+    Color? surface,
+    Color? background,
+    Brightness brightness = Brightness.light,
+    String? fontFamily,
+    UIProfile profile = UIProfile.balanced,
+    double contrastLevel = 0,
+    UIAdaptiveConfig adaptive = const UIAdaptiveConfig(),
+  });
+}
+```
+
+## YouthPalette
+
+[Source: lib/src/theme.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/theme.dart)
+
+```dart
+class YouthPalette extends ThemeExtension<YouthPalette> {
+  const YouthPalette({required this.success, required this.warning});
+
+  final Color success, warning;
+
+  static YouthPalette of(BuildContext context);
+}
+```
+
+## UIToneColor
+
+[Source: lib/src/theme.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/theme.dart)
+
+```dart
+extension UIToneColor on UITone {
+  Color color(BuildContext context);
+
+  UIAccentColors colors(BuildContext context);
+}
+```
+
+## UIWireframe
+
+[Source: lib/src/wireframe.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/wireframe.dart)
+
+```dart
+class UIWireframe extends StatelessWidget {
+  const UIWireframe.line({super.key, this.widthFactor = 1, this.height = 12});
+
+  const UIWireframe.image({super.key, this.height = 140});
+
+  const UIWireframe.avatar({super.key, double size = 48});
+
+  const UIWireframe.card({super.key});
+
+  const UIWireframe.list({super.key, this.count = 3});
+
+  const UIWireframe.page({super.key, this.layout = UIWireframeLayout.feed});
+
+  factory UIWireframe.auto({
+    Key? key,
+    Object? data,
+    UIWireframeLayout? layout,
+    List<UIWireframeField> fields = const [],
+    Map<String, UIWireframeFieldType> fieldTypes = const {},
+    int itemCount = 3,
+  });
+
+  UIWireframe.fromPlan({super.key, required UIWireframePlan plan});
+
+  static UIWireframePlan inspect(
+    Object? data, {
+    UIWireframeLayout? layout,
+    List<UIWireframeField> fields = const [],
+    Map<String, UIWireframeFieldType> fieldTypes = const {},
+    int itemCount = 3,
+  });
+
+  final double widthFactor, height;
+
+  final int count;
+
+  final UIWireframeLayout layout;
+}
+```
+
+## UIWireframeLayout
+
+[Source: lib/src/wireframe_inference.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/wireframe_inference.dart)
+
+```dart
+enum UIWireframeLayout {
+  feed,
+  dashboard,
+  form,
+  profile,
+  article,
+  product,
+  gallery,
+  chat,
+  table,
+  settings,
+  timeline,
+  detail,
+  list,
+  empty,
+  landing,
+  event,
+  pricing,
+}
+```
+
+## UIWireframeConfidence
+
+[Source: lib/src/wireframe_inference.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/wireframe_inference.dart)
+
+```dart
+enum UIWireframeConfidence { explicit, high, medium, low }
+```
+
+## UIWireframeFieldType
+
+[Source: lib/src/wireframe_inference.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/wireframe_inference.dart)
+
+```dart
+enum UIWireframeFieldType {
+  text,
+  paragraph,
+  number,
+  date,
+  email,
+  phone,
+  image,
+  avatar,
+  toggle,
+  choice,
+  password,
+  section,
+}
+```
+
+## UIWireframeField
+
+[Source: lib/src/wireframe_inference.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/wireframe_inference.dart)
+
+```dart
+class UIWireframeField {
+  const UIWireframeField(this.name, {this.type = UIWireframeFieldType.text});
+
+  final String name;
+
+  final UIWireframeFieldType type;
+}
+```
+
+## UIWireframePlan
+
+[Source: lib/src/wireframe_inference.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/wireframe_inference.dart)
+
+```dart
+class UIWireframePlan {
+  UIWireframePlan({
+    required this.layout,
+    required this.confidence,
+    required List<String> reasons,
+    required List<UIWireframeField> fields,
+    required this.itemCount,
+    this.isCollection = false,
+  });
+
+  final UIWireframeLayout layout;
+
+  final UIWireframeConfidence confidence;
+
+  final List<String> reasons;
+
+  final List<UIWireframeField> fields;
+
+  final int itemCount;
+
+  final bool isCollection;
+}
+```
+
+## UIWireframeInference
+
+[Source: lib/src/wireframe_inference.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/wireframe_inference.dart)
+
+```dart
+class UIWireframeInference {
+  static UIWireframePlan inspect(
+    Object? data, {
+    UIWireframeLayout? layout,
+    List<UIWireframeField> fields = const [],
+    Map<String, UIWireframeFieldType> fieldTypes = const {},
+    int itemCount = 3,
+  });
+}
+```
+
+
+---
+
+Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/ai-cookbook.md
+
+# Runnable youth_ui cookbook
+
+These are complete Dart entry points in the repository's existing example Flutter project, not pseudocode. They are analyzed with the project and tested for the interactions below. Add your own services/business logic where the comments indicate.
+
+## Start an example
+
+From the repository root:
+
+```sh
+cd example
+flutter pub get
+flutter run -t lib/recipes/auth_recipe.dart
+```
+
+Choose a device as usual. For web you can add `-d chrome` or `-d web-server`. Do not run all entry points as one application. A consumer already using MaterialApp/router should integrate the page class into its existing shell.
+
+## Login form
+
+[Source](https://github.com/HYowshi/flutter-ui/blob/main/example/lib/recipes/auth_recipe.dart) · [Readable source on website](auth_recipe.dart)
+
+Run `flutter run -t lib/recipes/auth_recipe.dart` from example/.
+
+Use this pattern for string validators, named API field errors, password input, controller ownership and managed UIForm submission. The delayed callback is a mock; no session is created. Replace it with the application's authentication service, map expected failures into UIFormException, and implement navigation/session storage in the app. Never hardcode credentials into a recipe.
+
+## Form with date and confirmation
+
+[Source](https://github.com/HYowshi/flutter-ui/blob/main/example/lib/recipes/editor_recipe.dart) · [Readable source on website](editor_recipe.dart)
+
+Run `flutter run -t lib/recipes/editor_recipe.dart` from example/.
+
+The State owns title/date/saved. UIDateField takes the controlled value and callback, with a typed date validator. UIAdaptiveDialog.confirm returns a boolean; only an explicit confirmation changes saved. Cancellation runs no save operation. The callback guards mounted after await. This example intentionally has no UIForm.onSuccess handler: returning from onSubmit after cancel is a completed callback, not a dedicated “cancelled” submission result. If your app needs that distinction, keep it in application state or confirm before starting submission.
+
+## Search, table and floating action
+
+[Source](https://github.com/HYowshi/flutter-ui/blob/main/example/lib/customization_example.dart) · [Readable source on website](customization_example.dart)
+
+Run `flutter run -t lib/customization_example.dart` from example/.
+
+This example adds rows in memory, filters them by search, manages selectedKeys/pageSize and places UIFloatingActionButton into the correct Scaffold slot. Row keys are unique names only because the sample dataset is constructed that way; real data should use persistent unique IDs. Use server paging for large remote datasets; UITable does not fetch API pages.
+
+## Match other needs to real examples
+
+- Component-specific customization: example/lib/usage_samples.dart and the corresponding demo in example/lib/main.dart. Snippets there name application-owned callbacks; they are not all standalone entry points.
+- Image sources/fallback/variants: docs/images.vi.md and ImageDemo.
+- Typed radio/dropdown/table values: docs/table-radio.vi.md and RadioDemo/TableDemo/DropdownDemo.
+- Adaptive app frame: docs/adaptive-design.vi.md and AdaptiveDemo.
+- Motion/reveal: docs/motion-input-notice.vi.md and MotionDemo.
+- Screen states/overlays/date range: docs/states-dialog-date.vi.md and StateViewDemo/AdaptiveDialogDemo/DatePickerDemo.
+- Wireframes and inference overrides: docs/wireframe.vi.md and WireframeDemo.
+
+For exact constructor parameters/defaults, use [API reference](api-reference.md) for the resolved version. Do not extrapolate properties from similarly named Flutter widgets.
+
+
+---
+
+Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/consumer-agents.md
+
+# Template for a project using youth_ui
+
+Copy/adapt the block below into your application's existing AGENTS.md or the equivalent context file your coding assistant reads. Merge it with existing instructions; do not replace them. If your assistant does not read such files automatically, paste the starter prompt and link explicitly.
+
+```markdown
+## Flutter UI library
+
+This app uses `youth_ui` from https://github.com/HYowshi/flutter-ui.
+Start with https://hyowshi.github.io/flutter-ui/llms.txt and
+https://hyowshi.github.io/flutter-ui/ai/ai-guide.md.
+
+- Verify the version/commit resolved in pubspec.lock and inspect the installed
+  source via .dart_tool/package_config.json. That version's source wins over
+  newer online docs. Do not silently upgrade dependencies or invent parameters.
+- Import package:youth_ui/youth_ui.dart and prefer its existing components.
+- Keep this app's router/providers/state architecture. UIApp creates a
+  MaterialApp; use cached YouthUI.colors themes for an existing MaterialApp.
+- Initialize theme once; prefer tone/variant and theme roles. Follow local
+  constraints, large text, keyboard/focus and reduced-motion conventions.
+- The app owns controllers it creates, async work, networking, permissions,
+  storage and business logic. Dispose owned controllers; guard UI after await.
+- Use runnable examples and the API reference for unfamiliar widgets.
+- Run flutter analyze and tests appropriate to the change, then report what
+  was verified and any concrete limitations.
+```
+
+## Prompt to paste into another AI
+
+> Dự án này dùng youth_ui từ HYowshi/flutter-ui. Đọc https://hyowshi.github.io/flutter-ui/llms.txt rồi ai-guide trước khi viết UI. Kiểm tra phiên bản thực tế trong pubspec.lock; dùng API đúng phiên bản đó. Ưu tiên component có sẵn, giữ router/state/theme hiện tại và chạy flutter analyze sau khi sửa.
+
+For offline work, download llms-full.txt, or point the agent at a local checkout and its docs/ai-guide.md. A guide cannot make an AI remember the library permanently; include the reference again when starting a new session without that context.
+
+
+---
+
+Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/forms-feedback.vi.md
+
+# Form và thông báo · 0.11
+
+## Gọi nhanh
+
+```dart
+final email = TextEditingController(); // dispose trong State.dispose
+
+UIForm(
+  submitLabel: 'Lưu hồ sơ',
+  onSubmit: () async {
+    await api.save(email.text); // mạng do ứng dụng cung cấp
+  },
+  onSuccess: () => UINotice.show(context,
+    message: 'Đã lưu hồ sơ.', tone: UITone.success),
+  children: [
+    UITextField(
+      name: 'email', label: 'Email', controller: email,
+      keyboardType: TextInputType.emailAddress,
+      autofillHints: const [AutofillHints.email],
+      textInputAction: TextInputAction.next,
+      validator: UIValidators.email(), clearable: true,
+    ),
+    UIPasswordField(
+      name: 'password', textInputAction: TextInputAction.done,
+      validator: UIValidators.minLength(8),
+    ),
+  ],
+);
+```
+
+`onSubmit` tự thêm nút gửi; không truyền thì `UIForm(children: ...)` vẫn là form bố cục như trước. `maxColumns: 1` giữ một cột; mặc định tối đa hai, tự giảm theo không gian/cỡ chữ. Có thể dùng `formKey` và validator Flutter như cũ.
+
+`UITextField` và `UIPasswordField` mặc định kiểm tra khi rời ô. Khi đã có lỗi, sửa nội dung sẽ kiểm tra lại. Gửi kiểm tra toàn form, focus và cuộn đến trường lỗi đầu tiên đang được mount. Đổi `autovalidateMode` nếu cần cách khác. `UIValidators.required`, `email`, `minLength`, `combine` là tiện ích cơ bản; email validator chỉ kiểm tra hình dạng, không chứng minh địa chỉ tồn tại. Quy tắc nghiệp vụ và validation server vẫn thuộc ứng dụng.
+
+Trong lúc gửi, form khoá tương tác và nút hiển thị loading; gọi submit nhiều lần chỉ chạy một yêu cầu. Không thay cây field hay xoá dữ liệu khi thất bại. `TextInputAction.done` gửi form nếu không cung cấp `onFieldSubmitted` riêng. Các field hỗ trợ focus, autofill, định dạng qua `inputFormatters`, `maxLength` và giới hạn nhiều dòng. Không tự format điện thoại/số tiền nếu chưa biết vùng và đơn vị.
+
+## Lỗi server và thử lại
+
+```dart
+onSubmit: () async {
+  final result = await api.save(email.text);
+  if (result.emailTaken) {
+    throw const UIFormException(
+      message: 'Hồ sơ chưa được lưu.',
+      fieldErrors: {'email': 'Email đã được sử dụng.'},
+    );
+  }
+}
+```
+
+`name` khớp key trong `fieldErrors`; hỗ trợ text, password và `UISelect`. Sửa trường nào thì xoá lỗi server của trường đó, giữ lỗi những trường khác. Lỗi chung hiển thị đầu form đến lần gửi tiếp theo. Với lỗi kết nối, throw `UIFormException(message: ...)` để thử lại mà giữ dữ liệu.
+
+Lỗi không dự kiến dùng `failureMessage` an toàn, không đưa nguyên exception ra màn hình. Nhận lỗi gốc qua `onError(error, stack)` để xử lý/log theo quy định của ứng dụng. Không log mật khẩu hoặc dữ liệu nhạy cảm. `onSuccess` chỉ chạy khi callback hoàn tất thành công và form còn tồn tại.
+
+Nếu cần nút gửi ngoài form, truyền `UIFormController`, gọi `await controller.submit()` và lắng nghe `isSubmitting`, `error`, `fieldErrors`. Giá trị trả về false nếu không hợp lệ, đang gửi, thất bại hoặc đã rời form. Một controller chỉ gắn một form; caller dispose sau khi tháo form. Khi form rời cây hoặc đổi `formKey` sang bản ghi mới, kết quả bất đồng bộ cũ bị bỏ qua ở UI; helper không huỷ HTTP request hay đảo ngược tác vụ server. Không lồng `Form` khác trong `UIForm`. Field được tạo lazy nhưng chưa mount sẽ không được Flutter Form kiểm tra; dùng validation model cho form nhiều bước/danh sách dài.
+
+## Thông báo
+
+```dart
+UINotice.show(context,
+  message: 'Đã lưu trữ tài liệu.',
+  tone: UITone.success,
+  actionLabel: 'Hoàn tác',
+  onAction: restoreDocument,
+);
+
+UIAlert(
+  title: 'Bạn đang ngoại tuyến',
+  message: 'Bản nháp vẫn được giữ.',
+  tone: UITone.warning,
+  actionLabel: 'Thử lại', onAction: reconnect,
+  // onDismiss: hideBanner,
+);
+```
+
+- `UINotice.show` dùng ScaffoldMessenger gần nhất, cần gọi từ event/callback dưới MaterialApp và có Scaffold. Không cần provider riêng. Một notice hiện tại, tối đa năm mục tính cả mục đang hiện; hàng đợi đầy trả false, giữ các mục đã nhận.
+- Trùng `id` sẽ bị bỏ qua khi đang hiện/chờ. Nếu không có id, so sánh nội dung, tone và nhãn hành động. Dùng id riêng theo tác vụ nếu câu chữ giống nhau nhưng dữ liệu/callback khác nhau. Đây là gộp bỏ bản trùng, không cộng số lượng hay thay callback của bản cũ.
+- Thông báo thường tự đóng sau năm giây (`duration` chỉnh được). Có hành động hoặc tone danger thì mặc định giữ đến khi thao tác/đóng. `persistent` có thể ghi đè. Nút hành động bố trí dưới nội dung để có chỗ xuống dòng; mọi notice có nút đóng.
+- `UINotice.clear(context)` đóng/xoá hàng đợi của helper trong messenger đó. Các SnackBar được ứng dụng tạo trực tiếp không bị xoá. Khi helper còn nằm sau một SnackBar khác, mục bị huỷ sẽ được bỏ qua khi đến lượt; không đóng thông báo bên ngoài để lấy chỗ. Nếu trộn hai hệ thống, thứ tự hiển thị vẫn theo ScaffoldMessenger. Khi cần xoá toàn bộ cả hai loại, dùng `UINotice.clearAll(context)` thay cho `ScaffoldMessenger.clearSnackBars()`: native Flutter không hoàn tất future `closed` của những mục chờ bị bỏ, nên gọi trực tiếp API native đó có thể làm helper mất tín hiệu để chạy tiếp.
+- Hoàn tác gọi callback một lần, không tự phục hồi dữ liệu. Callback cần còn hợp lệ khi đổi trang: dùng service/model sống đủ lâu, hoặc kiểm tra `mounted` trước khi cập nhật State. Đợi API thành công trước khi báo thành công; xử lý lỗi của tác vụ hoàn tác tại ứng dụng.
+- Notice dùng chuyển động và thông báo truy cập của SnackBar Flutter. `UIAlert` mặc định live region, có thể tắt bằng `liveRegion: false` cho hướng dẫn tĩnh. Dùng nội dung và biểu tượng cùng màu trạng thái; không dựa riêng vào màu.
+
+Inline cho lỗi trường, banner cho trạng thái trang, notice cho phản hồi ngắn, dialog cho quyết định cần chặn luồng. Trung tâm thông báo có lưu trữ/đã đọc, lưu nháp và cảnh báo rời form chưa thuộc đợt nâng cấp này.
+
+## Cơ sở và kiểm chứng
+
+Theo API Flutter [validation](https://docs.flutter.dev/cookbook/forms/validation), [FormState.validateGranularly](https://api.flutter.dev/flutter/widgets/FormState/validateGranularly.html) và [SnackBar persist](https://api.flutter.dev/flutter/material/SnackBar/persist.html). Helper dựa trên trạng thái native của Flutter thay vì một hệ form/toast độc lập. Test bao gồm blur/correction, focus, chống gửi trùng, lỗi server, dữ liệu không controller, kết quả muộn sau unmount, hàng đợi/chống trùng/Hoàn tác, màn hình nhỏ + chữ 200% + RTL. Không thay thế kiểm thử với backend và công nghệ hỗ trợ thực tế của từng sản phẩm.
+
+
+---
+
+Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/images.vi.md
+
+# UIImage: nguồn, khung và fallback
+
+## Gọi nhanh
+
+```dart
+UIImage(photoUrl,
+  fallbackSource: 'assets/default-cover.png',
+  fallback: const Center(child: Icon(Icons.hide_image_outlined)),
+  placeholder: const UIWireframe.image(),
+  semanticLabel: 'Ảnh bìa hoạt động',
+);
+UIImage.avatar(avatarUrl,
+  fallbackSource: 'assets/default-avatar.png',
+  fallback: const Center(child: Text('AN')),
+);
+```
+
+Tất cả các constructor đều có fallbackSource, fallback, placeholder, errorBuilder. `.source` nay nullable. String null/rỗng/chỉ khoảng trắng không tạo AssetImage. HTTP(S) cần host; các scheme khác như file/data/blob cần provider phù hợp hoặc widget riêng. `.provider(MemoryImage(bytes))` nhận ảnh trong bộ nhớ; FileImage chỉ dùng trên nền tảng hỗ trợ. Không tự suy đoán chuỗi base64 hay đường dẫn file native.
+
+## Chuỗi xử lý lỗi
+
+1. Nếu có `errorBuilder`, gọi builder với lỗi gốc và dùng kết quả. Builder này thay thế toàn bộ xử lý lỗi, không đồng thời tải fallbackSource hay chèn retry.
+2. Nếu không, thử `fallbackSource` một lần. Được dùng khi nguồn chính vắng mặt, HTTP/asset lỗi hoặc decoder không đọc được ảnh.
+3. Nếu fallbackSource không hợp lệ, trùng nguồn chính hoặc cũng lỗi, dùng `fallback` widget nếu có.
+4. Nếu không có widget riêng, hiển thị giao diện lỗi mặc định. Lỗi của ảnh dự phòng dừng ở icon cuối, không tự quay về nguồn chính.
+
+`placeholder` chỉ là giao diện chờ, không phải giao diện báo lỗi. Dùng cùng placeholder khi tải nguồn chính và dự phòng. Mặc định là nền/icon tĩnh để không tạo vòng animation liên tục. Nếu tự truyền spinner/shimmer, ứng dụng chịu trách nhiệm vòng đời và reduced motion của nó.
+
+Flutter cung cấp [Image.errorBuilder](https://api.flutter.dev/flutter/widgets/Image/errorBuilder.html) để thay thế ảnh lỗi. UIImage áp dụng builder cho cả nguồn chính và fallbackSource; widget Image tự đặt bên trong fallback/errorBuilder/placeholder vẫn cần tự xử lý lỗi nếu có. Không hứa hẹn bắt lỗi tùy ý trong cây widget do ứng dụng cung cấp.
+
+## Retry
+
+`allowRetry` mặc định bật trên ảnh thường/banner; tắt trên avatar/thumbnail/provider. Có thể bật lại theo nhu cầu. Chỉ giao diện lỗi mặc định có retry; không phủ nút lên widget hoặc ảnh fallback tùy biến.
+
+- Không tự retry theo timer, không lặp khi mất mạng.
+- Mỗi yêu cầu đang chờ chỉ xử lý một lần dù nhấn liên tục.
+- Xóa cache của provider thực tế (bao gồm ResizeImage) và provider gốc trước khi tạo Image mới. Flutter yêu cầu [evict đúng key](https://api.flutter.dev/flutter/painting/ImageProvider/evict.html); xóa key gốc không đồng nghĩa xóa key đã resize.
+- Nếu nguồn bị thay trong lúc chờ evict, kết quả cũ không làm reset ảnh mới. Dispose trong lúc chờ không gọi setState.
+- Khung nhỏ/chữ lớn dùng IconButton có tooltip; dưới 48px mỗi chiều thì bỏ thao tác retry. Giao diện lỗi vẫn hiện icon.
+
+Retry chỉ xóa cache phía Flutter; không đảm bảo bỏ cache HTTP/CDN/browser hoặc vượt CORS. Nếu URL cần token/header, ứng dụng cung cấp NetworkImage/provider đã cấu hình. Không ghi URL/lỗi kỹ thuật lên màn hình mặc định.
+
+## Geometry và chất lượng
+
+Nguồn chính, placeholder và fallback dùng chung khung, clip, fit và alignment. Avatar/thumbnail giữ hình vuông và co đều nếu vùng cha nhỏ. Ảnh thường/banner giới hạn chiều cao theo constraint cha; không ép kích thước vượt parent. Chọn `BoxFit.contain` khi cần thấy trọn ảnh, `cover` khi ưu tiên lấp đầy khung. Không tự đoán ý đồ cắt ảnh từ nội dung.
+
+Native dùng decode width theo bucket128 đến tối đa2048, không ép cả width/height làm méo tỉ lệ. Gợi ý này có thể chưa đủ sắc nét với nguồn cực rộng/hẹp bị crop mạnh: dùng `optimizeDecode: false` hoặc provider/biến thể đã crop phù hợp. Web bỏ qua decode hint, cần `variants` từ server để giảm dung lượng thực. Các biến thể rỗng bị bỏ qua; width không dương là lỗi cấu hình cần sửa, không phải lỗi tải ảnh.
+
+Không có disk cache/offline, SVG renderer, tải lại theo kết nối hay cache buster tự động. Asset dự phòng phải có trong pubspec. Ảnh raster/ảnh động phụ thuộc decoder và nền tảng Flutter; giảm chuyển động hiện áp dụng cho fade, không dừng frame GIF do decoder phát. Thông tin chung về provider/fit/semantics có tại [Flutter Image](https://api.flutter.dev/flutter/widgets/Image-class.html).
+
+Widget tùy biến nhận constraint của khung, nhưng vẫn có thể overflow nếu tự đặt kích thước/text quá lớn. Với fallback nhiều nội dung, chủ động wrap/padding hoặc đặt khung phù hợp. `semanticLabel` mô tả ý nghĩa ảnh kể cả khi thay thế, không đưa đường dẫn hoặc thông báo lỗi kỹ thuật làm nhãn.
+
+
+---
+
+Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/wireframe.vi.md
+
+# Wireframe nhận diện cấu trúc
+
+`UIWireframe.auto(data: sample)` tạo phác thảo tĩnh theo dữ liệu mẫu. Đây là công cụ chọn bố cục có quy tắc, không phải AI và không thể suy ra chính xác ý định sản phẩm chỉ từ JSON. Không chuyển dữ liệu thành các điều khiển hoạt động.
+
+## Mới trong 0.12
+
+Thêm `landing`, `event`, `pricing` (tổng 17 bố cục). `UIWireframe.auto(data: payload)` vẫn chỉ cần một lệnh; không cần chọn loại trước. Nhận root hoặc `hero` một cấp cho trang giới thiệu; ngày + địa điểm + tổ chức/đăng ký cho sự kiện; `plans/packages/goidichvu` hoặc list gói có giá + chu kỳ + tính năng cho pricing. `plan.isCollection` phân biệt danh sách sản phẩm với một chi tiết. Xem [thiết kế và giới hạn nhận diện](wireframe-design-research.vi.md).
+
+Dấu hiệu được quét trên tối đa 64 khoá và dùng bằng chứng đồng xuất hiện trong các bản ghi, độc lập giới hạn 12 trường preview. Một nhánh hero có tối đa 32 khoá; pricing có tối đa 8×32 khoá, không duyệt đệ quy. Metadata `pagination/count/hasNext/nextCursor` được chấp nhận khi bóc envelope. Tên ảnh như `heroImage/poster/banner/coverImage` hỗ trợ CDN không có đuôi; URL tùy ý vẫn cần hint. Demo tự phân tích sau 350 ms dừng nhập, giữ plan cũ khi JSON chưa hợp lệ.
+
+## Thứ tự quyết định
+
+1. `layout` do người gọi chỉ định luôn thắng.
+2. `fields` do người gọi cung cấp chọn form; `fieldTypes` ghi đè kiểu trường tương ứng trong dữ liệu mẫu, không tự đổi toàn màn hình thành form.
+3. Bóc tối đa 3 lớp envelope `data/items/results` khi các khóa còn lại chỉ là metadata đã biết. Không tùy tiện bóc trường `data` của một đối tượng nghiệp vụ.
+4. Xét dấu hiệu kết hợp: email/phone + password → form tài khoản; sender + message/text → chat; name/title + price + sku/currency/stock → product; stats + series/chart → dashboard; name + avatar + bio/email/role → profile; title + body/content → article; danh sách tương ứng → feed. Khóa tiếng Việt có dấu, snake_case và camelCase được chuẩn hóa.
+5. Tập ảnh có đuôi raster nhận diện → gallery; date + event/action → timeline; nhiều boolean → settings. Các bản ghi đồng nhất có nhiều trường ngắn → table (mức bằng chứng medium).
+6. Không đủ dấu hiệu → detail hoặc list. Map/List rỗng → empty. `null` không đồng nghĩa dữ liệu rỗng: chưa biết cấu trúc → detail trung tính.
+
+`confidence` (`explicit/high/medium/low`) phản ánh mức bằng chứng trong quy tắc, không phải xác suất hay chỉ số đo trên dữ liệu người dùng. `reasons` giải thích quy tắc đã chọn. Nếu nhiều bố cục có bằng chứng gần nhau, mức đánh giá hạ xuống medium và nêu bố cục cạnh tranh. Ví dụ số có tên `price` chưa đủ để gọi là sản phẩm; URL bất kỳ chưa đủ để gọi là ảnh. Dữ liệu có thể khớp nhiều mục đích: khi đã biết màn hình, nên truyền `layout`.
+
+## Loại trường và schema
+
+12 loại: text, paragraph, number, date, email, phone, image, avatar, toggle, choice, password, section. Nhận diện giá trị bool/num/DateTime; chuỗi dài; email, số điện thoại quốc tế có dấu `+`, ngày ISO hợp lệ và URL/path đuôi ảnh. Các định dạng mơ hồ như ngày `01/02/2026`, mã số có toàn chữ số, ảnh CDN không có đuôi và tên trường không gợi ý ảnh cần `fieldTypes`.
+
+```dart
+UIWireframe.auto(data: payload, fieldTypes: const {
+  'portrait': UIWireframeFieldType.avatar,
+  'due': UIWireframeFieldType.date,
+});
+
+// Chưa tải dữ liệu, nhưng đã biết cấu trúc form:
+UIWireframe.auto(fields: const [
+  UIWireframeField('Email', type: UIWireframeFieldType.email),
+  UIWireframeField('Password', type: UIWireframeFieldType.password),
+  UIWireframeField('Remember', type: UIWireframeFieldType.toggle),
+]);
+```
+
+Không suy đoán validator, quyền người dùng, trạng thái loading/error hay nghiệp vụ từ mẫu dữ liệu. Empty là bố cục minh họa, không có nội dung thông báo thật. Khi cần dùng làm skeleton tải, chỉ định preset/schema để khớp màn hình thực; không hứa hẹn giữ chính xác hình học của widget tùy biến.
+
+## Hiệu năng và bố cục
+
+- Mỗi lần inspect xét tối đa 8 phần tử, 64 khóa/bản ghi, 12 trường đầu ra. Chỉ xét cấu trúc ngoài, không duyệt đồ thị lồng nhau. Khóa dài được cắt ở 100 ký tự trước chuẩn hóa. Mẫu không đại diện có thể dẫn tới kết quả sai.
+- `itemCount` là số khối xem trước, mặc định 3, cho phép 0–12; không tự dựng hàng nghìn bản ghi.
+- `UIWireframe.inspect(...)` trả plan bất biến chỉ chứa tên/loại trường, bố cục và lý do; không giữ giá trị đầu vào. Dùng `UIWireframe.fromPlan(plan: plan)` để không phân tích lại khi rebuild. Khi dữ liệu/schema thay đổi, tạo plan mới.
+- Không ticker, shimmer hay tải ảnh; không phản hồi chạm/bàn phím trong wireframe. Semantics chỉ giới thiệu một wireframe, không đọc các khối giả làm nội dung thật.
+- Bảng thành thẻ ở vùng dưới compact breakpoint hoặc text scale >1.5. Grid dùng local constraints, không dò tên thiết bị. RTL, light/dark và vùng hẹp được hỗ trợ. Parent chịu trách nhiệm cuộn; vẫn phải cung cấp constraint hợp lệ cho cây Flutter.
+- Không đánh giá FPS thiết bị thật từ test widget; giới hạn phép phân tích giúp tránh xử lý toàn bộ payload trong một lần dựng.
+
+## Cơ sở Flutter
+
+[LayoutBuilder](https://api.flutter.dev/flutter/widgets/LayoutBuilder-class.html) cung cấp constraint của parent để bố trí theo vùng thực. [Understanding constraints](https://docs.flutter.dev/ui/layout/constraints) giải thích giới hạn mà widget phải tuân theo. [Semantics](https://api.flutter.dev/flutter/widgets/Semantics-class.html) và ExcludeSemantics được dùng để khối trang trí không bị đọc như nội dung/điều khiển thực. Các quy tắc nhận diện nghiệp vụ ở trên là quyết định của thư viện, không phải cam kết từ Flutter.
+
+
+---
+
+Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/customization.vi.md
+
+# Tùy chỉnh widget và Floating Action Button
+
+Các widget có mặc định từ theme, không cần gán màu từng chỗ. Ưu tiên `tone`/`variant` để dùng lại trong các dự án. Chỉ ghi đè phần cần khác.
+
+## FAB
+
+```dart
+Scaffold(
+  floatingActionButton: UIFloatingActionButton(
+    icon: Icons.add_rounded,
+    tooltip: 'Tạo dự án', // tên hành động luôn có khi nhãn được thu gọn
+    label: 'Tạo dự án',
+    onPressed: createProject,
+    tone: UITone.accent,
+  ),
+  body: yourPage,
+);
+```
+
+- `size`: `UIFabSize.small`, `regular`, `large`; native Material giữ vùng chạm padded tối thiểu 48px cho nút nhỏ. Vùng quá nhỏ vẫn cần parent cung cấp đủ chỗ.
+- `extended: null` tự hiện nhãn khi vùng chứa ≥ breakpoint compact (mặc định 600px), thu về icon ở vùng hẹp. `true` yêu cầu hiện nhãn; `false` luôn icon. Nhãn dài được giới hạn/ellipsis theo vùng chứa, tooltip giữ tên đầy đủ. Khi extended, dùng kích thước native extended; size chỉ tác dụng ở dạng icon.
+- `loading: true` khóa callback; reduced motion dùng icon tĩnh thay spinner. Ứng dụng quản lý `Future`, lỗi và trạng thái loading, wrapper không tự gọi lại nghiệp vụ.
+- `shape`, `elevation`, `backgroundColor`, `foregroundColor`, `focusNode`, `autofocus` tùy chỉnh cục bộ. Nếu đổi màu, nên đổi cả cặp nền/chữ và kiểm tra sáng/tối, disabled, hover/focus; thư viện không sửa màu do caller ghi đè.
+- `heroTag` mặc định null để không trùng tag giữa nhiều nút. Nếu cần chuyển Hero giữa hai route, truyền cùng tag cho cặp nút tương ứng và tag khác cho các nút cùng route.
+- Đặt vào `Scaffold.floatingActionButton` để Flutter tránh bàn phím/snackbar/bottomNavigationBar theo geometry native. Một trang thường chỉ có một hành động nổi chính; demo có nhiều nút để so sánh.
+
+`UIAdaptiveScaffold` cũng nhận `floatingActionButton` và `floatingActionButtonLocation`. Với FAB, navigation và footer actions được chuyển vào slot đáy native; phần cuộn có khoảng trống cuối. Tự dùng Scaffold thì ứng dụng cần chừa khoảng cuối cho nội dung cuộn. Widget FAB tùy biến có chiều cao lớn hơn mặc định có thể cần padding riêng.
+
+## ButtonStyle
+
+```dart
+UIButton(
+  label: 'Xuất báo cáo', icon: Icons.download_outlined,
+  onPressed: exportReport, fullWidth: false,
+  tone: UITone.secondary,
+  style: FilledButton.styleFrom(
+    padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 18),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  ),
+);
+```
+
+`style` merge lên style sinh từ theme, thuộc tính không truyền giữ mặc định. Hỗ trợ `WidgetStateProperty` cho các trạng thái. `tooltip`, `focusNode`, `autofocus`, `onLongPress` bổ sung thao tác; `loading` tắt cả nhấn và nhấn giữ. Chủ sở hữu FocusNode/controller chịu trách nhiệm dispose. Không giảm kích thước chạm hoặc xóa focus indicator nếu cần truy cập bàn phím.
+
+## Table
+
+```dart
+UITable<Person>(
+  rows: people,
+  searchQuery: query,
+  searchText: (p) => '${p.name} ${p.email}', // bỏ để tìm mọi column.value
+  pageSize: pageSize,
+  onPageSizeChanged: (n) => setState(() => pageSize = n),
+  pageSizeOptions: const [5, 10, 20, 50],
+  rowKey: (p) => p.id,
+  selectedKeys: selected,
+  showSelectAll: true,
+  onSelectionChanged: (keys) => setState(() => selected = keys),
+  loading: loading, error: errorMessage, onRetry: reload,
+  columns: [
+    UITableColumn(label: 'Tên', minWidth: 220, value: (p) => p.name,
+      compare: (a, b) => a.name.compareTo(b.name)),
+    UITableColumn(label: 'Điểm', minWidth: 80,
+      value: (p) => '${p.points}', numeric: true,
+      compare: (a, b) => a.points.compareTo(b.points)),
+  ],
+);
+```
+
+`query`, `pageSize`, `selected`, `loading`, `errorMessage` thuộc State ứng dụng. Nối `query` với `UITextField.search(onChanged: ...)`. Bộ lọc bỏ dấu Việt và phân biệt hoa/thường; lọc trong bộ nhớ, không tải dữ liệu từ API. Không tìm nội dung tùy ý bên trong `cellBuilder`: hãy cung cấp giá trị text hoặc `searchText`. Query mới/số dòng mới quay về trang đầu; sort ổn định và chỉ dựng ô của trang hiện tại.
+
+`showSelectAll` mặc định false để tương thích API cũ. Khi bật, checkbox có trạng thái chưa chọn/một phần/toàn trang; chỉ đổi các dòng đang hiển thị và giữ lựa chọn ở trang khác/ngoài bộ lọc. Số đã chọn tính toàn bộ selectedKeys của caller; caller quyết định dọn key cũ khi đổi dataset. `rowKey` phải duy nhất, ổn định.
+
+`onPageSizeChanged` bật dropdown số dòng, caller cập nhật pageSize (1–100). Giá trị hiện tại luôn có trong danh sách kể cả không nằm trong pageSizeOptions. `minWidth` cột phải hữu hạn ≥48px (mặc định180px), không bao gồm padding. Desktop cuộn ngang khi cần; mobile/chữ lớn dùng thẻ nên không áp độ rộng cột.
+
+Thứ tự trạng thái: loading → error/retry → empty → filtered results. Không có kết quả tìm kiếm có thông báo riêng, không hiển thị trang 0/-1. `error` là thông báo cho người dùng; onRetry callback do ứng dụng xử lý. `empty` thay giao diện khi dataset gốc rỗng.
+
+Các API lọc/sort/paging hiện xử lý dữ liệu trong bộ nhớ; dữ liệu rất lớn cần phân trang/tìm kiếm server riêng. Tạo List mới khi cập nhật rows/columns; giữ columns/callback ổn định khi có thể để tận dụng cache, không sửa trực tiếp collection đang được truyền vào.
+
+## Mã sử dụng trên website
+
+Mỗi mục có ba chế độ: **Dùng nhanh** (đoạn ghép), **Tùy chỉnh** (thuộc tính và điểm nối nghiệp vụ), **Trang mẫu chạy được** (imports, State, controller/dispose, theme, tìm kiếm, table và FAB đầy đủ). Sao chép lấy đúng chế độ đang chọn; khi clipboard bị chặn có thể chọn text để copy thủ công.
+
+Mã ngắn dùng tên model/callback minh họa, phải thay bằng ứng dụng thực tế. Trang hoàn chỉnh có thể dán vào main.dart của dự án đã thêm dependency youth_ui, hoặc chạy từ repo:
+
+```sh
+cd example
+flutter run -t lib/customization_example.dart
+```
+
+[Source trang hoàn chỉnh](../example/lib/customization_example.dart). Không khởi tạo controller trong build; callback API phải xử lý lỗi/timeout và kiểm tra mounted trước khi setState sau await.
+
+
+---
+
+Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/states-dialog-date.vi.md
+
+# Trạng thái màn hình, popup và chọn ngày
+
+## Trạng thái màn hình
+
+```dart
+UIStateView.loading(progress: uploadProgress, onAction: cancelUpload);
+UIStateView.empty(message: 'Tạo dự án đầu tiên của bạn.', onAction: createProject);
+UIStateView.error(message: 'Chưa tải được nội dung.', onAction: reload);
+UIStateView.offline(onAction: reconnect);
+UIStateView.forbidden(onAction: requestAccess);
+UIStateView.success(message: 'Mọi thay đổi đã lưu.', onAction: continueFlow);
+```
+
+Chỉ `onAction` mới làm xuất hiện nút chính; bỏ callback thì chỉ còn nội dung. Nhãn mặc định theo trạng thái và có thể đổi bằng `actionLabel`. Loading nhận tiến độ 0–1; bỏ progress dùng spinner, reduced motion dùng biểu tượng tĩnh. Thư viện không tự chạy request, dò mạng, cache bản nháp hay xác định quyền. Nội dung demo chỉ minh họa; ứng dụng phải thực hiện nghiệp vụ thật.
+
+Tùy chỉnh toàn bộ nội dung và hình bằng constructor chung:
+
+```dart
+UIStateView(
+  kind: UIStateKind.empty,
+  title: 'Không có kết quả', message: 'Hãy thử từ khóa ngắn hơn.',
+  illustration: const Icon(Icons.search_off_outlined, size: 64),
+  actionLabel: 'Xóa bộ lọc', onAction: clearFilter,
+  secondaryActionLabel: 'Quay lại', onSecondaryAction: goBack,
+);
+```
+
+Nội dung tối đa 480px, tự cuộn khi vùng chứa thấp/chữ lớn; parent vẫn cần cung cấp kích thước hợp lệ. Illustration nên có kích thước hữu hạn; mặc định mang tính trang trí và được loại khỏi semantics, thông tin cần thiết hãy đưa vào title/message. Các nhãn mặc định của thư viện hiện là tiếng Việt; thay title/message/actionLabel để bản địa hóa nội dung cho dự án.
+
+## Dialog / Bottom Sheet
+
+```dart
+final accepted = await UIAdaptiveDialog.confirm(context,
+  title: 'Lưu thay đổi?', message: 'Các cập nhật sẽ được lưu vào hồ sơ.',
+  confirmLabel: 'Lưu',
+);
+if (!context.mounted || !accepted) return;
+await saveProfile();
+```
+
+`confirm` trả true khi bấm nút chính; hủy, đóng, Back hoặc dismiss trả false. `danger: true` đổi vai trò màu cho hành động nhạy cảm. Không tự gọi API hay chạy thao tác xóa.
+
+```dart
+final result = await UIAdaptiveDialog.show<String>(context,
+  title: 'Chỉnh sửa', presentation: UIPresentation.auto,
+  dismissible: true, showClose: true, maxWidth: 600,
+  builder: (routeContext) => const YourEditor(),
+  actionsBuilder: (routeContext) => [
+    UIButton(label: 'Áp dụng',
+      onPressed: () => Navigator.pop(routeContext, 'saved')),
+  ],
+);
+```
+
+- `auto`: khi mở, vùng MediaQuery nhỏ hơn compactBreakpoint (mặc định600px) dùng sheet; còn lại dialog. Có thể ép `UIPresentation.dialog` hoặc `.sheet`.
+- Resize khi đang mở giữ nguyên route để tránh mất dữ liệu/focus; kích thước và cuộn tiếp tục thích ứng. Kiểu trình bày mới được chọn khi mở lần kế tiếp.
+- Header, body và actions cùng vùng cuộn, nên nội dung dài hoặc bàn phím lớn vẫn có thể tới được thao tác cuối. Không đặt Expanded/ListView vô hạn trong builder; dùng Column(mainAxisSize: min), danh sách có chiều cao hữu hạn hoặc sliver riêng khi nội dung rất lớn.
+- `dismissible: false` chặn chạm ngoài, Back và kéo sheet để đóng; nút đóng/callback `Navigator.pop(routeContext)` vẫn chủ động đóng. Với showClose:false, hãy cung cấp thao tác kết thúc hoặc hủy trong nội dung.
+- Cả hai dùng root navigator mặc định; `useRootNavigator:false` khi muốn route thuộc navigator lồng nhau. Dùng context trong builder/actionsBuilder để pop đúng route.
+- Native routes quản lý focus/barrier và bàn phím. Reduced motion bỏ transition của wrapper. Muốn thay đổi state trong popup dùng StatefulWidget riêng hoặc StatefulBuilder; setState của trang phía sau không tự cập nhật route.
+- Theme được capture theo cơ chế route Flutter. Provider đặt dưới navigator không tự được chuyển sang route; truyền dữ liệu/controller cần dùng hoặc đặt provider ở scope thích hợp. Wrapper không cung cấp state restoration.
+
+## Ngày và khoảng ngày
+
+```dart
+DateTime? appointment; // biến trong State
+UIDateField(
+  name: 'appointment', label: 'Ngày hẹn', value: appointment,
+  onChanged: (date) => setState(() => appointment = date),
+  firstDate: DateTime(2026), lastDate: DateTime(2030, 12, 31),
+  selectableDayPredicate: (date) => date.weekday <= DateTime.friday,
+  validator: (date) => date == null ? 'Hãy chọn ngày hẹn' : null,
+  helper: 'Chỉ chọn ngày làm việc.',
+);
+```
+
+`value` và callback do ứng dụng sở hữu, hãy cập nhật value trong onChanged. Callback null hoặc enabled:false vô hiệu hóa sửa. Hủy picker giữ nguyên giá trị; nút xóa (clearable mặc địnhtrue) gửi null. Field dùng được trong Form thông thường hoặc UIForm. Với UIForm, name nối lỗi server, tự khóa khi gửi và xóa lỗi của đúng trường khi người dùng đổi ngày. Form reset không tự reset state của ứng dụng: khi muốn reset controlled field, đặt value về giá trị ban đầu.
+
+Mặc định khoảng ngày 01/01/1900–31/12/2100. Bounds tính cả hai đầu và bỏ phần giờ. Nếu giá trị của field không còn hợp lệ sau khi đổi bounds/predicate, validator báo lỗi; mở picker không đưa giá trị cũ sai vào native picker. Hãy luôn kiểm tra validator/giá trị trước khi gửi dữ liệu.
+
+```dart
+final date = await UIDatePicker.show(context,
+  initialDate: appointment,
+  firstDate: DateTime(2026), lastDate: DateTime(2030, 12, 31),
+  title: 'Ngày hẹn',
+  entryMode: DatePickerEntryMode.input, // calendar / input / *Only
+);
+final range = await UIDatePicker.range(context,
+  initialRange: selectedRange, title: 'Khoảng thời gian',
+  confirmLabel: 'Áp dụng',
+);
+```
+
+Helper trả null khi hủy. Với range, khi vùng hẹp dưới400px và chữ lớn/tiêu đề không đủ chỗ, mặc định mở nhập ngày trực tiếp để tránh header native tràn; đo text một lần lúc mở, không giảm text scale. Có thể chủ động truyền entryMode để chọn cách trình bày. Cỡ tiêu đề range mặc định dùng titleLarge ở vùng hẹp, giữ style DatePickerTheme do caller chỉ định. Bounds đảo, initialDate/initialRange ngoài khoảng, initialDate bị predicate loại trừ sẽ ném ArgumentError trước khi mở, kể cả release. `selectableDayPredicate` hiện chỉ áp dụng chọn ngày đơn; range dùng khoảng giới hạn, không tự áp quy tắc ngày làm việc hay số ngày tối đa. Không tự quét toàn bộ lịch để tìm ngày thay thế. Phần định dạng/parse/chọn ngày/bàn phím/calendar theo Flutter native; hiệu ứng của picker native do Flutter quản lý.
+
+DateTime kết quả là ngày không kèm giờ, không phải timestamp hay lịch hẹn đã gắn múi giờ. Ứng dụng phải quyết định giờ, timezone và cách lưu; không tự chuyển date-only sang UTC. Cập nhật value/bounds, đổi tên field hoặc hủy owner khi picker mở sẽ bỏ qua kết quả cũ; native route vẫn có thể được đóng bình thường.
+
+`invalidDateMessage` thay lỗi khi ngày nằm ngoài bounds/predicate. `format` thay cách hiển thị field, không đổi parser của hộp nhập native. `locale` trên field/helper chỉ đổi picker; locale của app quyết định hiển thị mặc định trong field. Dùng UIApp.locale để đồng bộ:
+
+```dart
+UIApp(
+  primary: Colors.indigo,
+  locale: const Locale('vi'),
+  home: const HomePage(),
+);
+```
+
+UIApp cài sẵn delegates Material/Widgets/Cupertino, supportedLocales mặc định en/vi và theo hệ thống khi không truyền locale. Có thể truyền thêm delegates (ưu tiên trước mặc định) và supportedLocales. Nếu dùng MaterialApp riêng, tự cấu hình flutter_localizations/delegates và supportedLocales để native picker có locale mong muốn. Những chuỗi nghiệp vụ do caller truyền vẫn phải được ứng dụng dịch.
+
+
+---
+
+Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/motion-input-notice.vi.md
+
+# Animation, textbox và thông báo · 0.13
+
+## Nhịp chuyển động chung
+
+`UIMotion.fast` =160 ms, `standard` =240 ms, `entrance` =320 ms. `UIMotion.resolve(context, duration)` trả zero nếu người dùng bật reduced motion. Đây là mặc định thiết kế của thư viện, có thể truyền duration riêng cho các widget chuyển động.
+
+```dart
+UIEntrance(key: ValueKey(replay), child: content);
+UIAnimatedContent(child: Text(status, key: ValueKey(status)));
+UIReveal(visible: expanded, child: details);
+```
+
+- `UIEntrance`: fade + dịch nhẹ, mặc định320 ms (trước đây450 ms). Giữ child ngoài animation builder, không dựng lại nội dung mỗi tick. Chặn bấm/focus ở đoạn đầu gần như vô hình. Đổi Key để chạy lại; không tự lặp.
+- `UIAnimatedContent`: fade + scale nhẹ .98→1, đồng thời chuyển chiều cao. Truyền Key khác khi muốn chuyển nội dung. Widget cũ đang thoát không nhận bấm, focus hay semantics; không ép chiều cao cũ xuống kích thước mới gây overflow. Đây không phải cách quản lý state giữa hai màn hình/router.
+- `UIReveal`: mở/thu chiều cao và opacity, giữ state child. Khi ẩn, không nhận pointer/focus, không đọc semantics và tắt ticker trong subtree. Child vẫn tồn tại/được layout, nên không dùng để giữ hàng nghìn item hoặc thay virtualized list. HTTP request/service bên ngoài không tự dừng. Field ẩn còn nằm trong Form vẫn tham gia validation; app cần quyết định trường nào được yêu cầu theo nghiệp vụ.
+- Các widget trên cùng textbox/UIAlert bỏ thời lượng transition khi reduced motion được bật. Theme transition giữ cơ chế snapshot có giới hạn sẵn có. SnackBar dùng chuyển cảnh native Flutter, không reset animation controller đang dùng chung với thông báo ngoài helper; cài đặt truy cập native tiếp tục do Flutter quản lý.
+
+`UIAnimatedSize(child: content)` cũng có thể dùng riêng. Khi reduced motion, helper bỏ size interpolator và giữ child qua một keyed subtree để không mất state; tránh AnimatedSize duration=zero thay đổi trong lúc layout.
+
+## Textbox gọi nhanh
+
+```dart
+UITextField.search(
+  onChanged: filterItems,
+  onFieldSubmitted: search,
+);
+UITextField.multiline(
+  label: 'Ghi chú', maxLength: 180,
+);
+UITextField(
+  label: 'Ngân sách', initialValue: '250000',
+  suffixText: 'VND', keyboardType: TextInputType.number,
+  variant: UIInputVariant.filled,
+);
+```
+
+`search` tự có icon tìm kiếm, nút xoá, bàn phím Search và nền mềm. `multiline` tăng từ3 đến6 dòng, dùng newline và capitalisation theo câu; quá6 dòng cuộn trong ô. Đây chỉ là UI, không tự truy vấn mạng hay debounce tìm kiếm.
+
+Field thường thêm `initialValue`, `minLines`, `autofocus`, `prefixText`, `suffixText`, `textCapitalization`, `variant` và `errorText`. `outlined` giữ bề mặt mặc định; `filled` dùng surfaceContainerLow từ cùng bộ màu. Các trạng thái focus/error/disabled vẫn dùng InputDecoration native và theme chung. Lỗi/helper đổi chiều cao trong160 ms; không có rung hay animation lặp khi nhập.
+
+Không truyền `initialValue` cùng controller. `initialValue` dùng lúc tạo State; thay nó sau đó không ghi đè phần người dùng đang sửa. Muốn cập nhật lập trình, dùng controller. Controller do ứng dụng truyền vẫn phải dispose ở ứng dụng. `readOnly` vẫn cho chọn/sao chép, khác `enabled: false`. `prefixText/suffixText` là affix theo cách hiển thị native Flutter; khi label chưa nổi, affix có thể chưa hiện. `errorText` do app kiểm soát, ưu tiên hơn lỗi managed form, app phải tự cập nhật/xoá nó. UIPasswordField cũng nhận variant/errorText. Bộ validator và name-bound server error từ0.11 giữ nguyên.
+
+## Thông báo
+
+```dart
+UINotice.show(context,
+  title: 'Đồng bộ hoàn tất',
+  message: 'Các thay đổi đã được cập nhật.',
+  tone: UITone.success,
+);
+```
+
+Notice có title tùy chọn, nhịp chữ rõ, bo16 px và icon trạng thái. Title tham gia key chống trùng khi không truyền id. Nội dung dài giới hạn chiều cao theo viewport và keyboard insets, cuộn bên trong, không cắt mất nội dung. Nút đóng native nằm ngoài vùng nội dung cuộn. Với thông báo dài cần đọc, truyền `persistent: true` hoặc tăng duration; mặc định thông báo thường vẫn5 giây. Hoàn tác và danger giữ đến khi đóng như trước.
+
+`UIAlert` đổi màu nền và chiều cao nhẹ khi đổi nội dung/tone, tắt duration khi reduced motion. Dùng cùng widget/key cho một trạng thái được cập nhật; tránh tạo nhiều banner chỉ khác màu cùng lúc. Hàng đợi, clear/clearAll và callback Hoàn tác giữ hợp đồng ở [hướng dẫn form & feedback](forms-feedback.vi.md).
+
+## Kiểm chứng và giới hạn
+
+Regression cho outgoing hit/focus/semantics, chuyển nội dung cao→thấp, giữ dữ liệu khi reveal, entrance không rebuild child mỗi frame, textbox Search/clear/read-only/multiline/error, notice dài trên320 px/chữ200% khi bàn phím chiếm240 px. Chạy lại toàn bộ test library/showcase và analyze. Các kiểm tra này không tương đương profile FPS/GPU trên thiết bị thật.
+
+
+---
+
+Runnable source: https://github.com/HYowshi/flutter-ui/blob/main/example/lib/customization_example.dart
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:youth_ui/youth_ui.dart';
+
+void main() => runApp(const UIApp(primary: Colors.indigo, home: CustomPage()));
+
+class CustomPage extends StatefulWidget {
+  const CustomPage({super.key});
+  @override
+  State<CustomPage> createState() => _CustomPageState();
+}
+
+class _CustomPageState extends State<CustomPage> {
+  final search = TextEditingController();
+  final rows = <String>['An', 'Bình', 'Chi', 'Dũng'];
+  Set<Object> selected = {};
+  int pageSize = 5;
+
+  @override
+  void dispose() {
+    search.dispose();
+    super.dispose();
+  }
+
+  void addItem() {
+    setState(() => rows.add('Thành viên ${rows.length + 1}'));
+    UINotice.show(context, title: 'Đã thêm', message: rows.last);
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      title: const Text('Danh sách của tôi'),
+      actions: const [UIThemeToggle()],
+    ),
+    floatingActionButton: UIFloatingActionButton(
+      icon: Icons.add_rounded,
+      tooltip: 'Thêm thành viên',
+      label: 'Thêm thành viên',
+      onPressed: addItem,
+    ),
+    body: UIPage(
+      children: [
+        UITextField.search(
+          controller: search,
+          onChanged: (_) => setState(() {}),
+        ),
+        UITable<String>(
+          rows: List.unmodifiable(rows),
+          searchQuery: search.text,
+          pageSize: pageSize,
+          onPageSizeChanged: (n) => setState(() => pageSize = n),
+          rowKey: (name) => name,
+          selectedKeys: selected,
+          showSelectAll: true,
+          onSelectionChanged: (keys) => setState(() => selected = keys),
+          columns: [
+            UITableColumn(
+              label: 'Tên',
+              value: (name) => name,
+              compare: (a, b) => a.compareTo(b),
+            ),
+          ],
+        ),
+        // Khoảng cuối để FAB không che hàng cuối khi cuộn hết.
+        const SizedBox(height: 120),
+      ],
+    ),
+  );
+}
+```
+
+
+---
+
+Runnable source: https://github.com/HYowshi/flutter-ui/blob/main/example/lib/recipes/auth_recipe.dart
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:youth_ui/youth_ui.dart';
+
+void main() => runApp(const UIApp(primary: Colors.indigo, home: AuthRecipe()));
+
+/// Demonstrates UI only. Replace the submission callback with your auth service.
+class AuthRecipe extends StatefulWidget {
+  const AuthRecipe({super.key});
+  @override
+  State<AuthRecipe> createState() => _AuthRecipeState();
+}
+
+class _AuthRecipeState extends State<AuthRecipe> {
+  final email = TextEditingController();
+  final password = TextEditingController();
+
+  @override
+  void dispose() {
+    email.dispose();
+    password.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(
+      title: const Text('Đăng nhập'),
+      actions: const [UIThemeToggle()],
+    ),
+    body: UIPage(
+      children: [
+        const Text('Ví dụ giao diện; chưa kết nối dịch vụ xác thực.'),
+        UIForm(
+          maxColumns: 1,
+          submitLabel: 'Đăng nhập mẫu',
+          onSubmit: () async {
+            // Replace with await authService.signIn(email.text.trim(), password.text).
+            // Expected API errors can throw UIFormException with named fieldErrors.
+            await Future<void>.delayed(const Duration(milliseconds: 200));
+          },
+          onSuccess: () => UINotice.show(
+            context,
+            message: 'Biểu mẫu hợp lệ. Chưa tạo phiên đăng nhập thật.',
+            tone: UITone.success,
+          ),
+          children: [
+            UITextField(
+              name: 'email',
+              label: 'Email',
+              controller: email,
+              keyboardType: TextInputType.emailAddress,
+              autofillHints: const [AutofillHints.username],
+              textInputAction: TextInputAction.next,
+              validator: UIValidators.combine([
+                UIValidators.required(),
+                UIValidators.email(),
+              ]),
+            ),
+            UIPasswordField(
+              name: 'password',
+              controller: password,
+              autofillHints: const [AutofillHints.password],
+              validator: UIValidators.combine([
+                UIValidators.required(),
+                UIValidators.minLength(8),
+              ]),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+```
+
+
+---
+
+Runnable source: https://github.com/HYowshi/flutter-ui/blob/main/example/lib/recipes/editor_recipe.dart
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:youth_ui/youth_ui.dart';
+
+void main() => runApp(
+  const UIApp(primary: Colors.teal, locale: Locale('vi'), home: EditorRecipe()),
+);
+
+/// Controlled date, local controller lifecycle, confirmation and mounted guards.
+class EditorRecipe extends StatefulWidget {
+  const EditorRecipe({super.key});
+  @override
+  State<EditorRecipe> createState() => _EditorRecipeState();
+}
+
+class _EditorRecipeState extends State<EditorRecipe> {
+  final title = TextEditingController();
+  DateTime? date;
+  bool saved = false;
+
+  @override
+  void dispose() {
+    title.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('Lịch hẹn mẫu')),
+    body: UIPage(
+      children: [
+        UIForm(
+          maxColumns: 1,
+          submitLabel: 'Lưu lịch hẹn mẫu',
+          onSubmit: () async {
+            final accepted = await UIAdaptiveDialog.confirm(
+              context,
+              title: 'Lưu lịch hẹn?',
+              message: 'Ví dụ chỉ lưu trạng thái trong bộ nhớ.',
+              confirmLabel: 'Xác nhận lưu',
+            );
+            if (!mounted || !accepted) return;
+            // Persist through the application's service here, then guard mounted.
+            setState(() => saved = true);
+          },
+          children: [
+            UITextField(
+              name: 'title',
+              label: 'Tiêu đề',
+              controller: title,
+              validator: UIValidators.required(),
+            ),
+            UIDateField(
+              name: 'date',
+              label: 'Ngày hẹn',
+              value: date,
+              onChanged: (value) => setState(() => date = value),
+              validator: (value) => value == null ? 'Hãy chọn ngày hẹn.' : null,
+            ),
+          ],
+        ),
+        if (saved)
+          const UIAlert(
+            title: 'Đã lưu mẫu',
+            message: 'Dữ liệu ở trong bộ nhớ; chưa ghi vào máy chủ.',
+            tone: UITone.success,
+          ),
+      ],
+    ),
+  );
+}
+```
