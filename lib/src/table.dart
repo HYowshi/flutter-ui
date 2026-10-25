@@ -323,7 +323,11 @@ class _UITableState<T> extends State<UITable<T>> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        if (selectable) checkbox(widget.rows[index]),
+                        if (selectable)
+                          Align(
+                            alignment: AlignmentDirectional.centerStart,
+                            child: checkbox(widget.rows[index]),
+                          ),
                         for (final column in widget.columns)
                           Padding(
                             padding: const EdgeInsets.symmetric(vertical: 6),
