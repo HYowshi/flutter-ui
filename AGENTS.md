@@ -11,4 +11,4 @@ This repository is the Flutter/Dart library `youth_ui` and its showcase, not a c
 - Do not edit `docs/api-reference.md` or `llms-full.txt` manually. Edit source/curated guides and regenerate them.
 - `docs/consumer-agents.md` is a template for another project's instructions; it is not a request to modify unrelated projects.
 
-For consumer integration guidance, use `docs/ai-guide.md`. For public API constructors/defaults and parameter field types, use `docs/api-reference.md`. For runnable examples, use `examples/README.md`.
+For consumer integration guidance, use `docs/ai-guide.md`. For public API constructors/defaults and parameter field types, use `docs/api-reference.md`. For runnable examples, use `example/README.md`.

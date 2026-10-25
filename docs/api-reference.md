@@ -1,7 +1,7 @@
 # youth_ui API reference
 
-Generated for **0.15.0** from the public export/part graph of lib/youth_ui.dart.
-Source fingerprint: `440103ce7b47030b47140308f47390845a12ee1a29160280bbbecb7869c739e2`.
+Generated for **0.15.1** from the public export/part graph of lib/youth_ui.dart.
+Source fingerprint: `121a0a22e6910a1cacaddef9b27dc8af1c9d8f8f6a0dcd238b97a4dbaaee50c9`.
 
 Do not edit manually. Run `python tool/generate_ai_docs.py`; CI checks drift.
 These are source-derived declaration excerpts: explicit constructors/defaults,

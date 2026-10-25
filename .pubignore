@@ -1,0 +1,25 @@
+# Release and cache output; this replaces .gitignore for pub packaging.
+**/.dart_tool/
+**/build/
+**/coverage/
+**/.idea/
+**/.vscode/
+**/__pycache__/
+**/*.pyc
+**/*.log
+**/*.iml
+**/*.ipr
+**/*.iws
+**/*.swp
+/pubspec.lock
+/example/pubspec.lock
+/dist/
+/.release/
+/.github/
+**/doc/api/
+# Repository-only documentation and maintenance tools stay in GitHub archives.
+/docs/
+/tool/
+/test/
+/AGENTS.md
+/example/test/

@@ -449,7 +449,7 @@ class _StudioState extends State<Studio> {
           ),
           const SizedBox(height: 20),
           Text(
-            'v0.15.0 · Ready-to-use Flutter UI',
+            'v0.15.1 · Ready-to-use Flutter UI',
             style: TextStyle(fontSize: 10, color: s.onSurfaceVariant),
           ),
         ],

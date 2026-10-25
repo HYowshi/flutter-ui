@@ -1,6 +1,6 @@
 # youth_ui: guide for coding agents
 
-Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This guide targets **0.15.0**, not a package named `flutter_ui` on pub.dev. The repository/folder name is Flutter UI; the Dart package/import is youth_ui.
+Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This guide targets **0.15.1**, not a package named `flutter_ui` on pub.dev. The repository/folder name is Flutter UI; the Dart package/import is youth_ui.
 
 ## Reading order and version matching
 
@@ -18,10 +18,10 @@ dependencies:
   youth_ui:
     git:
       url: https://github.com/HYowshi/flutter-ui.git
-      ref: d3989fed91c4ae7021f1a2ef6e33cc349ec9cdb3
+      ref: v0.15.1
 ```
 
-That commit is an immutable 0.15.0 baseline containing the three newest UI groups. `main` follows ongoing work; pin a reviewed commit for reproducibility. Run `flutter pub get` after changing dependencies. Requirements for this version: Dart ^3.13.0; Flutter >=3.47.0. Repository CI uses Flutter 3.47.5. Do not upgrade an application's SDK or dependencies without a reason required by the task.
+That release tag identifies the 0.15.1 MIT-licensed distribution. `main` follows ongoing work; pin a reviewed commit for reproducibility. Run `flutter pub get` after changing dependencies. Requirements for this version: Dart ^3.13.0; Flutter >=3.47.0. Repository CI uses Flutter 3.47.5. Do not upgrade an application's SDK or dependencies without a reason required by the task.
 
 ```dart
 import 'package:flutter/material.dart';

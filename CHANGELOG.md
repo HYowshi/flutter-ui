@@ -1,3 +1,10 @@
+## 0.15.1
+
+- License the library under MIT for reuse and redistribution.
+- Add clean, versioned ZIP/TAR.GZ distributions, SHA-256 checksums and release verification.
+- Exclude caches/logs/build output from packages and consolidate runnable examples under example/.
+- Pin installation examples to v0.15.1 and document Git/local-path installation; no public widget API changes.
+
 ## 0.15.0
 
 - Add version-aware AI integration docs, generated source-signature reference, full-text bundle, consumer instruction template, tested recipes and a static AI documentation portal with CI drift checks.

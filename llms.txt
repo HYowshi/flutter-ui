@@ -1,6 +1,6 @@
 # Flutter UI / youth_ui
 
-> A reusable Flutter/Dart UI library for mobile, desktop and web. Version 0.15.0; Dart ^3.13.0 and Flutter >=3.47.0. Public import: package:youth_ui/youth_ui.dart.
+> A reusable Flutter/Dart UI library for mobile, desktop and web. Version 0.15.1; Dart ^3.13.0 and Flutter >=3.47.0. Public import: package:youth_ui/youth_ui.dart.
 
 This is a reading entry point, not a mechanism that automatically teaches every AI. Give an agent this URL or a local checkout and ask it to read the guide. Match documentation to the version resolved in the consumer's pubspec.lock; prefer that version's source over main when they differ.
 
@@ -21,6 +21,8 @@ This is a reading entry point, not a mechanism that automatically teaches every 
 - [Showcase](https://hyowshi.github.io/flutter-ui/): interactive visual reference; APIs remain in readable source and docs.
 
 ## Detailed guides
+
+- [Distribution/install](https://hyowshi.github.io/flutter-ui/ai/distribution.vi.md): fixed release tag, ZIP/TAR.GZ, local-path use and MIT license.
 
 - [Forms and notices](https://hyowshi.github.io/flutter-ui/ai/forms-feedback.vi.md): named server errors, validation timing, notice queue integration.
 - [Images](https://hyowshi.github.io/flutter-ui/ai/images.vi.md): fallback order, source variants, sizing, CORS and retry boundaries.

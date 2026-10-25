@@ -4,9 +4,13 @@ Bộ Flutter/Dart UI dùng lại cho mobile, desktop và web, không gắn với
 
 **[Website tương tác](https://hyowshi.github.io/flutter-ui/)** · **[Nghiên cứu và quyết định thuật toán](docs/color-research.vi.md)** · **[Thiết kế truyền thông và UI](docs/visual-communication.vi.md)**
 
+## Cài đặt và tải bản đóng gói
+
+Giấy phép **MIT**. Dùng Git dependency ghim `v0.15.1` theo phần Dùng nhanh bên dưới, hoặc tải ZIP/TAR.GZ tại [GitHub Releases](https://github.com/HYowshi/flutter-ui/releases/tag/v0.15.1). [Hướng dẫn cài gói đã giải nén](docs/distribution.vi.md).
+
 ## Dùng với AI
 
-Cho AI bắt đầu từ **[llms.txt](llms.txt)** hoặc **[cổng tài liệu đọc trực tiếp](https://hyowshi.github.io/flutter-ui/ai/)**. Có [hướng dẫn tích hợp](docs/ai-guide.md), [chữ ký API lấy từ source](docs/api-reference.md), [ví dụ chạy được](examples/README.md), [mẫu AGENTS.md cho dự án khác](docs/consumer-agents.md) và [bản gộp một tệp](llms-full.txt).
+Cho AI bắt đầu từ **[llms.txt](llms.txt)** hoặc **[cổng tài liệu đọc trực tiếp](https://hyowshi.github.io/flutter-ui/ai/)**. Có [hướng dẫn tích hợp](docs/ai-guide.md), [chữ ký API lấy từ source](docs/api-reference.md), [ví dụ chạy được](example/README.md), [mẫu AGENTS.md cho dự án khác](docs/consumer-agents.md) và [bản gộp một tệp](llms-full.txt).
 
 Prompt dùng ngay:
 
@@ -31,7 +35,7 @@ dependencies:
   youth_ui:
     git:
       url: https://github.com/HYowshi/flutter-ui.git
-      ref: main
+      ref: v0.15.1
 ```
 
 ```dart
@@ -50,7 +54,7 @@ void main() => runApp(UIApp(
 ));
 ```
 
-`UIApp` tự tạo và giữ theme sáng/tối, theo hệ thống, hỗ trợ đổi chế độ qua `UIThemeToggle`. Không cần khởi tạo thêm provider hay bộ màu ở từng trang. `submit` là callback của ứng dụng; asset phải khai báo trong pubspec. Pin commit khi cần dependency ổn định thay vì dùng main.
+`UIApp` tự tạo và giữ theme sáng/tối, theo hệ thống, hỗ trợ đổi chế độ qua `UIThemeToggle`. Không cần khởi tạo thêm provider hay bộ màu ở từng trang. `submit` là callback của ứng dụng; asset phải khai báo trong pubspec. Bản ví dụ ghim tag v0.15.1; dùng commit cụ thể khi cần đối chiếu chính xác.
 
 Với MaterialApp/router sẵn có, vẫn dùng `YouthUI.colors(...)` một lần rồi đặt `theme: ui.light`, `darkTheme: ui.dark`. Muốn transition mới: đặt `themeAnimationDuration: Duration.zero` và trong builder trả `UIThemeTransition(theme: Theme.of(context), child: child!)`. Không chồng hai animation theme.
 
