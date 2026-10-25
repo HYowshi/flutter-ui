@@ -1,3 +1,11 @@
+## 0.13.0
+
+- Unify motion timings, shorten entrance transitions and block invisible/outgoing interactions; animate content size without shrinking outgoing layouts.
+- Add state-preserving UIReveal with hidden pointer/focus/semantics/ticker exclusion and reduced-motion support.
+- Add search/multiline textbox presets, filled surfaces, initial values, affixes, line limits, external errors and animated validation height.
+- Add titled, bounded scrollable notices and animated alert sizing/surfaces while preserving native shared snackbar controller behavior.
+- Expand interactive motion/input/feedback examples and transition/accessibility/keyboard regressions.
+
 ## 0.12.0
 
 - Add automatic landing/event/pricing wireframes and collection-aware product cards, with adaptive visual hierarchy.

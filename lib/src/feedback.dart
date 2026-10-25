@@ -10,6 +10,7 @@ abstract final class UINotice {
   static bool show(
     BuildContext context, {
     required String message,
+    String? title,
     String? id,
     UITone tone = UITone.primary,
     String? actionLabel,
@@ -31,7 +32,7 @@ abstract final class UINotice {
     }
     final messenger = ScaffoldMessenger.of(context);
     final queue = _queues[messenger] ??= _UINoticeQueue(messenger);
-    final key = id ?? '$tone|$message|$actionLabel';
+    final key = id ?? '$tone|$title|$message|$actionLabel';
     if (queue.items.length >= 5 || queue.items.any((item) => item.id == key)) {
       return false;
     }
@@ -45,55 +46,88 @@ abstract final class UINotice {
       duration: duration,
       persist: persistent ?? (onAction != null || tone == UITone.danger),
       showCloseIcon: true,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 4, 12),
       content: Builder(
         builder: (context) {
           if (item.cancelled) return const SizedBox.shrink();
           final colors = tone.colors(context);
-          return Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+          final media = MediaQuery.of(context);
+          final view = View.of(context);
+          final viewportHeight = media.size.height > 0
+              ? media.size.height
+              : view.physicalSize.height / view.devicePixelRatio;
+          final available =
+              viewportHeight - media.viewInsets.bottom - media.padding.vertical;
+          return ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: math.max(48, math.min(320, available * .4)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: colors.soft,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: Icon(
-                        _noticeIcon(tone),
-                        size: 18,
-                        color: colors.onSoft,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: colors.soft,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(
+                            _noticeIcon(tone),
+                            size: 18,
+                            color: colors.onSoft,
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (title != null && title.trim().isNotEmpty) ...[
+                              Text(
+                                title,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                  height: 1.4,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                            ],
+                            Text(message, style: const TextStyle(height: 1.5)),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(child: Text(message)),
+                  if (onAction != null) ...[
+                    const SizedBox(height: 4),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        foregroundColor: Theme.of(context)
+                            .colorScheme
+                            .inversePrimary,
+                      ),
+                      onPressed: () {
+                        if (actionUsed || item.cancelled) return;
+                        actionUsed = true;
+                        messenger.hideCurrentSnackBar(
+                          reason: SnackBarClosedReason.action,
+                        );
+                        onAction();
+                      },
+                      child: Text(actionLabel!),
+                    ),
+                  ],
                 ],
               ),
-              if (onAction != null) ...[
-                const SizedBox(height: 4),
-                TextButton(
-                  style: TextButton.styleFrom(
-                    foregroundColor: Theme.of(context)
-                        .colorScheme
-                        .inversePrimary,
-                  ),
-                  onPressed: () {
-                    if (actionUsed || item.cancelled) return;
-                    actionUsed = true;
-                    messenger.hideCurrentSnackBar(
-                      reason: SnackBarClosedReason.action,
-                    );
-                    onAction();
-                  },
-                  child: Text(actionLabel!),
-                ),
-              ],
-            ],
+            ),
           );
         },
       ),

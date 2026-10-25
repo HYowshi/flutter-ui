@@ -436,7 +436,7 @@ class _StudioState extends State<Studio> {
           ),
           const SizedBox(height: 20),
           Text(
-            'v0.12.0 · Ready-to-use Flutter UI',
+            'v0.13.0 · Ready-to-use Flutter UI',
             style: TextStyle(fontSize: 10, color: s.onSurfaceVariant),
           ),
         ],
@@ -1872,11 +1872,10 @@ class _InputDemoState extends State<InputDemo> {
               textInputAction: TextInputAction.done,
               validator: UIValidators.minLength(8),
             ),
-            const UITextField(
+            UITextField.multiline(
               label: 'Giới thiệu',
-              maxLines: 3,
               maxLength: 180,
-              hint: 'Chia sẻ ý tưởng của bạn…',
+              helper: 'Tự tăng chiều cao từ 3 đến 6 dòng.',
             ),
             const UITextField(
               label: 'Thông tin đã xác minh',
@@ -1887,6 +1886,50 @@ class _InputDemoState extends State<InputDemo> {
         ),
         const SizedBox(height: 16),
         Text('Số lần gửi mô phỏng: $attempts'),
+        const SizedBox(height: 28),
+        const Text(
+          'Textbox dùng nhanh',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Nền mềm cho tìm kiếm; prefix/suffix cho đơn vị; read-only vẫn cho phép chọn và sao chép.',
+        ),
+        const SizedBox(height: 16),
+        UIGrid(
+          maxColumns: 2,
+          children: [
+            UITextField.search(
+              label: 'Tìm trong thư viện',
+              onFieldSubmitted: (query) => UINotice.show(
+                context,
+                title: 'Tìm kiếm mẫu',
+                message: query.isEmpty
+                    ? 'Bạn chưa nhập từ khoá.'
+                    : 'Từ khoá: $query',
+              ),
+            ),
+            const UITextField(
+              label: 'Ngân sách',
+              initialValue: '250000',
+              suffixText: 'VND',
+              keyboardType: TextInputType.number,
+              variant: UIInputVariant.filled,
+            ),
+            const UITextField(
+              label: 'Mã tham chiếu',
+              initialValue: 'REF-2026',
+              readOnly: true,
+              helper: 'Chỉ đọc · có thể chọn và sao chép',
+            ),
+            const UITextField(
+              label: 'Lỗi được ứng dụng cung cấp',
+              initialValue: 'demo',
+              errorText:
+                  'Thông báo lỗi có thể đặt trực tiếp, ngoài managed form.',
+            ),
+          ],
+        ),
       ],
     ),
   );
@@ -2080,6 +2123,30 @@ class _FeedbackDemoState extends State<FeedbackDemo> {
               ),
             ),
             UIButton(
+              label: 'Thông báo có tiêu đề',
+              variant: UIButtonVariant.soft,
+              onPressed: () => UINotice.show(
+                context,
+                title: 'Đồng bộ hoàn tất',
+                message: 'Các thay đổi đã được cập nhật. Bạn có thể tiếp tục làm việc.',
+                tone: UITone.success,
+              ),
+            ),
+            UIButton(
+              label: 'Thử nội dung dài',
+              variant: UIButtonVariant.outline,
+              onPressed: () => UINotice.show(
+                context,
+                title: 'Chi tiết cần kiểm tra',
+                message: List.filled(
+                  8,
+                  'Một mục chưa được đồng bộ. Dữ liệu được giữ lại để bạn kiểm tra và thử lại.',
+                ).join(' '),
+                tone: UITone.warning,
+                persistent: true,
+              ),
+            ),
+            UIButton(
               label: 'Xoá hàng đợi',
               variant: UIButtonVariant.ghost,
               onPressed: () => UINotice.clear(context),
@@ -2125,13 +2192,14 @@ class MotionDemo extends StatefulWidget {
 
 class _MotionDemoState extends State<MotionDemo> {
   int replay = 0, step = 0;
+  bool detailsVisible = false;
   @override
   Widget build(BuildContext context) => DemoBlock(
     number: '05',
     title: 'Motion & Animation',
     description:
         'Chuyển động nhẹ giúp nhận biết thay đổi, giữ nội dung là trọng tâm.',
-    effects: 'Entrance: fade + dịch 18px, 450ms easeOutCubic · đổi nội dung: fade + scale 250ms · tôn trọng reduced motion',
+    effects: '160 / 240 / 320 ms · xuất hiện / thay nội dung / mở thu · ngừng ticker khi ẩn · tôn trọng reduced motion',
     code: "UIEntrance(\n  key: ValueKey(replay),\n  child: yourWidget,\n);\nUIAnimatedContent(\n  child: Text('Bước \$step', key: ValueKey(step)),\n);",
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -2146,6 +2214,35 @@ class _MotionDemoState extends State<MotionDemo> {
           spacing: 12,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [Text('Chuyển theme toàn ứng dụng'), UIThemeToggle()],
+        ),
+        const SizedBox(height: 20),
+        UIButton(
+          label: detailsVisible ? 'Thu gọn nội dung' : 'Mở nội dung bổ sung',
+          variant: UIButtonVariant.outline,
+          icon: detailsVisible ? Icons.expand_less : Icons.expand_more,
+          onPressed: () => setState(() => detailsVisible = !detailsVisible),
+        ),
+        UIReveal(
+          visible: detailsVisible,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: UICard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'Mở/thu mà vẫn giữ nội dung đã nhập',
+                    style: TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 12),
+                  const UITextField(
+                    label: 'Ghi chú giữ lại khi thu gọn',
+                    helper: 'Khi ẩn, phần này không nhận focus, tương tác hoặc chạy ticker.',
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
         const SizedBox(height: 18),
         LayoutBuilder(

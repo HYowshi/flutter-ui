@@ -4,6 +4,34 @@ import 'package:youth_ui/youth_ui.dart';
 import 'package:flutter_ui_showcase/main.dart';
 
 void main() {
+  testWidgets('motion gallery reveal retains the user note across collapse', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: YouthUI.init(primary: Colors.blue),
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: MotionDemo(reduce: false, onReduce: (_) {}),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Mở nội dung bổ sung'));
+    await tester.tap(find.text('Mở nội dung bổ sung'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextFormField), 'Nội dung cần giữ');
+    await tester.ensureVisible(find.text('Thu gọn nội dung'));
+    await tester.tap(find.text('Thu gọn nội dung'));
+    await tester.pumpAndSettle();
+    expect(tester.getSize(find.byType(UIReveal)).height, 0);
+    await tester.tap(find.text('Mở nội dung bổ sung'));
+    await tester.pumpAndSettle();
+    expect(find.text('Nội dung cần giữ'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'wireframe automatically reanalyses edits and keeps last valid plan',
     (tester) async {

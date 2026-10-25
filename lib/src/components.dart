@@ -8,6 +8,7 @@ import 'package:flutter/services.dart';
 import 'theme.dart';
 import 'color_engine.dart';
 import 'adaptive.dart';
+import 'motion.dart';
 
 part 'select.dart';
 part 'form.dart';
@@ -119,6 +120,8 @@ class UIButton extends StatelessWidget {
 }
 
 /// Text input with blur-first validation and optional server field binding.
+enum UIInputVariant { outlined, filled }
+
 class UITextField extends StatelessWidget {
   const UITextField({
     super.key,
@@ -141,8 +144,56 @@ class UITextField extends StatelessWidget {
     this.maxLength,
     this.readOnly = false,
     this.clearable = false,
+    this.initialValue,
+    this.minLines,
+    this.autofocus = false,
+    this.errorText,
+    this.prefixText,
+    this.suffixText,
+    this.variant = UIInputVariant.outlined,
+    this.textCapitalization = TextCapitalization.none,
     this.autovalidateMode = AutovalidateMode.onUnfocus,
-  });
+  }) : assert(controller == null || initialValue == null),
+       assert(minLines == null || minLines > 0 && minLines <= maxLines);
+  factory UITextField.search({
+    Key? key,
+    String label = 'Tìm kiếm',
+    TextEditingController? controller,
+    ValueChanged<String>? onChanged,
+    ValueChanged<String>? onFieldSubmitted,
+  }) => UITextField(
+    key: key,
+    label: label,
+    controller: controller,
+    onChanged: onChanged,
+    onFieldSubmitted: onFieldSubmitted,
+    prefixIcon: Icons.search_rounded,
+    clearable: true,
+    textInputAction: TextInputAction.search,
+    variant: UIInputVariant.filled,
+  );
+  factory UITextField.multiline({
+    Key? key,
+    required String label,
+    TextEditingController? controller,
+    String? helper,
+    int? maxLength,
+    FormFieldValidator<String>? validator,
+    ValueChanged<String>? onChanged,
+  }) => UITextField(
+    key: key,
+    label: label,
+    controller: controller,
+    helper: helper,
+    maxLength: maxLength,
+    validator: validator,
+    onChanged: onChanged,
+    minLines: 3,
+    maxLines: 6,
+    keyboardType: TextInputType.multiline,
+    textInputAction: TextInputAction.newline,
+    textCapitalization: TextCapitalization.sentences,
+  );
   final String label;
   final String? name, hint, helper;
   final TextEditingController? controller;
@@ -158,6 +209,11 @@ class UITextField extends StatelessWidget {
   final FocusNode? focusNode;
   final List<TextInputFormatter>? inputFormatters;
   final AutovalidateMode autovalidateMode;
+  final String? initialValue, errorText, prefixText, suffixText;
+  final int? minLines;
+  final bool autofocus;
+  final UIInputVariant variant;
+  final TextCapitalization textCapitalization;
   @override
   Widget build(BuildContext context) => _UISmartField(input: this);
 }
@@ -176,10 +232,13 @@ class UIPasswordField extends StatelessWidget {
     this.textInputAction,
     this.onFieldSubmitted,
     this.helper,
+    this.errorText,
+    this.variant = UIInputVariant.outlined,
     this.autovalidateMode = AutovalidateMode.onUnfocus,
   });
   final String label;
-  final String? name, helper;
+  final String? name, helper, errorText;
+  final UIInputVariant variant;
   final TextEditingController? controller;
   final FormFieldValidator<String>? validator;
   final ValueChanged<String>? onChanged, onFieldSubmitted;
@@ -201,6 +260,8 @@ class UIPasswordField extends StatelessWidget {
       autofillHints: autofillHints,
       focusNode: focusNode,
       helper: helper,
+      errorText: errorText,
+      variant: variant,
       textInputAction: textInputAction,
       onFieldSubmitted: onFieldSubmitted,
       prefixIcon: Icons.lock_outline_rounded,
@@ -224,7 +285,9 @@ class _UISmartFieldState extends State<_UISmartField> {
   @override
   void initState() {
     super.initState();
-    text = widget.input.controller ?? TextEditingController();
+    text =
+        widget.input.controller ??
+        TextEditingController(text: widget.input.initialValue);
   }
 
   @override
@@ -263,73 +326,86 @@ class _UISmartFieldState extends State<_UISmartField> {
     final form = _UIFormScope.maybeOf(context);
     final enabled = input.enabled && !(form?.isSubmitting ?? false);
     return UIAdaptiveBuilder(
-      builder: (context, ui) => TextFormField(
-        key: field,
-        controller: text,
-        focusNode: input.focusNode,
-        validator: input.validator,
-        forceErrorText: form?.fieldErrors[input.name],
-        autovalidateMode: input.autovalidateMode,
-        onChanged: changed,
-        keyboardType: input.keyboardType,
-        enabled: enabled,
-        readOnly: input.readOnly,
-        maxLines: input.maxLines,
-        maxLength: input.maxLength,
-        inputFormatters: input.inputFormatters,
-        autofillHints: input.autofillHints,
-        textInputAction: input.textInputAction,
-        onFieldSubmitted:
-            input.onFieldSubmitted ??
-            (input.textInputAction == TextInputAction.done && form != null
-                ? (_) => unawaited(form.submit())
-                : null),
-        obscureText: widget.password && hidden,
-        enableSuggestions: !widget.password,
-        autocorrect: !widget.password,
-        decoration: InputDecoration(
-          contentPadding: ui.controlPadding,
-          labelText: input.label,
-          hintText: input.hint,
-          helperText: input.helper,
-          errorMaxLines: 4,
-          helperMaxLines: 4,
-          prefixIcon: input.prefixIcon == null
-              ? null
-              : Icon(input.prefixIcon, size: 20),
-          suffixIcon: widget.password
-              ? IconButton(
-                  tooltip:
-                      '${hidden ? 'Hiện' : 'Ẩn'} ${input.label.toLowerCase()}',
-                  isSelected: !hidden,
-                  onPressed: enabled
-                      ? () => setState(() => hidden = !hidden)
-                      : null,
-                  icon: Icon(
-                    hidden
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
-                    size: 20,
-                  ),
-                )
-              : input.clearable
-              ? ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: text,
-                  builder: (context, value, _) => value.text.isEmpty
-                      ? const SizedBox.shrink()
-                      : IconButton(
-                          tooltip: 'Xoá ${input.label.toLowerCase()}',
-                          onPressed: enabled && !input.readOnly
-                              ? () {
-                                  text.clear();
-                                  field.currentState?.didChange('');
-                                  changed('');
-                                }
-                              : null,
-                          icon: const Icon(Icons.close_rounded, size: 20),
-                        ),
-                )
-              : null,
+      builder: (context, ui) => UIAnimatedSize(
+        duration: UIMotion.resolve(context, UIMotion.fast),
+        alignment: AlignmentDirectional.topStart,
+        curve: Curves.easeOutCubic,
+        child: TextFormField(
+          key: field,
+          controller: text,
+          focusNode: input.focusNode,
+          validator: input.validator,
+          forceErrorText: input.errorText ?? form?.fieldErrors[input.name],
+          autovalidateMode: input.autovalidateMode,
+          onChanged: changed,
+          keyboardType: input.keyboardType,
+          enabled: enabled,
+          readOnly: input.readOnly,
+          maxLines: input.maxLines,
+          minLines: input.minLines,
+          autofocus: input.autofocus,
+          textCapitalization: input.textCapitalization,
+          maxLength: input.maxLength,
+          inputFormatters: input.inputFormatters,
+          autofillHints: input.autofillHints,
+          textInputAction: input.textInputAction,
+          onFieldSubmitted:
+              input.onFieldSubmitted ??
+              (input.textInputAction == TextInputAction.done && form != null
+                  ? (_) => unawaited(form.submit())
+                  : null),
+          obscureText: widget.password && hidden,
+          enableSuggestions: !widget.password,
+          autocorrect: !widget.password,
+          decoration: InputDecoration(
+            contentPadding: ui.controlPadding,
+            labelText: input.label,
+            hintText: input.hint,
+            helperText: input.helper,
+            prefixText: input.prefixText,
+            suffixText: input.suffixText,
+            fillColor: input.variant == UIInputVariant.filled
+                ? Theme.of(context).colorScheme.surfaceContainerLow
+                : Theme.of(context).colorScheme.surfaceContainerLowest,
+            errorMaxLines: 4,
+            helperMaxLines: 4,
+            prefixIcon: input.prefixIcon == null
+                ? null
+                : Icon(input.prefixIcon, size: 20),
+            suffixIcon: widget.password
+                ? IconButton(
+                    tooltip:
+                        '${hidden ? 'Hiện' : 'Ẩn'} ${input.label.toLowerCase()}',
+                    isSelected: !hidden,
+                    onPressed: enabled
+                        ? () => setState(() => hidden = !hidden)
+                        : null,
+                    icon: Icon(
+                      hidden
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      size: 20,
+                    ),
+                  )
+                : input.clearable
+                ? ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: text,
+                    builder: (context, value, _) => value.text.isEmpty
+                        ? const SizedBox.shrink()
+                        : IconButton(
+                            tooltip: 'Xoá ${input.label.toLowerCase()}',
+                            onPressed: enabled && !input.readOnly
+                                ? () {
+                                    text.clear();
+                                    field.currentState?.didChange('');
+                                    changed('');
+                                  }
+                                : null,
+                            icon: const Icon(Icons.close_rounded, size: 20),
+                          ),
+                  )
+                : null,
+          ),
         ),
       ),
     );
@@ -466,57 +542,63 @@ class UIAlert extends StatelessWidget {
     };
     return Semantics(
       liveRegion: liveRegion,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: colors.soft,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: colors.border),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: c, size: 20),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (title != null) ...[
+      child: UIAnimatedSize(
+        duration: UIMotion.resolve(context, UIMotion.standard),
+        alignment: AlignmentDirectional.topStart,
+        curve: Curves.easeOutCubic,
+        child: AnimatedContainer(
+          duration: UIMotion.resolve(context, UIMotion.fast),
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colors.soft,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: colors.border),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: c, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (title != null) ...[
+                      Text(
+                        title!,
+                        style: TextStyle(color: c, fontWeight: FontWeight.w700),
+                      ),
+                      const SizedBox(height: 4),
+                    ],
                     Text(
-                      title!,
-                      style: TextStyle(color: c, fontWeight: FontWeight.w700),
+                      message,
+                      style: TextStyle(
+                        color: colors.onSoft,
+                        height: 1.5,
+                        fontSize: 13,
+                      ),
                     ),
-                    const SizedBox(height: 4),
+                    if (onAction != null) ...[
+                      const SizedBox(height: 8),
+                      TextButton(
+                        style: TextButton.styleFrom(foregroundColor: c),
+                        onPressed: onAction,
+                        child: Text(actionLabel!),
+                      ),
+                    ],
                   ],
-                  Text(
-                    message,
-                    style: TextStyle(
-                      color: colors.onSoft,
-                      height: 1.5,
-                      fontSize: 13,
-                    ),
-                  ),
-                  if (onAction != null) ...[
-                    const SizedBox(height: 8),
-                    TextButton(
-                      style: TextButton.styleFrom(foregroundColor: c),
-                      onPressed: onAction,
-                      child: Text(actionLabel!),
-                    ),
-                  ],
-                ],
+                ),
               ),
-            ),
-            if (onDismiss != null)
-              IconButton(
-                tooltip: 'Đóng thông báo',
-                color: c,
-                onPressed: onDismiss,
-                icon: const Icon(Icons.close_rounded, size: 20),
-              ),
-          ],
+              if (onDismiss != null)
+                IconButton(
+                  tooltip: 'Đóng thông báo',
+                  color: c,
+                  onPressed: onDismiss,
+                  icon: const Icon(Icons.close_rounded, size: 20),
+                ),
+            ],
+          ),
         ),
       ),
     );
