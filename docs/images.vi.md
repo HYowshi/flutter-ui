@@ -49,3 +49,11 @@ Native dùng decode width theo bucket128 đến tối đa2048, không ép cả w
 Không có disk cache/offline, SVG renderer, tải lại theo kết nối hay cache buster tự động. Asset dự phòng phải có trong pubspec. Ảnh raster/ảnh động phụ thuộc decoder và nền tảng Flutter; giảm chuyển động hiện áp dụng cho fade, không dừng frame GIF do decoder phát. Thông tin chung về provider/fit/semantics có tại [Flutter Image](https://api.flutter.dev/flutter/widgets/Image-class.html).
 
 Widget tùy biến nhận constraint của khung, nhưng vẫn có thể overflow nếu tự đặt kích thước/text quá lớn. Với fallback nhiều nội dung, chủ động wrap/padding hoặc đặt khung phù hợp. `semanticLabel` mô tả ý nghĩa ảnh kể cả khi thay thế, không đưa đường dẫn hoặc thông báo lỗi kỹ thuật làm nhãn.
+
+## Kiểm tra nguồn và chi phí layout (0.15.2)
+
+Chuỗi nguồn chính, biến thể được chọn và fallback có ký tự điều khiển ASCII hoặc HTTP(S) URL chứa user-info (`user:password@host`) bị từ chối trước khi tạo provider. Giao diện sử dụng chuỗi fallback có sẵn. Không đưa mật khẩu vào URL ảnh. `UIImage.provider` do ứng dụng tự cung cấp vẫn thuộc trách nhiệm ứng dụng.
+
+Lựa chọn biến thể duyệt một lần qua Map, không sắp xếp/cấp phát danh sách kích thước ở mỗi layout. Vẫn chọn kích thước nhỏ nhất đủ nhu cầu, nếu không có thì dùng lớn nhất; bỏ biến thể rỗng và kiểm tra khóa dương.
+
+Thư viện vẫn hỗ trợ HTTP để tương thích; ứng dụng nên cung cấp HTTPS và chỉ cho phép miền tin cậy theo nghiệp vụ. Đây không phải bộ lọc mạng, trình chống SSRF hay cơ chế vượt CORS. Tránh truyền token dài hạn trong URL; cache ảnh và chính sách máy chủ do ứng dụng quản lý.

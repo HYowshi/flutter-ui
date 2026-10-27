@@ -1,7 +1,7 @@
 # youth_ui API reference
 
-Generated for **0.15.1** from the public export/part graph of lib/youth_ui.dart.
-Source fingerprint: `121a0a22e6910a1cacaddef9b27dc8af1c9d8f8f6a0dcd238b97a4dbaaee50c9`.
+Generated for **0.15.2** from the public export/part graph of lib/youth_ui.dart.
+Source fingerprint: `b29141fd3cfa017173a83eb5ad20b4d171340e09a19e039cf42257415204b448`.
 
 Do not edit manually. Run `python tool/generate_ai_docs.py`; CI checks drift.
 These are source-derived declaration excerpts: explicit constructors/defaults,
@@ -1386,7 +1386,7 @@ class UIAnimatedSize extends StatefulWidget {
 [Source: lib/src/motion.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/motion.dart)
 
 ```dart
-class UIEntrance extends StatelessWidget {
+class UIEntrance extends StatefulWidget {
   const UIEntrance({
     super.key,
     required this.child,

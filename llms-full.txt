@@ -1,4 +1,4 @@
-# youth_ui 0.15.1: AI full-text documentation
+# youth_ui 0.15.2: AI full-text documentation
 
 Generated bundle; individual source/guide files remain authoritative.
 
@@ -9,7 +9,7 @@ Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/ai-guide.md
 
 # youth_ui: guide for coding agents
 
-Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This guide targets **0.15.1**, not a package named `flutter_ui` on pub.dev. The repository/folder name is Flutter UI; the Dart package/import is youth_ui.
+Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This guide targets **0.15.2**, not a package named `flutter_ui` on pub.dev. The repository/folder name is Flutter UI; the Dart package/import is youth_ui.
 
 ## Reading order and version matching
 
@@ -25,7 +25,7 @@ Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This 
 Fast installation from the consumer app directory (adds the dependency and resolves it in one command):
 
 ```sh
-flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.15.1}}"
+flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.15.2}}"
 ```
 
 This release is distributed through GitHub, not pub.dev. Do not replace this command with `flutter pub add youth_ui`. Git must be installed. Alternatively, edit pubspec.yaml manually:
@@ -35,10 +35,10 @@ dependencies:
   youth_ui:
     git:
       url: https://github.com/HYowshi/flutter-ui.git
-      ref: v0.15.1
+      ref: v0.15.2
 ```
 
-That release tag identifies the 0.15.1 MIT-licensed distribution. `main` follows ongoing work; pin a reviewed commit for reproducibility. Run `flutter pub get` after changing dependencies. Requirements for this version: Dart ^3.13.0; Flutter >=3.47.0. Repository CI uses Flutter 3.47.5. Do not upgrade an application's SDK or dependencies without a reason required by the task.
+That release tag identifies the 0.15.2 MIT-licensed distribution. `main` follows ongoing work; pin a reviewed commit for reproducibility. Run `flutter pub get` after changing dependencies. Requirements for this version: Dart ^3.13.0; Flutter >=3.47.0. Repository CI uses Flutter 3.47.5. Do not upgrade an application's SDK or dependencies without a reason required by the task.
 
 ```dart
 import 'package:flutter/material.dart';
@@ -132,6 +132,8 @@ UIDateField is controlled: update value in onChanged; cancel retains it, clear s
 ## Motion, performance and accessibility
 
 - Respect platform reduced motion and high contrast. No new perpetual shimmer/blur effect is needed for a routine state.
+- UIEntrance preserves child state across reduced-motion changes. Outgoing UIAnimatedContent subtrees have muted tickers; caller futures/timers are not cancelled. Theme snapshots are cancelled when backgrounded/ticker-disabled; use reduceMotion or zero transition duration to avoid theme snapshots on sensitive screens.
+- Password fields disable personalized IME learning even when revealed. Image source strings reject control characters and embedded HTTP credentials; custom ImageProviders and network/domain policy remain application-owned.
 - UIReveal retains the mounted child, form validation and service work; it blocks hidden focus/pointers/semantics/tickers. It does not virtualize lists or cancel network requests.
 - Use stable keys for stateful/reordered items and changing keys to replay an entrance or distinguish AnimatedContent children.
 - Preserve native keyboard navigation, meaningful tooltips, readable labels and touch targets. Avoid overflow with narrow widths/large text/RTL. A passing test suite is not an FPS or zero-bug guarantee.
@@ -150,8 +152,8 @@ Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/api-reference.md
 
 # youth_ui API reference
 
-Generated for **0.15.1** from the public export/part graph of lib/youth_ui.dart.
-Source fingerprint: `121a0a22e6910a1cacaddef9b27dc8af1c9d8f8f6a0dcd238b97a4dbaaee50c9`.
+Generated for **0.15.2** from the public export/part graph of lib/youth_ui.dart.
+Source fingerprint: `b29141fd3cfa017173a83eb5ad20b4d171340e09a19e039cf42257415204b448`.
 
 Do not edit manually. Run `python tool/generate_ai_docs.py`; CI checks drift.
 These are source-derived declaration excerpts: explicit constructors/defaults,
@@ -1536,7 +1538,7 @@ class UIAnimatedSize extends StatefulWidget {
 [Source: lib/src/motion.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/motion.dart)
 
 ```dart
-class UIEntrance extends StatelessWidget {
+class UIEntrance extends StatefulWidget {
   const UIEntrance({
     super.key,
     required this.child,
@@ -2362,6 +2364,14 @@ Không có disk cache/offline, SVG renderer, tải lại theo kết nối hay ca
 
 Widget tùy biến nhận constraint của khung, nhưng vẫn có thể overflow nếu tự đặt kích thước/text quá lớn. Với fallback nhiều nội dung, chủ động wrap/padding hoặc đặt khung phù hợp. `semanticLabel` mô tả ý nghĩa ảnh kể cả khi thay thế, không đưa đường dẫn hoặc thông báo lỗi kỹ thuật làm nhãn.
 
+## Kiểm tra nguồn và chi phí layout (0.15.2)
+
+Chuỗi nguồn chính, biến thể được chọn và fallback có ký tự điều khiển ASCII hoặc HTTP(S) URL chứa user-info (`user:password@host`) bị từ chối trước khi tạo provider. Giao diện sử dụng chuỗi fallback có sẵn. Không đưa mật khẩu vào URL ảnh. `UIImage.provider` do ứng dụng tự cung cấp vẫn thuộc trách nhiệm ứng dụng.
+
+Lựa chọn biến thể duyệt một lần qua Map, không sắp xếp/cấp phát danh sách kích thước ở mỗi layout. Vẫn chọn kích thước nhỏ nhất đủ nhu cầu, nếu không có thì dùng lớn nhất; bỏ biến thể rỗng và kiểm tra khóa dương.
+
+Thư viện vẫn hỗ trợ HTTP để tương thích; ứng dụng nên cung cấp HTTPS và chỉ cho phép miền tin cậy theo nghiệp vụ. Đây không phải bộ lọc mạng, trình chống SSRF hay cơ chế vượt CORS. Tránh truyền token dài hạn trong URL; cache ảnh và chính sách máy chủ do ứng dụng quản lý.
+
 
 ---
 
@@ -2697,6 +2707,16 @@ Notice có title tùy chọn, nhịp chữ rõ, bo16 px và icon trạng thái. 
 
 Regression cho outgoing hit/focus/semantics, chuyển nội dung cao→thấp, giữ dữ liệu khi reveal, entrance không rebuild child mỗi frame, textbox Search/clear/read-only/multiline/error, notice dài trên320 px/chữ200% khi bàn phím chiếm240 px. Chạy lại toàn bộ test library/showcase và analyze. Các kiểm tra này không tương đương profile FPS/GPU trên thiết bị thật.
 
+## Bảo trì 0.15.2: chuyển động và tài nguyên
+
+`UIEntrance` giữ nguyên state con khi đổi reduced motion, hoàn tất ngay khi route tắt ticker và không chạy lại khi bật chuyển động. `UIAnimatedContent` tắt ticker bên trong nội dung đang thoát, trong khi controller của fade bên ngoài vẫn hoàn tất và gỡ nội dung cũ. Việc này không hủy Future, timer hay request do ứng dụng tạo.
+
+`UIThemeTransition` bỏ overlay và dừng chuyển cảnh khi ứng dụng không còn resumed, route tắt ticker hoặc hệ thống bật high contrast/reduced motion. Snapshot hết dùng được dispose sau frame để tránh giải phóng khi render còn tham chiếu. Khi dùng lại ứng dụng, theme mới nhất được giữ. Ảnh chụp theme vẫn có thể chứa nội dung đang hiện trong app; đây không phải cơ chế chống chụp màn hình của hệ điều hành. Với màn hình nhạy cảm, dùng `UIApp(reduceMotion: true, ...)` hoặc `UIThemeTransition(duration: Duration.zero, ...)` để không tạo snapshot chuyển theme.
+
+`UIPasswordField` luôn tắt suggestions, autocorrect và `enableIMEPersonalizedLearning`, kể cả khi người dùng bật hiện mật khẩu. Đây là yêu cầu gửi tới bàn phím; không thay thế mã hóa đường truyền, quản lý phiên hay lưu trữ an toàn trong ứng dụng.
+
+Đã kiểm tra bằng widget test và analyzer; chưa đo GPU/FPS, điện năng hay bộ nhớ trên thiết bị thật. Không suy ra phần trăm tiết kiệm tài nguyên từ các kiểm thử này.
+
 
 ---
 
@@ -2704,14 +2724,14 @@ Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/distribution.vi.md
 
 # Cài đặt và bản phân phối
 
-Bản đầu tiên được đóng gói: **youth_ui 0.15.1**, giấy phép **MIT**. Thư viện dùng Flutter >=3.47.0 và Dart ^3.13.0. Không phải package tên flutter_ui trên pub.dev.
+Bản hiện tại: **youth_ui 0.15.2**, giấy phép **MIT**. Thư viện dùng Flutter >=3.47.0 và Dart ^3.13.0. Không phải package tên flutter_ui trên pub.dev.
 
 ## Cài trực tiếp từ GitHub
 
 Cách nhanh nhất: mở terminal tại thư mục ứng dụng và chạy một lệnh. Lệnh tự ghi dependency và tải gói:
 
 ```sh
-flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.15.1}}"
+flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.15.2}}"
 ```
 
 Không cần tải ZIP hay chạy thêm `flutter pub get` sau lệnh thành công. Bản GitHub cần Git và kết nối mạng. Chưa dùng `flutter pub add youth_ui` vì bản này chưa phát hành trên pub.dev.
@@ -2725,23 +2745,23 @@ dependencies:
   youth_ui:
     git:
       url: https://github.com/HYowshi/flutter-ui.git
-      ref: v0.15.1
+      ref: v0.15.2
 ```
 
 Chạy `flutter pub get`, rồi import `package:youth_ui/youth_ui.dart`. Không cần sao chép từng file trong lib/src. Tag cố định giúp các dự án không tự thay đổi theo main; commit cụ thể là mức ghim chính xác nhất.
 
 ## Dùng ZIP / TAR.GZ
 
-Tải file tại [GitHub Releases](https://github.com/HYowshi/flutter-ui/releases/tag/v0.15.1), đối chiếu SHA256SUMS.txt rồi giải nén. Hai định dạng có cùng bộ file, một thư mục gốc youth_ui-0.15.1 và release.json ghi commit/hash từng file.
+Tải file tại [GitHub Releases](https://github.com/HYowshi/flutter-ui/releases/tag/v0.15.2), đối chiếu SHA256SUMS.txt rồi giải nén. Hai định dạng có cùng bộ file, một thư mục gốc youth_ui-0.15.2 và release.json ghi commit/hash từng file.
 
-Ví dụ đặt thư viện vào `packages/youth_ui-0.15.1` của app:
+Ví dụ đặt thư viện vào `packages/youth_ui-0.15.2` của app:
 
 ```yaml
 dependencies:
   flutter:
     sdk: flutter
   youth_ui:
-    path: packages/youth_ui-0.15.1
+    path: packages/youth_ui-0.15.2
 ```
 
 `path` tính từ thư mục chứa pubspec.yaml của app. Không dùng đường dẫn ổ D của người phát triển trong dự án chia sẻ cho người khác. Thêm dependency Git thay vì path khi không muốn đưa toàn bộ thư viện vào repo app.

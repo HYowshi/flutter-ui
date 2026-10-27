@@ -45,7 +45,7 @@ class _UIAnimatedSizeState extends State<UIAnimatedSize> {
 }
 
 /// Change the Key to replay. Respects the platform reduced-motion setting.
-class UIEntrance extends StatelessWidget {
+class UIEntrance extends StatefulWidget {
   const UIEntrance({
     super.key,
     required this.child,
@@ -58,28 +58,68 @@ class UIEntrance extends StatelessWidget {
   final double distance;
   final Curve curve;
   @override
-  Widget build(BuildContext context) {
-    if (MediaQuery.disableAnimationsOf(context)) return child;
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: duration,
-      curve: curve,
-      child: child,
-      builder: (context, value, child) => IgnorePointer(
+  State<UIEntrance> createState() => _UIEntranceState();
+}
+
+class _UIEntranceState extends State<UIEntrance>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  bool _started = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: widget.duration);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context) ||
+        !TickerMode.valuesOf(context).enabled ||
+        widget.duration == Duration.zero) {
+      _controller.value = 1;
+      _started = true;
+    } else if (!_started) {
+      _started = true;
+      _controller.forward();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant UIEntrance oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _controller.duration = widget.duration;
+    if (widget.duration == Duration.zero) _controller.value = 1;
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: _controller,
+    child: widget.child,
+    builder: (context, child) {
+      final value = widget.curve.transform(_controller.value);
+      return IgnorePointer(
         ignoring: value < .15,
         child: ExcludeFocus(
           excluding: value < .15,
           child: Opacity(
             opacity: value.clamp(0, 1),
             child: Transform.translate(
-              offset: Offset(0, distance * (1 - value)),
+              offset: Offset(0, widget.distance * (1 - value)),
               child: child,
             ),
           ),
         ),
-      ),
-    );
-  }
+      );
+    },
+  );
 }
 
 class UIAnimatedContent extends StatelessWidget {
@@ -115,7 +155,10 @@ class UIAnimatedContent extends StatelessWidget {
               start: 0,
               end: 0,
               child: IgnorePointer(
-                child: ExcludeFocus(child: ExcludeSemantics(child: old)),
+                child: TickerMode(
+                  enabled: false,
+                  child: ExcludeFocus(child: ExcludeSemantics(child: old)),
+                ),
               ),
             ),
           ?current,

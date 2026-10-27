@@ -1,3 +1,13 @@
+## 0.15.2
+
+- Preserve UIEntrance child state when reduced-motion preferences change; complete hidden-route entrances without replay.
+- Mute outgoing AnimatedContent subtree tickers while its fade finishes.
+- Cancel theme snapshots/transitions when backgrounded or ticker-disabled; respect standalone high-contrast settings.
+- Disable personalized IME learning for password fields, including revealed passwords.
+- Reject image source strings containing control characters or embedded HTTP credentials; use existing fallback handling.
+- Select responsive image variants in one pass without sorted temporary lists on each layout.
+- Add motion/state, lifecycle, password and unsafe-source regression tests. No new required setup or constructor parameters.
+
 ## 0.15.1
 
 - License the library under MIT for reuse and redistribution.

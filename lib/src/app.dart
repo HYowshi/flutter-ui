@@ -211,7 +211,7 @@ class UIThemeTransition extends StatefulWidget {
 }
 
 class _UIThemeTransitionState extends State<UIThemeTransition>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   final _boundary = GlobalKey();
   late ThemeData _displayed;
   late final AnimationController _animation;
@@ -222,6 +222,7 @@ class _UIThemeTransitionState extends State<UIThemeTransition>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _displayed = widget.theme;
     _animation = AnimationController(vsync: this, duration: widget.duration);
     _opacity = Tween(begin: 1.0, end: 0.0).animate(
@@ -234,6 +235,25 @@ class _UIThemeTransitionState extends State<UIThemeTransition>
         if (mounted && _displayed != widget.theme) _schedule();
       }
     });
+  }
+
+  bool get _canAnimate =>
+      !MediaQuery.disableAnimationsOf(context) &&
+      !MediaQuery.highContrastOf(context) &&
+      TickerMode.valuesOf(context).enabled &&
+      (WidgetsBinding.instance.lifecycleState == null ||
+          WidgetsBinding.instance.lifecycleState ==
+              AppLifecycleState.resumed) &&
+      widget.duration > Duration.zero;
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) return;
+    _generation++;
+    _animation.stop();
+    _busy = false;
+    _displayed = widget.theme;
+    _dropSnapshot();
   }
 
   void _dropSnapshot() {
@@ -258,7 +278,7 @@ class _UIThemeTransitionState extends State<UIThemeTransition>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (MediaQuery.disableAnimationsOf(context)) {
+    if (!_canAnimate) {
       _generation++;
       _animation.stop();
       _busy = false;
@@ -268,8 +288,7 @@ class _UIThemeTransitionState extends State<UIThemeTransition>
   }
 
   void _schedule() {
-    if (MediaQuery.disableAnimationsOf(context) ||
-        widget.duration == Duration.zero) {
+    if (!_canAnimate) {
       _generation++;
       _animation.stop();
       _busy = false;
@@ -282,6 +301,11 @@ class _UIThemeTransitionState extends State<UIThemeTransition>
     final generation = ++_generation;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || generation != _generation) return;
+      if (!_canAnimate) {
+        setState(() => _displayed = widget.theme);
+        _busy = false;
+        return;
+      }
       final boundary =
           _boundary.currentContext?.findRenderObject()
               as RenderRepaintBoundary?;
@@ -319,6 +343,7 @@ class _UIThemeTransitionState extends State<UIThemeTransition>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _generation++;
     _animation.dispose();
     _snapshot?.dispose();

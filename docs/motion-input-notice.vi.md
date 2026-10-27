@@ -57,3 +57,13 @@ Notice có title tùy chọn, nhịp chữ rõ, bo16 px và icon trạng thái. 
 ## Kiểm chứng và giới hạn
 
 Regression cho outgoing hit/focus/semantics, chuyển nội dung cao→thấp, giữ dữ liệu khi reveal, entrance không rebuild child mỗi frame, textbox Search/clear/read-only/multiline/error, notice dài trên320 px/chữ200% khi bàn phím chiếm240 px. Chạy lại toàn bộ test library/showcase và analyze. Các kiểm tra này không tương đương profile FPS/GPU trên thiết bị thật.
+
+## Bảo trì 0.15.2: chuyển động và tài nguyên
+
+`UIEntrance` giữ nguyên state con khi đổi reduced motion, hoàn tất ngay khi route tắt ticker và không chạy lại khi bật chuyển động. `UIAnimatedContent` tắt ticker bên trong nội dung đang thoát, trong khi controller của fade bên ngoài vẫn hoàn tất và gỡ nội dung cũ. Việc này không hủy Future, timer hay request do ứng dụng tạo.
+
+`UIThemeTransition` bỏ overlay và dừng chuyển cảnh khi ứng dụng không còn resumed, route tắt ticker hoặc hệ thống bật high contrast/reduced motion. Snapshot hết dùng được dispose sau frame để tránh giải phóng khi render còn tham chiếu. Khi dùng lại ứng dụng, theme mới nhất được giữ. Ảnh chụp theme vẫn có thể chứa nội dung đang hiện trong app; đây không phải cơ chế chống chụp màn hình của hệ điều hành. Với màn hình nhạy cảm, dùng `UIApp(reduceMotion: true, ...)` hoặc `UIThemeTransition(duration: Duration.zero, ...)` để không tạo snapshot chuyển theme.
+
+`UIPasswordField` luôn tắt suggestions, autocorrect và `enableIMEPersonalizedLearning`, kể cả khi người dùng bật hiện mật khẩu. Đây là yêu cầu gửi tới bàn phím; không thay thế mã hóa đường truyền, quản lý phiên hay lưu trữ an toàn trong ứng dụng.
+
+Đã kiểm tra bằng widget test và analyzer; chưa đo GPU/FPS, điện năng hay bộ nhớ trên thiết bị thật. Không suy ra phần trăm tiết kiệm tài nguyên từ các kiểm thử này.

@@ -155,12 +155,18 @@ class _UIImageState extends State<UIImage> {
   Object? _activeIdentity;
 
   ImageProvider? _sourceProvider(String? source) {
+    // Reject control characters before trimming; never reinterpret these as assets.
+    if (source != null && source.codeUnits.any((c) => c < 32 || c == 127)) {
+      return null;
+    }
     final value = source?.trim() ?? '';
     if (value.isEmpty) return null;
     final uri = Uri.tryParse(value);
     if (uri == null) return null;
     if (uri.scheme == 'https' || uri.scheme == 'http') {
-      return uri.host.isEmpty ? null : NetworkImage(value);
+      return uri.host.isEmpty || uri.userInfo.isNotEmpty
+          ? null
+          : NetworkImage(value);
     }
     // Other schemes need an explicit ImageProvider, not an accidental asset request.
     if (uri.hasScheme || value.startsWith('//')) return null;
@@ -217,22 +223,23 @@ class _UIImageState extends State<UIImage> {
             : original;
         var source = widget.source;
         if (widget.variants.isNotEmpty) {
-          final sizes = widget.variants.keys.toList()..sort();
-          if (sizes.first <= 0) {
-            throw ArgumentError('Image variant widths must be positive.');
+          // One scan: no sorted lists allocated on every layout/resize.
+          int? adequate, largest;
+          for (final entry in widget.variants.entries) {
+            final size = entry.key;
+            if (size <= 0) {
+              throw ArgumentError('Image variant widths must be positive.');
+            }
+            if (entry.value.trim().isEmpty) continue;
+            if (largest == null || size > largest) largest = size;
+            if (size >= physical && (adequate == null || size < adequate)) {
+              adequate = size;
+            }
           }
-          // Empty variants are unavailable, rather than masking a valid base source.
-          final usable = sizes
-              .where((size) => widget.variants[size]!.trim().isNotEmpty)
-              .toList();
-          if (usable.isNotEmpty) {
-            final size = usable.firstWhere(
-              (s) => s >= physical,
-              orElse: () => usable.last,
-            );
-            source = widget.variants[size];
-          }
+          final size = adequate ?? largest;
+          if (size != null) source = widget.variants[size];
         }
+
         final original = widget.provider ?? _sourceProvider(source);
         Widget neutral(IconData icon) => ColoredBox(
           color: scheme.surfaceContainerHigh,

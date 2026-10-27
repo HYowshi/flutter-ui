@@ -9,7 +9,7 @@ Bộ Flutter/Dart UI dùng lại cho mobile, desktop và web, không gắn với
 Trong thư mục ứng dụng Flutter, chạy **một lệnh** (tự thêm dependency và tải thư viện):
 
 ```sh
-flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.15.1}}"
+flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.15.2}}"
 ```
 
 Sau đó thay `lib/main.dart` của **ứng dụng mới** bằng:
@@ -35,7 +35,7 @@ Bản hiện tại phát hành trên GitHub, **chưa trên pub.dev**: dùng nguy
 
 ## Cài đặt và tải bản đóng gói
 
-Giấy phép **MIT**. Dùng Git dependency ghim `v0.15.1` theo phần Dùng nhanh bên dưới, hoặc tải ZIP/TAR.GZ tại [GitHub Releases](https://github.com/HYowshi/flutter-ui/releases/tag/v0.15.1). [Hướng dẫn cài gói đã giải nén](docs/distribution.vi.md).
+Giấy phép **MIT**. Dùng Git dependency ghim `v0.15.2` theo phần Dùng nhanh bên dưới, hoặc tải ZIP/TAR.GZ tại [GitHub Releases](https://github.com/HYowshi/flutter-ui/releases/tag/v0.15.2). [Hướng dẫn cài gói đã giải nén](docs/distribution.vi.md).
 
 ## Dùng với AI
 
@@ -64,7 +64,7 @@ dependencies:
   youth_ui:
     git:
       url: https://github.com/HYowshi/flutter-ui.git
-      ref: v0.15.1
+      ref: v0.15.2
 ```
 
 ```dart
@@ -83,7 +83,7 @@ void main() => runApp(UIApp(
 ));
 ```
 
-`UIApp` tự tạo và giữ theme sáng/tối, theo hệ thống, hỗ trợ đổi chế độ qua `UIThemeToggle`. Không cần khởi tạo thêm provider hay bộ màu ở từng trang. `submit` là callback của ứng dụng; asset phải khai báo trong pubspec. Bản ví dụ ghim tag v0.15.1; dùng commit cụ thể khi cần đối chiếu chính xác.
+`UIApp` tự tạo và giữ theme sáng/tối, theo hệ thống, hỗ trợ đổi chế độ qua `UIThemeToggle`. Không cần khởi tạo thêm provider hay bộ màu ở từng trang. `submit` là callback của ứng dụng; asset phải khai báo trong pubspec. Bản ví dụ ghim tag v0.15.2; dùng commit cụ thể khi cần đối chiếu chính xác.
 
 Với MaterialApp/router sẵn có, vẫn dùng `YouthUI.colors(...)` một lần rồi đặt `theme: ui.light`, `darkTheme: ui.dark`. Muốn transition mới: đặt `themeAnimationDuration: Duration.zero` và trong builder trả `UIThemeTransition(theme: Theme.of(context), child: child!)`. Không chồng hai animation theme.
 

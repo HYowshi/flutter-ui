@@ -1,6 +1,6 @@
 # youth_ui: guide for coding agents
 
-Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This guide targets **0.15.1**, not a package named `flutter_ui` on pub.dev. The repository/folder name is Flutter UI; the Dart package/import is youth_ui.
+Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This guide targets **0.15.2**, not a package named `flutter_ui` on pub.dev. The repository/folder name is Flutter UI; the Dart package/import is youth_ui.
 
 ## Reading order and version matching
 
@@ -16,7 +16,7 @@ Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This 
 Fast installation from the consumer app directory (adds the dependency and resolves it in one command):
 
 ```sh
-flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.15.1}}"
+flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.15.2}}"
 ```
 
 This release is distributed through GitHub, not pub.dev. Do not replace this command with `flutter pub add youth_ui`. Git must be installed. Alternatively, edit pubspec.yaml manually:
@@ -26,10 +26,10 @@ dependencies:
   youth_ui:
     git:
       url: https://github.com/HYowshi/flutter-ui.git
-      ref: v0.15.1
+      ref: v0.15.2
 ```
 
-That release tag identifies the 0.15.1 MIT-licensed distribution. `main` follows ongoing work; pin a reviewed commit for reproducibility. Run `flutter pub get` after changing dependencies. Requirements for this version: Dart ^3.13.0; Flutter >=3.47.0. Repository CI uses Flutter 3.47.5. Do not upgrade an application's SDK or dependencies without a reason required by the task.
+That release tag identifies the 0.15.2 MIT-licensed distribution. `main` follows ongoing work; pin a reviewed commit for reproducibility. Run `flutter pub get` after changing dependencies. Requirements for this version: Dart ^3.13.0; Flutter >=3.47.0. Repository CI uses Flutter 3.47.5. Do not upgrade an application's SDK or dependencies without a reason required by the task.
 
 ```dart
 import 'package:flutter/material.dart';
@@ -123,6 +123,8 @@ UIDateField is controlled: update value in onChanged; cancel retains it, clear s
 ## Motion, performance and accessibility
 
 - Respect platform reduced motion and high contrast. No new perpetual shimmer/blur effect is needed for a routine state.
+- UIEntrance preserves child state across reduced-motion changes. Outgoing UIAnimatedContent subtrees have muted tickers; caller futures/timers are not cancelled. Theme snapshots are cancelled when backgrounded/ticker-disabled; use reduceMotion or zero transition duration to avoid theme snapshots on sensitive screens.
+- Password fields disable personalized IME learning even when revealed. Image source strings reject control characters and embedded HTTP credentials; custom ImageProviders and network/domain policy remain application-owned.
 - UIReveal retains the mounted child, form validation and service work; it blocks hidden focus/pointers/semantics/tickers. It does not virtualize lists or cancel network requests.
 - Use stable keys for stateful/reordered items and changing keys to replay an entrance or distinguish AnimatedContent children.
 - Preserve native keyboard navigation, meaningful tooltips, readable labels and touch targets. Avoid overflow with narrow widths/large text/RTL. A passing test suite is not an FPS or zero-bug guarantee.

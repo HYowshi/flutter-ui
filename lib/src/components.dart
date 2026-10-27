@@ -384,6 +384,7 @@ class _UISmartFieldState extends State<_UISmartField> {
                   : null),
           obscureText: widget.password && hidden,
           enableSuggestions: !widget.password,
+          enableIMEPersonalizedLearning: !widget.password,
           autocorrect: !widget.password,
           decoration: InputDecoration(
             contentPadding: ui.controlPadding,
