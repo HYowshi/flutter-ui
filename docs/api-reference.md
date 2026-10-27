@@ -1,7 +1,7 @@
 # youth_ui API reference
 
-Generated for **0.15.2** from the public export/part graph of lib/youth_ui.dart.
-Source fingerprint: `b29141fd3cfa017173a83eb5ad20b4d171340e09a19e039cf42257415204b448`.
+Generated for **0.16.0** from the public export/part graph of lib/youth_ui.dart.
+Source fingerprint: `22647fbf805db33ae958f1673b3f141b28f66f1b116caa23c45887a72bbad6b2`.
 
 Do not edit manually. Run `python tool/generate_ai_docs.py`; CI checks drift.
 These are source-derived declaration excerpts: explicit constructors/defaults,
@@ -638,6 +638,7 @@ class UITextField extends StatelessWidget {
     this.inputFormatters,
     this.maxLength,
     this.readOnly = false,
+    this.obscureText = false,
     this.clearable = false,
     this.initialValue,
     this.minLines,
@@ -648,6 +649,30 @@ class UITextField extends StatelessWidget {
     this.variant = UIInputVariant.outlined,
     this.textCapitalization = TextCapitalization.none,
     this.autovalidateMode = AutovalidateMode.onUnfocus,
+  });
+
+  factory UITextField.pin({
+    Key? key,
+    String label = 'Mã PIN',
+    int length = 6,
+    bool obscureText = true,
+    String? name,
+    String? hint,
+    String? helper,
+    String? errorText,
+    String? invalidCodeMessage,
+    TextEditingController? controller,
+    FormFieldValidator<String>? validator,
+    ValueChanged<String>? onChanged,
+    ValueChanged<String>? onFieldSubmitted,
+    FocusNode? focusNode,
+    bool enabled = true,
+    bool readOnly = false,
+    bool autofocus = false,
+    Iterable<String>? autofillHints,
+    TextInputAction textInputAction = TextInputAction.done,
+    UIInputVariant variant = UIInputVariant.outlined,
+    AutovalidateMode autovalidateMode = AutovalidateMode.onUnfocus,
   });
 
   factory UITextField.search({
@@ -682,7 +707,7 @@ class UITextField extends StatelessWidget {
 
   final IconData? prefixIcon;
 
-  final bool enabled, readOnly, clearable;
+  final bool enabled, readOnly, clearable, obscureText;
 
   final int maxLines;
 

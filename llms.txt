@@ -1,6 +1,6 @@
 # Flutter UI / youth_ui
 
-> A reusable Flutter/Dart UI library for mobile, desktop and web. Version 0.15.2; Dart ^3.13.0 and Flutter >=3.47.0. Public import: package:youth_ui/youth_ui.dart.
+> A reusable Flutter/Dart UI library for mobile, desktop and web. Version 0.16.0; Dart ^3.13.0 and Flutter >=3.47.0. Public import: package:youth_ui/youth_ui.dart.
 
 This is a reading entry point, not a mechanism that automatically teaches every AI. Give an agent this URL or a local checkout and ask it to read the guide. Match documentation to the version resolved in the consumer's pubspec.lock; prefer that version's source over main when they differ.
 

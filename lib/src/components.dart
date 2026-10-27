@@ -171,6 +171,7 @@ class UITextField extends StatelessWidget {
     this.inputFormatters,
     this.maxLength,
     this.readOnly = false,
+    this.obscureText = false,
     this.clearable = false,
     this.initialValue,
     this.minLines,
@@ -182,7 +183,78 @@ class UITextField extends StatelessWidget {
     this.textCapitalization = TextCapitalization.none,
     this.autovalidateMode = AutovalidateMode.onUnfocus,
   }) : assert(controller == null || initialValue == null),
-       assert(minLines == null || minLines > 0 && minLines <= maxLines);
+       assert(minLines == null || minLines > 0 && minLines <= maxLines),
+       assert(!obscureText || maxLines == 1);
+
+  /// Numeric code input. Preserves leading zeros, filters typing/paste to
+  /// ASCII digits and limits length. Blank remains optional; use validator
+  /// for required/business rules. Does not verify or automatically submit codes.
+  factory UITextField.pin({
+    Key? key,
+    String label = 'Mã PIN',
+    int length = 6,
+    bool obscureText = true,
+    String? name,
+    String? hint,
+    String? helper,
+    String? errorText,
+    String? invalidCodeMessage,
+    TextEditingController? controller,
+    FormFieldValidator<String>? validator,
+    ValueChanged<String>? onChanged,
+    ValueChanged<String>? onFieldSubmitted,
+    FocusNode? focusNode,
+    bool enabled = true,
+    bool readOnly = false,
+    bool autofocus = false,
+    Iterable<String>? autofillHints,
+    TextInputAction textInputAction = TextInputAction.done,
+    UIInputVariant variant = UIInputVariant.outlined,
+    AutovalidateMode autovalidateMode = AutovalidateMode.onUnfocus,
+  }) {
+    if (length < 1 || length > 32) {
+      throw RangeError.range(length, 1, 32, 'length');
+    }
+    return UITextField(
+      key: key,
+      label: label,
+      name: name,
+      hint: hint,
+      helper: helper,
+      errorText: errorText,
+      controller: controller,
+      keyboardType: TextInputType.number,
+      obscureText: obscureText,
+      maxLength: length,
+      inputFormatters: [
+        FilteringTextInputFormatter.digitsOnly,
+        LengthLimitingTextInputFormatter(
+          length,
+          maxLengthEnforcement: MaxLengthEnforcement.enforced,
+        ),
+      ],
+      validator: (value) {
+        if (value != null &&
+            value.isNotEmpty &&
+            (value.length != length ||
+                value.codeUnits.any((c) => c < 48 || c > 57))) {
+          return invalidCodeMessage ?? 'Nhập đủ $length chữ số (0–9).';
+        }
+        return validator?.call(value);
+      },
+      onChanged: onChanged,
+      onFieldSubmitted: onFieldSubmitted,
+      focusNode: focusNode,
+      enabled: enabled,
+      readOnly: readOnly,
+      autofocus: autofocus,
+      autofillHints: autofillHints,
+      textInputAction: textInputAction,
+      variant: variant,
+      autovalidateMode: autovalidateMode,
+    );
+  }
+
   factory UITextField.search({
     Key? key,
     String label = 'Tìm kiếm',
@@ -229,7 +301,7 @@ class UITextField extends StatelessWidget {
   final ValueChanged<String>? onChanged, onFieldSubmitted;
   final TextInputType? keyboardType;
   final IconData? prefixIcon;
-  final bool enabled, readOnly, clearable;
+  final bool enabled, readOnly, clearable, obscureText;
   final int maxLines;
   final int? maxLength;
   final Iterable<String>? autofillHints;
@@ -353,6 +425,10 @@ class _UISmartFieldState extends State<_UISmartField> {
     final input = widget.input;
     final form = _UIFormScope.maybeOf(context);
     final enabled = input.enabled && !(form?.isSubmitting ?? false);
+    final privateInput =
+        widget.password ||
+        input.obscureText ||
+        input.keyboardType == TextInputType.number;
     return UIAdaptiveBuilder(
       builder: (context, ui) => UIAnimatedSize(
         duration: UIMotion.resolve(context, UIMotion.fast),
@@ -382,10 +458,10 @@ class _UISmartFieldState extends State<_UISmartField> {
               (input.textInputAction == TextInputAction.done && form != null
                   ? (_) => unawaited(form.submit())
                   : null),
-          obscureText: widget.password && hidden,
-          enableSuggestions: !widget.password,
-          enableIMEPersonalizedLearning: !widget.password,
-          autocorrect: !widget.password,
+          obscureText: input.obscureText || widget.password && hidden,
+          enableSuggestions: !privateInput,
+          enableIMEPersonalizedLearning: !privateInput,
+          autocorrect: !privateInput,
           decoration: InputDecoration(
             contentPadding: ui.controlPadding,
             labelText: input.label,

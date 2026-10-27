@@ -1,4 +1,4 @@
-# youth_ui 0.15.2: AI full-text documentation
+# youth_ui 0.16.0: AI full-text documentation
 
 Generated bundle; individual source/guide files remain authoritative.
 
@@ -9,7 +9,7 @@ Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/ai-guide.md
 
 # youth_ui: guide for coding agents
 
-Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This guide targets **0.15.2**, not a package named `flutter_ui` on pub.dev. The repository/folder name is Flutter UI; the Dart package/import is youth_ui.
+Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This guide targets **0.16.0**, not a package named `flutter_ui` on pub.dev. The repository/folder name is Flutter UI; the Dart package/import is youth_ui.
 
 ## Reading order and version matching
 
@@ -25,7 +25,7 @@ Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This 
 Fast installation from the consumer app directory (adds the dependency and resolves it in one command):
 
 ```sh
-flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.15.2}}"
+flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.16.0}}"
 ```
 
 This release is distributed through GitHub, not pub.dev. Do not replace this command with `flutter pub add youth_ui`. Git must be installed. Alternatively, edit pubspec.yaml manually:
@@ -35,10 +35,10 @@ dependencies:
   youth_ui:
     git:
       url: https://github.com/HYowshi/flutter-ui.git
-      ref: v0.15.2
+      ref: v0.16.0
 ```
 
-That release tag identifies the 0.15.2 MIT-licensed distribution. `main` follows ongoing work; pin a reviewed commit for reproducibility. Run `flutter pub get` after changing dependencies. Requirements for this version: Dart ^3.13.0; Flutter >=3.47.0. Repository CI uses Flutter 3.47.5. Do not upgrade an application's SDK or dependencies without a reason required by the task.
+That release tag identifies the 0.16.0 MIT-licensed distribution. `main` follows ongoing work; pin a reviewed commit for reproducibility. Run `flutter pub get` after changing dependencies. Requirements for this version: Dart ^3.13.0; Flutter >=3.47.0. Repository CI uses Flutter 3.47.5. Do not upgrade an application's SDK or dependencies without a reason required by the task.
 
 ```dart
 import 'package:flutter/material.dart';
@@ -69,7 +69,7 @@ UIThemeToggle depends on the controller scope installed by UIApp. In an existing
 | App frame with responsive navigation | UIAdaptiveScaffold + UIDestination |
 | Main/secondary action | UIButton with UIButtonVariant and UITone |
 | Floating primary action | UIFloatingActionButton in Scaffold's FAB slot |
-| Text/password/search/notes | UITextField; UIPasswordField; UITextField.search; UITextField.multiline |
+| Text/password/search/notes | UITextField; UIPasswordField; UITextField.search; UITextField.multiline; UITextField.pin |
 | Form submission and validation | UIForm; UIFormController; UIFormException; UIValidators |
 | Boolean / multiple choice | UICheckbox; UISwitch; UIToggleButton; UISegmentedControl |
 | Single choice / dropdown | UIRadioGroup + UIOption; UISelect + UIOption |
@@ -102,6 +102,8 @@ Use ordinary Flutter widgets for features the library does not provide. Do not i
 - Check mounted/context.mounted after await before touching UI. Ignore stale responses when the edited record changes. Widgets guard their own lifecycles, not all caller-owned futures.
 
 ## Forms and notices
+
+Use `UITextField.pin(length: 4)` for numeric codes: numeric keyboard, ASCII digits-only typing/paste, enforced maximum length, leading zeros retained, masked by default. Use `obscureText: false` and explicit oneTimeCode autofill hints for visible OTP. Blank is optional unless a caller validator requires it; nonblank values must have exactly length digits. Programmatic controller writes bypass formatters, but validation checks them. No automatic submission on completion or verification/SMS reading is provided.
 
 UIForm can be layout-only. Supplying onSubmit enables validation, loading/duplicate-submit protection, field locking and error feedback. UIFormController.submit() returns whether a managed submit succeeded. Keep network/authentication/storage in the application's callback.
 
@@ -152,8 +154,8 @@ Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/api-reference.md
 
 # youth_ui API reference
 
-Generated for **0.15.2** from the public export/part graph of lib/youth_ui.dart.
-Source fingerprint: `b29141fd3cfa017173a83eb5ad20b4d171340e09a19e039cf42257415204b448`.
+Generated for **0.16.0** from the public export/part graph of lib/youth_ui.dart.
+Source fingerprint: `22647fbf805db33ae958f1673b3f141b28f66f1b116caa23c45887a72bbad6b2`.
 
 Do not edit manually. Run `python tool/generate_ai_docs.py`; CI checks drift.
 These are source-derived declaration excerpts: explicit constructors/defaults,
@@ -790,6 +792,7 @@ class UITextField extends StatelessWidget {
     this.inputFormatters,
     this.maxLength,
     this.readOnly = false,
+    this.obscureText = false,
     this.clearable = false,
     this.initialValue,
     this.minLines,
@@ -800,6 +803,30 @@ class UITextField extends StatelessWidget {
     this.variant = UIInputVariant.outlined,
     this.textCapitalization = TextCapitalization.none,
     this.autovalidateMode = AutovalidateMode.onUnfocus,
+  });
+
+  factory UITextField.pin({
+    Key? key,
+    String label = 'Mã PIN',
+    int length = 6,
+    bool obscureText = true,
+    String? name,
+    String? hint,
+    String? helper,
+    String? errorText,
+    String? invalidCodeMessage,
+    TextEditingController? controller,
+    FormFieldValidator<String>? validator,
+    ValueChanged<String>? onChanged,
+    ValueChanged<String>? onFieldSubmitted,
+    FocusNode? focusNode,
+    bool enabled = true,
+    bool readOnly = false,
+    bool autofocus = false,
+    Iterable<String>? autofillHints,
+    TextInputAction textInputAction = TextInputAction.done,
+    UIInputVariant variant = UIInputVariant.outlined,
+    AutovalidateMode autovalidateMode = AutovalidateMode.onUnfocus,
   });
 
   factory UITextField.search({
@@ -834,7 +861,7 @@ class UITextField extends StatelessWidget {
 
   final IconData? prefixIcon;
 
-  final bool enabled, readOnly, clearable;
+  final bool enabled, readOnly, clearable, obscureText;
 
   final int maxLines;
 
@@ -2717,6 +2744,27 @@ Regression cho outgoing hit/focus/semantics, chuyển nội dung cao→thấp, g
 
 Đã kiểm tra bằng widget test và analyzer; chưa đo GPU/FPS, điện năng hay bộ nhớ trên thiết bị thật. Không suy ra phần trăm tiết kiệm tài nguyên từ các kiểm thử này.
 
+## PIN và OTP (0.16.0)
+
+```dart
+UITextField.pin(length: 4); // bàn phím số, tối đa 4 chữ số, che nội dung
+UITextField.pin(
+  label: 'Mã OTP',
+  length: 6,
+  obscureText: false,
+  autofillHints: const [AutofillHints.oneTimeCode],
+  onChanged: (code) {},
+);
+```
+
+Preset chỉ nhận ASCII `0–9`, loại ký tự khác khi gõ/dán/autofill và cắt tại `length` (1–32, mặc định 6). Giá trị vẫn là String nên giữ `0012`. Bộ lọc áp dụng cả bàn phím vật lý; không chỉ dựa vào gợi ý bàn phím số của thiết bị. Nền tảng quyết định bàn phím thực tế.
+
+Ô trống mặc định là tùy chọn. Nếu bắt buộc, truyền `validator: UIValidators.required()`; khi có nội dung, preset kiểm tra đúng số chữ số trước validator của ứng dụng. Đổi câu báo lỗi bằng `invalidCodeMessage`. `name`, `controller`, `focusNode`, `enabled`, `readOnly`, `errorText`, `variant` và callbacks vẫn tích hợp cùng UIForm. Controller do app tạo phải được app dispose. Giá trị gán bằng controller không đi qua input formatter; không tự sửa dữ liệu của caller, nhưng validation vẫn từ chối ký tự/độ dài sai.
+
+Không tự chuyển focus, tự gửi khi đủ chữ số hay xác minh mã. Phím Done có thể gửi UIForm theo quy tắc hiện tại nếu không có onFieldSubmitted riêng. Việc xác minh, giới hạn số lần thử và thời hạn mã thuộc backend. Không ghi log hoặc đưa mã vào notice. Đối với OTP, autofillHints là gợi ý nền tảng, không tự đọc SMS.
+
+`UITextField` thường cũng có `obscureText` (mặc định false, chỉ dùng một dòng). Ô mã số và nội dung được che tắt gợi ý, tự sửa và học bàn phím; UIPasswordField giữ nút hiện/ẩn hiện tại.
+
 
 ---
 
@@ -2724,14 +2772,14 @@ Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/distribution.vi.md
 
 # Cài đặt và bản phân phối
 
-Bản hiện tại: **youth_ui 0.15.2**, giấy phép **MIT**. Thư viện dùng Flutter >=3.47.0 và Dart ^3.13.0. Không phải package tên flutter_ui trên pub.dev.
+Bản hiện tại: **youth_ui 0.16.0**, giấy phép **MIT**. Thư viện dùng Flutter >=3.47.0 và Dart ^3.13.0. Không phải package tên flutter_ui trên pub.dev.
 
 ## Cài trực tiếp từ GitHub
 
 Cách nhanh nhất: mở terminal tại thư mục ứng dụng và chạy một lệnh. Lệnh tự ghi dependency và tải gói:
 
 ```sh
-flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.15.2}}"
+flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.16.0}}"
 ```
 
 Không cần tải ZIP hay chạy thêm `flutter pub get` sau lệnh thành công. Bản GitHub cần Git và kết nối mạng. Chưa dùng `flutter pub add youth_ui` vì bản này chưa phát hành trên pub.dev.
@@ -2745,23 +2793,23 @@ dependencies:
   youth_ui:
     git:
       url: https://github.com/HYowshi/flutter-ui.git
-      ref: v0.15.2
+      ref: v0.16.0
 ```
 
 Chạy `flutter pub get`, rồi import `package:youth_ui/youth_ui.dart`. Không cần sao chép từng file trong lib/src. Tag cố định giúp các dự án không tự thay đổi theo main; commit cụ thể là mức ghim chính xác nhất.
 
 ## Dùng ZIP / TAR.GZ
 
-Tải file tại [GitHub Releases](https://github.com/HYowshi/flutter-ui/releases/tag/v0.15.2), đối chiếu SHA256SUMS.txt rồi giải nén. Hai định dạng có cùng bộ file, một thư mục gốc youth_ui-0.15.2 và release.json ghi commit/hash từng file.
+Tải file tại [GitHub Releases](https://github.com/HYowshi/flutter-ui/releases/tag/v0.16.0), đối chiếu SHA256SUMS.txt rồi giải nén. Hai định dạng có cùng bộ file, một thư mục gốc youth_ui-0.16.0 và release.json ghi commit/hash từng file.
 
-Ví dụ đặt thư viện vào `packages/youth_ui-0.15.2` của app:
+Ví dụ đặt thư viện vào `packages/youth_ui-0.16.0` của app:
 
 ```yaml
 dependencies:
   flutter:
     sdk: flutter
   youth_ui:
-    path: packages/youth_ui-0.15.2
+    path: packages/youth_ui-0.16.0
 ```
 
 `path` tính từ thư mục chứa pubspec.yaml của app. Không dùng đường dẫn ổ D của người phát triển trong dự án chia sẻ cho người khác. Thêm dependency Git thay vì path khi không muốn đưa toàn bộ thư viện vào repo app.

@@ -1,6 +1,6 @@
 # youth_ui: guide for coding agents
 
-Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This guide targets **0.15.2**, not a package named `flutter_ui` on pub.dev. The repository/folder name is Flutter UI; the Dart package/import is youth_ui.
+Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This guide targets **0.16.0**, not a package named `flutter_ui` on pub.dev. The repository/folder name is Flutter UI; the Dart package/import is youth_ui.
 
 ## Reading order and version matching
 
@@ -16,7 +16,7 @@ Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This 
 Fast installation from the consumer app directory (adds the dependency and resolves it in one command):
 
 ```sh
-flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.15.2}}"
+flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.16.0}}"
 ```
 
 This release is distributed through GitHub, not pub.dev. Do not replace this command with `flutter pub add youth_ui`. Git must be installed. Alternatively, edit pubspec.yaml manually:
@@ -26,10 +26,10 @@ dependencies:
   youth_ui:
     git:
       url: https://github.com/HYowshi/flutter-ui.git
-      ref: v0.15.2
+      ref: v0.16.0
 ```
 
-That release tag identifies the 0.15.2 MIT-licensed distribution. `main` follows ongoing work; pin a reviewed commit for reproducibility. Run `flutter pub get` after changing dependencies. Requirements for this version: Dart ^3.13.0; Flutter >=3.47.0. Repository CI uses Flutter 3.47.5. Do not upgrade an application's SDK or dependencies without a reason required by the task.
+That release tag identifies the 0.16.0 MIT-licensed distribution. `main` follows ongoing work; pin a reviewed commit for reproducibility. Run `flutter pub get` after changing dependencies. Requirements for this version: Dart ^3.13.0; Flutter >=3.47.0. Repository CI uses Flutter 3.47.5. Do not upgrade an application's SDK or dependencies without a reason required by the task.
 
 ```dart
 import 'package:flutter/material.dart';
@@ -60,7 +60,7 @@ UIThemeToggle depends on the controller scope installed by UIApp. In an existing
 | App frame with responsive navigation | UIAdaptiveScaffold + UIDestination |
 | Main/secondary action | UIButton with UIButtonVariant and UITone |
 | Floating primary action | UIFloatingActionButton in Scaffold's FAB slot |
-| Text/password/search/notes | UITextField; UIPasswordField; UITextField.search; UITextField.multiline |
+| Text/password/search/notes | UITextField; UIPasswordField; UITextField.search; UITextField.multiline; UITextField.pin |
 | Form submission and validation | UIForm; UIFormController; UIFormException; UIValidators |
 | Boolean / multiple choice | UICheckbox; UISwitch; UIToggleButton; UISegmentedControl |
 | Single choice / dropdown | UIRadioGroup + UIOption; UISelect + UIOption |
@@ -93,6 +93,8 @@ Use ordinary Flutter widgets for features the library does not provide. Do not i
 - Check mounted/context.mounted after await before touching UI. Ignore stale responses when the edited record changes. Widgets guard their own lifecycles, not all caller-owned futures.
 
 ## Forms and notices
+
+Use `UITextField.pin(length: 4)` for numeric codes: numeric keyboard, ASCII digits-only typing/paste, enforced maximum length, leading zeros retained, masked by default. Use `obscureText: false` and explicit oneTimeCode autofill hints for visible OTP. Blank is optional unless a caller validator requires it; nonblank values must have exactly length digits. Programmatic controller writes bypass formatters, but validation checks them. No automatic submission on completion or verification/SMS reading is provided.
 
 UIForm can be layout-only. Supplying onSubmit enables validation, loading/duplicate-submit protection, field locking and error feedback. UIFormController.submit() returns whether a managed submit succeeded. Keep network/authentication/storage in the application's callback.
 

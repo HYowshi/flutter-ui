@@ -67,3 +67,24 @@ Regression cho outgoing hit/focus/semantics, chuyển nội dung cao→thấp, g
 `UIPasswordField` luôn tắt suggestions, autocorrect và `enableIMEPersonalizedLearning`, kể cả khi người dùng bật hiện mật khẩu. Đây là yêu cầu gửi tới bàn phím; không thay thế mã hóa đường truyền, quản lý phiên hay lưu trữ an toàn trong ứng dụng.
 
 Đã kiểm tra bằng widget test và analyzer; chưa đo GPU/FPS, điện năng hay bộ nhớ trên thiết bị thật. Không suy ra phần trăm tiết kiệm tài nguyên từ các kiểm thử này.
+
+## PIN và OTP (0.16.0)
+
+```dart
+UITextField.pin(length: 4); // bàn phím số, tối đa 4 chữ số, che nội dung
+UITextField.pin(
+  label: 'Mã OTP',
+  length: 6,
+  obscureText: false,
+  autofillHints: const [AutofillHints.oneTimeCode],
+  onChanged: (code) {},
+);
+```
+
+Preset chỉ nhận ASCII `0–9`, loại ký tự khác khi gõ/dán/autofill và cắt tại `length` (1–32, mặc định 6). Giá trị vẫn là String nên giữ `0012`. Bộ lọc áp dụng cả bàn phím vật lý; không chỉ dựa vào gợi ý bàn phím số của thiết bị. Nền tảng quyết định bàn phím thực tế.
+
+Ô trống mặc định là tùy chọn. Nếu bắt buộc, truyền `validator: UIValidators.required()`; khi có nội dung, preset kiểm tra đúng số chữ số trước validator của ứng dụng. Đổi câu báo lỗi bằng `invalidCodeMessage`. `name`, `controller`, `focusNode`, `enabled`, `readOnly`, `errorText`, `variant` và callbacks vẫn tích hợp cùng UIForm. Controller do app tạo phải được app dispose. Giá trị gán bằng controller không đi qua input formatter; không tự sửa dữ liệu của caller, nhưng validation vẫn từ chối ký tự/độ dài sai.
+
+Không tự chuyển focus, tự gửi khi đủ chữ số hay xác minh mã. Phím Done có thể gửi UIForm theo quy tắc hiện tại nếu không có onFieldSubmitted riêng. Việc xác minh, giới hạn số lần thử và thời hạn mã thuộc backend. Không ghi log hoặc đưa mã vào notice. Đối với OTP, autofillHints là gợi ý nền tảng, không tự đọc SMS.
+
+`UITextField` thường cũng có `obscureText` (mặc định false, chỉ dùng một dòng). Ô mã số và nội dung được che tắt gợi ý, tự sửa và học bàn phím; UIPasswordField giữ nút hiện/ẩn hiện tại.

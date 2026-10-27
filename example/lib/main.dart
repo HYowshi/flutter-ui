@@ -449,7 +449,7 @@ class _StudioState extends State<Studio> {
           ),
           const SizedBox(height: 20),
           Text(
-            'v0.15.2 · Ready-to-use Flutter UI',
+            'v0.16.0 · Ready-to-use Flutter UI',
             style: TextStyle(fontSize: 10, color: s.onSurfaceVariant),
           ),
         ],
@@ -1957,6 +1957,17 @@ class _InputDemoState extends State<InputDemo> {
               suffixText: 'VND',
               keyboardType: TextInputType.number,
               variant: UIInputVariant.filled,
+            ),
+            UITextField.pin(
+              label: 'Mã PIN',
+              length: 4,
+              helper: '4 chữ số · bàn phím số · ẩn nội dung',
+            ),
+            UITextField.pin(
+              label: 'Mã xác thực OTP',
+              obscureText: false,
+              autofillHints: const [AutofillHints.oneTimeCode],
+              helper: '6 chữ số · thử dán cả chữ và số',
             ),
             const UITextField(
               label: 'Mã tham chiếu',

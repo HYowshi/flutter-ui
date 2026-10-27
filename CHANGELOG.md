@@ -1,3 +1,10 @@
+## 0.16.0
+
+- Add UITextField.pin: numeric keyboard, ASCII digit filtering for typing/paste/autofill, enforced maximum length, retained leading zeros and exact nonblank code validation.
+- Support configurable code length (1–32), masking, one-time-code autofill hints, named form errors, custom validation and standard field callbacks.
+- Add single-line obscureText to UITextField; disable suggestions, autocorrect and personalized keyboard learning for numeric/masked inputs.
+- Add PIN/OTP showcase examples, customization snippets and input/paste/composition/validation regression tests. Code verification and automatic submission are not implemented by the preset.
+
 ## 0.15.2
 
 - Preserve UIEntrance child state when reduced-motion preferences change; complete hidden-route entrances without replay.

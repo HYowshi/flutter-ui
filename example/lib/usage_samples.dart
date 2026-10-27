@@ -80,6 +80,10 @@ UIForm(
       validator: UIValidators.combine([
         UIValidators.required(), UIValidators.email(),
       ])),
+    UITextField.pin(name: 'pin', label: 'Mã PIN', length: 4,
+      validator: UIValidators.required()),
+    UITextField.pin(label: 'OTP', obscureText: false,
+      autofillHints: const [AutofillHints.oneTimeCode]),
     UITextField(label: 'Giới thiệu', minLines: 3, maxLines: 8,
       maxLength: 500, keyboardType: TextInputType.multiline),
   ],
