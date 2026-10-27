@@ -16,3 +16,4 @@ export 'src/table.dart';
 export 'src/floating_action_button.dart';
 export 'src/state_view.dart';
 export 'src/adaptive_dialog.dart';
+export 'src/async_view.dart';

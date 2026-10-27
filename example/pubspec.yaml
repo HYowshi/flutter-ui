@@ -5,6 +5,7 @@ version: 1.0.0+1
 environment:
   sdk: ^3.13.0
 dependencies:
+  http: ^1.6.0
   flutter:
     sdk: flutter
   youth_ui:

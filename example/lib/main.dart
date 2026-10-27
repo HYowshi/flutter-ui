@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:youth_ui/youth_ui.dart';
 
 import 'usage_samples.dart';
+import 'api_demo.dart';
 
 void main() => runApp(const ShowcaseApp());
 
@@ -104,6 +105,7 @@ class _StudioState extends State<Studio> {
     'Trạng thái màn hình',
     'Dialog & Sheet',
     'Date Picker',
+    'Kết nối API',
   ];
   static const icons = [
     Icons.grid_view_rounded,
@@ -124,6 +126,7 @@ class _StudioState extends State<Studio> {
     Icons.info_outline_rounded,
     Icons.web_asset_outlined,
     Icons.date_range_outlined,
+    Icons.cloud_sync_outlined,
   ];
   @override
   void dispose() {
@@ -281,6 +284,15 @@ class _StudioState extends State<Studio> {
                               if (selected == 15) const StateViewDemo(),
                               if (selected == 16) const AdaptiveDialogDemo(),
                               if (selected == 17) const DatePickerDemo(),
+                              if (selected == 18)
+                                const DemoBlock(
+                                  number: '19',
+                                  title: 'Kết nối API',
+                                  description: 'Truyền hàm API, nhận dữ liệu và trạng thái UI dùng lại.',
+                                  effects: 'Loading / retry / empty · bỏ kết quả cũ · không gọi lại khi rebuild',
+                                  code: "UIAsyncView<List<Member>>(\n  load: api.fetchMembers,\n  isEmpty: (rows) => rows.isEmpty,\n  builder: (context, rows) => UITable<Member>(rows: rows, columns: columns),\n);",
+                                  child: ApiConnectionDemo(),
+                                ),
                               if (selected == 0 || selected == 3)
                                 const InputDemo(),
                               if (selected == 0 || selected == 4)
@@ -355,6 +367,7 @@ class _StudioState extends State<Studio> {
     'Loading, dữ liệu rỗng, lỗi, ngoại tuyến và quyền truy cập có cùng ngôn ngữ thiết kế.',
     'Popup tự chọn dialog hoặc bottom sheet, giữ nội dung và thao tác rõ ràng.',
     'Chọn ngày, khoảng ngày, giới hạn hợp lệ và dùng cùng form.',
+    'Truyền hàm API; trạng thái tải, lỗi, rỗng và cập nhật dữ liệu được xử lý thống nhất.',
   ];
   Widget sidebar(BuildContext context, {bool closeDrawer = false}) {
     final s = Theme.of(context).colorScheme;
@@ -449,7 +462,7 @@ class _StudioState extends State<Studio> {
           ),
           const SizedBox(height: 20),
           Text(
-            'v0.16.0 · Ready-to-use Flutter UI',
+            'v0.17.0 · Ready-to-use Flutter UI',
             style: TextStyle(fontSize: 10, color: s.onSurfaceVariant),
           ),
         ],

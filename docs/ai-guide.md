@@ -1,6 +1,6 @@
 # youth_ui: guide for coding agents
 
-Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This guide targets **0.16.0**, not a package named `flutter_ui` on pub.dev. The repository/folder name is Flutter UI; the Dart package/import is youth_ui.
+Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This guide targets **0.17.0**, not a package named `flutter_ui` on pub.dev. The repository/folder name is Flutter UI; the Dart package/import is youth_ui.
 
 ## Reading order and version matching
 
@@ -16,7 +16,7 @@ Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This 
 Fast installation from the consumer app directory (adds the dependency and resolves it in one command):
 
 ```sh
-flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.16.0}}"
+flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.17.0}}"
 ```
 
 This release is distributed through GitHub, not pub.dev. Do not replace this command with `flutter pub add youth_ui`. Git must be installed. Alternatively, edit pubspec.yaml manually:
@@ -26,10 +26,10 @@ dependencies:
   youth_ui:
     git:
       url: https://github.com/HYowshi/flutter-ui.git
-      ref: v0.16.0
+      ref: v0.17.0
 ```
 
-That release tag identifies the 0.16.0 MIT-licensed distribution. `main` follows ongoing work; pin a reviewed commit for reproducibility. Run `flutter pub get` after changing dependencies. Requirements for this version: Dart ^3.13.0; Flutter >=3.47.0. Repository CI uses Flutter 3.47.5. Do not upgrade an application's SDK or dependencies without a reason required by the task.
+That release tag identifies the 0.17.0 MIT-licensed distribution. `main` follows ongoing work; pin a reviewed commit for reproducibility. Run `flutter pub get` after changing dependencies. Requirements for this version: Dart ^3.13.0; Flutter >=3.47.0. Repository CI uses Flutter 3.47.5. Do not upgrade an application's SDK or dependencies without a reason required by the task.
 
 ```dart
 import 'package:flutter/material.dart';
@@ -61,6 +61,7 @@ UIThemeToggle depends on the controller scope installed by UIApp. In an existing
 | Main/secondary action | UIButton with UIButtonVariant and UITone |
 | Floating primary action | UIFloatingActionButton in Scaffold's FAB slot |
 | Text/password/search/notes | UITextField; UIPasswordField; UITextField.search; UITextField.multiline; UITextField.pin |
+| API loading / reload / safe errors | UIAsyncView<T>; UIAsyncController |
 | Form submission and validation | UIForm; UIFormController; UIFormException; UIValidators |
 | Boolean / multiple choice | UICheckbox; UISwitch; UIToggleButton; UISegmentedControl |
 | Single choice / dropdown | UIRadioGroup + UIOption; UISelect + UIOption |
@@ -91,6 +92,12 @@ Use ordinary Flutter widgets for features the library does not provide. Do not i
 - `initialValue` initializes text/select fields. It is not a general controlled-value API. Do not pass a nonexistent `UISelect.value`. Reset intentionally with an appropriate key/state reset when the record changes.
 - UITextField accepts either controller or initialValue, not both. Changing initialValue does not overwrite an ongoing edit. Search/multiline convenience factories expose fewer options than the main constructor; use the main constructor when a preset lacks an option.
 - Check mounted/context.mounted after await before touching UI. Ignore stale responses when the edited record changes. Widgets guard their own lifecycles, not all caller-owned futures.
+
+## API integration
+
+UIAsyncView<T> accepts a Future<T> load callback and a typed builder. It loads once after mounting; parent rebuilds/new closure identities do not refetch. Change immutable requestKey (include account/query/record) or call an optional caller-owned UIAsyncController.reload(). Concurrent reloads share a Future<bool>; false means failure/detached/disposed/superseded. isEmpty is explicit; nullable T may be valid data. Safe default errors never display exception.toString(). Custom builders and diagnostic onError are available.
+
+Old data is removed while loading; builder children are remounted on reload. Keep drafts/forms outside the async region. Key changes and disposal invalidate stale responses and settle obsolete reload futures without writing old data. This does NOT cancel HTTP/Firebase/Dio requests. The application owns transport/cancellation/auth/cache/server paging; reuse an existing async state framework when applicable. Bound the view's height in scrollable layouts. See api-integration.vi.md and the runnable HTTP recipe (http is an example dependency only, not a youth_ui core dependency). Never invent a universal JSON schema, token manager, automatic POST retry or SMS/auth service.
 
 ## Forms and notices
 

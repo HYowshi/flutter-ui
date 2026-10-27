@@ -1,4 +1,4 @@
-# youth_ui 0.16.0: AI full-text documentation
+# youth_ui 0.17.0: AI full-text documentation
 
 Generated bundle; individual source/guide files remain authoritative.
 
@@ -9,7 +9,7 @@ Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/ai-guide.md
 
 # youth_ui: guide for coding agents
 
-Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This guide targets **0.16.0**, not a package named `flutter_ui` on pub.dev. The repository/folder name is Flutter UI; the Dart package/import is youth_ui.
+Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This guide targets **0.17.0**, not a package named `flutter_ui` on pub.dev. The repository/folder name is Flutter UI; the Dart package/import is youth_ui.
 
 ## Reading order and version matching
 
@@ -25,7 +25,7 @@ Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This 
 Fast installation from the consumer app directory (adds the dependency and resolves it in one command):
 
 ```sh
-flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.16.0}}"
+flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.17.0}}"
 ```
 
 This release is distributed through GitHub, not pub.dev. Do not replace this command with `flutter pub add youth_ui`. Git must be installed. Alternatively, edit pubspec.yaml manually:
@@ -35,10 +35,10 @@ dependencies:
   youth_ui:
     git:
       url: https://github.com/HYowshi/flutter-ui.git
-      ref: v0.16.0
+      ref: v0.17.0
 ```
 
-That release tag identifies the 0.16.0 MIT-licensed distribution. `main` follows ongoing work; pin a reviewed commit for reproducibility. Run `flutter pub get` after changing dependencies. Requirements for this version: Dart ^3.13.0; Flutter >=3.47.0. Repository CI uses Flutter 3.47.5. Do not upgrade an application's SDK or dependencies without a reason required by the task.
+That release tag identifies the 0.17.0 MIT-licensed distribution. `main` follows ongoing work; pin a reviewed commit for reproducibility. Run `flutter pub get` after changing dependencies. Requirements for this version: Dart ^3.13.0; Flutter >=3.47.0. Repository CI uses Flutter 3.47.5. Do not upgrade an application's SDK or dependencies without a reason required by the task.
 
 ```dart
 import 'package:flutter/material.dart';
@@ -70,6 +70,7 @@ UIThemeToggle depends on the controller scope installed by UIApp. In an existing
 | Main/secondary action | UIButton with UIButtonVariant and UITone |
 | Floating primary action | UIFloatingActionButton in Scaffold's FAB slot |
 | Text/password/search/notes | UITextField; UIPasswordField; UITextField.search; UITextField.multiline; UITextField.pin |
+| API loading / reload / safe errors | UIAsyncView<T>; UIAsyncController |
 | Form submission and validation | UIForm; UIFormController; UIFormException; UIValidators |
 | Boolean / multiple choice | UICheckbox; UISwitch; UIToggleButton; UISegmentedControl |
 | Single choice / dropdown | UIRadioGroup + UIOption; UISelect + UIOption |
@@ -100,6 +101,12 @@ Use ordinary Flutter widgets for features the library does not provide. Do not i
 - `initialValue` initializes text/select fields. It is not a general controlled-value API. Do not pass a nonexistent `UISelect.value`. Reset intentionally with an appropriate key/state reset when the record changes.
 - UITextField accepts either controller or initialValue, not both. Changing initialValue does not overwrite an ongoing edit. Search/multiline convenience factories expose fewer options than the main constructor; use the main constructor when a preset lacks an option.
 - Check mounted/context.mounted after await before touching UI. Ignore stale responses when the edited record changes. Widgets guard their own lifecycles, not all caller-owned futures.
+
+## API integration
+
+UIAsyncView<T> accepts a Future<T> load callback and a typed builder. It loads once after mounting; parent rebuilds/new closure identities do not refetch. Change immutable requestKey (include account/query/record) or call an optional caller-owned UIAsyncController.reload(). Concurrent reloads share a Future<bool>; false means failure/detached/disposed/superseded. isEmpty is explicit; nullable T may be valid data. Safe default errors never display exception.toString(). Custom builders and diagnostic onError are available.
+
+Old data is removed while loading; builder children are remounted on reload. Keep drafts/forms outside the async region. Key changes and disposal invalidate stale responses and settle obsolete reload futures without writing old data. This does NOT cancel HTTP/Firebase/Dio requests. The application owns transport/cancellation/auth/cache/server paging; reuse an existing async state framework when applicable. Bound the view's height in scrollable layouts. See api-integration.vi.md and the runnable HTTP recipe (http is an example dependency only, not a youth_ui core dependency). Never invent a universal JSON schema, token manager, automatic POST retry or SMS/auth service.
 
 ## Forms and notices
 
@@ -154,8 +161,8 @@ Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/api-reference.md
 
 # youth_ui API reference
 
-Generated for **0.16.0** from the public export/part graph of lib/youth_ui.dart.
-Source fingerprint: `22647fbf805db33ae958f1673b3f141b28f66f1b116caa23c45887a72bbad6b2`.
+Generated for **0.17.0** from the public export/part graph of lib/youth_ui.dart.
+Source fingerprint: `39adcae8f7a7b64ff495f1b98ef6703a1d3afe603f59e0de56332c5eca21c6ed`.
 
 Do not edit manually. Run `python tool/generate_ai_docs.py`; CI checks drift.
 These are source-derived declaration excerpts: explicit constructors/defaults,
@@ -184,6 +191,8 @@ its linked detailed guides. Do not copy a declaration as an executable example.
 - [UIApp](#uiapp)
 - [UIThemeToggle](#uithemetoggle)
 - [UIThemeTransition](#uithemetransition)
+- [UIAsyncController](#uiasynccontroller)
+- [UIAsyncView](#uiasyncview)
 - [UITone](#uitone)
 - [UIButtonVariant](#uibuttonvariant)
 - [UIProfile](#uiprofile)
@@ -559,6 +568,63 @@ class UIThemeTransition extends StatefulWidget {
   final Widget child;
 
   final Duration duration;
+}
+```
+
+## UIAsyncController
+
+[Source: lib/src/async_view.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/async_view.dart)
+
+```dart
+class UIAsyncController extends ChangeNotifier {
+  bool get isLoading;
+
+  Future<bool> reload();
+}
+```
+
+## UIAsyncView
+
+[Source: lib/src/async_view.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/async_view.dart)
+
+```dart
+class UIAsyncView<T> extends StatefulWidget {
+  const UIAsyncView({
+    super.key,
+    required this.load,
+    required this.builder,
+    this.requestKey,
+    this.controller,
+    this.isEmpty,
+    this.loadingBuilder,
+    this.emptyBuilder,
+    this.errorBuilder,
+    this.onError,
+    this.failureMessage = 'Chưa thể tải dữ liệu. Vui lòng thử lại.',
+  });
+
+  final Future<T> Function() load;
+
+  final Widget Function(BuildContext context, T data) builder;
+
+  final Object? requestKey;
+
+  final UIAsyncController? controller;
+
+  final bool Function(T data)? isEmpty;
+
+  final WidgetBuilder? loadingBuilder, emptyBuilder;
+
+  final Widget Function(
+    BuildContext context,
+    Object error,
+    Future<bool> Function() retry,
+  )?
+  errorBuilder;
+
+  final void Function(Object error, StackTrace stack)? onError;
+
+  final String failureMessage;
 }
 ```
 
@@ -2204,6 +2270,12 @@ This example adds rows in memory, filters them by search, manages selectedKeys/p
 
 For exact constructor parameters/defaults, use [API reference](api-reference.md) for the resolved version. Do not extrapolate properties from similarly named Flutter widgets.
 
+## HTTP API, typed Table and managed Form
+
+[Source](https://github.com/HYowshi/flutter-ui/blob/main/example/lib/recipes/api_recipe.dart) · [Readable source](api_recipe.dart) · [Contract and setup](api-integration.vi.md)
+
+Run `flutter run -t lib/recipes/api_recipe.dart --dart-define=API_BASE_URL=https://your-server.example/api/` from example/. No endpoint is contacted when no base URL is supplied. This is actual injectable http.Client transport, not a deployed backend: adapt the explicitly documented member endpoints/schema. Tests mock GET/POST/422, validate model decoding and exercise form failure/correction/save/list reload. The website's API gallery intentionally uses a local Future simulation instead.
+
 
 ---
 
@@ -2772,14 +2844,14 @@ Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/distribution.vi.md
 
 # Cài đặt và bản phân phối
 
-Bản hiện tại: **youth_ui 0.16.0**, giấy phép **MIT**. Thư viện dùng Flutter >=3.47.0 và Dart ^3.13.0. Không phải package tên flutter_ui trên pub.dev.
+Bản hiện tại: **youth_ui 0.17.0**, giấy phép **MIT**. Thư viện dùng Flutter >=3.47.0 và Dart ^3.13.0. Không phải package tên flutter_ui trên pub.dev.
 
 ## Cài trực tiếp từ GitHub
 
 Cách nhanh nhất: mở terminal tại thư mục ứng dụng và chạy một lệnh. Lệnh tự ghi dependency và tải gói:
 
 ```sh
-flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.16.0}}"
+flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.17.0}}"
 ```
 
 Không cần tải ZIP hay chạy thêm `flutter pub get` sau lệnh thành công. Bản GitHub cần Git và kết nối mạng. Chưa dùng `flutter pub add youth_ui` vì bản này chưa phát hành trên pub.dev.
@@ -2793,23 +2865,23 @@ dependencies:
   youth_ui:
     git:
       url: https://github.com/HYowshi/flutter-ui.git
-      ref: v0.16.0
+      ref: v0.17.0
 ```
 
 Chạy `flutter pub get`, rồi import `package:youth_ui/youth_ui.dart`. Không cần sao chép từng file trong lib/src. Tag cố định giúp các dự án không tự thay đổi theo main; commit cụ thể là mức ghim chính xác nhất.
 
 ## Dùng ZIP / TAR.GZ
 
-Tải file tại [GitHub Releases](https://github.com/HYowshi/flutter-ui/releases/tag/v0.16.0), đối chiếu SHA256SUMS.txt rồi giải nén. Hai định dạng có cùng bộ file, một thư mục gốc youth_ui-0.16.0 và release.json ghi commit/hash từng file.
+Tải file tại [GitHub Releases](https://github.com/HYowshi/flutter-ui/releases/tag/v0.17.0), đối chiếu SHA256SUMS.txt rồi giải nén. Hai định dạng có cùng bộ file, một thư mục gốc youth_ui-0.17.0 và release.json ghi commit/hash từng file.
 
-Ví dụ đặt thư viện vào `packages/youth_ui-0.16.0` của app:
+Ví dụ đặt thư viện vào `packages/youth_ui-0.17.0` của app:
 
 ```yaml
 dependencies:
   flutter:
     sdk: flutter
   youth_ui:
-    path: packages/youth_ui-0.16.0
+    path: packages/youth_ui-0.17.0
 ```
 
 `path` tính từ thư mục chứa pubspec.yaml của app. Không dùng đường dẫn ổ D của người phát triển trong dự án chia sẻ cho người khác. Thêm dependency Git thay vì path khi không muốn đưa toàn bộ thư viện vào repo app.
@@ -2844,6 +2916,101 @@ python tool/build_release.py
 Artifact nằm trong dist/, thư mục này không được commit. Script chỉ đọc file Git-tracked trong allowlist, từ chối checkout chưa commit, kiểm tra manifest của cả ZIP/TAR.GZ và tạo checksum.
 
 `.pubignore` là bộ lọc riêng cho pub.dev: bỏ tài liệu/công cụ/kiểm thử chỉ dùng trong repository, vẫn giữ README, LICENSE, mã thư viện, bản hướng dẫn AI gộp và ví dụ dùng thật. `dart pub publish --dry-run` chỉ kiểm tra, không đăng gói. Bản này phân phối qua GitHub Release; việc đăng lên pub.dev cần luồng phát hành/tài khoản của chủ sở hữu.
+
+
+---
+
+Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/api-integration.vi.md
+
+# Nối API với Youth UI
+
+## Tải dữ liệu: chỉ truyền hàm và cách hiển thị
+
+```dart
+UIAsyncView<List<Member>>(
+  load: api.fetchMembers,
+  isEmpty: (members) => members.isEmpty,
+  builder: (context, members) => UITable<Member>(
+    rows: members,
+    columns: [UITableColumn(label: 'Họ tên', value: (member) => member.name)],
+  ),
+);
+```
+
+`api.fetchMembers` là hàm của ứng dụng trả `Future<List<Member>>`. Có thể dùng http, Dio, Firebase hoặc repository đang có. Core youth_ui không thêm HTTP dependency, không giữ base URL/token hay đổi kiến trúc state/router của ứng dụng.
+
+Widget tự tải một lần sau khi mount, hiện loading, dữ liệu hoặc lỗi có nút Thử lại. `isEmpty` do ứng dụng chỉ định, không đoán cấu trúc JSON. Không có `isEmpty` thì mọi kết quả hợp lệ (kể cả null nếu T nullable) được chuyển cho builder. Exception không tự hiện `toString()` trên màn hình: mặc định dùng câu lỗi an toàn, tùy chỉnh bằng `failureMessage`. `onError` nhận lỗi/stack cho xử lý của ứng dụng; không log token, mã PIN hay body chứa dữ liệu riêng tư. `loadingBuilder`, `emptyBuilder`, `errorBuilder` thay giao diện theo ý muốn; errorBuilder nhận callback retry.
+
+Các trạng thái mặc định tự cuộn khi cần. Khi dùng trong Column/scroll view, đặt vùng tải trong `SizedBox(height: ...)` hoặc giới hạn chiều cao hợp lý. Nếu builder trả UIPage/ListView, parent phải cung cấp chiều cao hữu hạn; không lồng hai scroll view không giới hạn. UITable vẫn là bảng phân trang trong bộ nhớ, không tự phân trang server.
+
+## Tải lại, lọc và đổi tài khoản
+
+```dart
+// Tạo trong State, dispose khi đóng trang.
+final list = UIAsyncController();
+
+UIAsyncView<List<Member>>(
+  controller: list,
+  requestKey: (accountId, query),
+  load: () => api.fetchMembers(query),
+  isEmpty: (rows) => rows.isEmpty,
+  builder: (context, rows) => MembersList(rows: rows),
+);
+
+final loaded = await list.reload(); // true: load hiện tại thành công, kể cả rỗng
+```
+
+- Rebuild, đổi theme hoặc tạo closure `load` mới không tự gọi API. Đổi `requestKey` theo equality hoặc gọi reload mới tải lại. Dùng key immutable và đưa account/query/record liên quan vào đó; không đưa token vào chuỗi log hay URL.
+- Khi đổi requestKey, dữ liệu của yêu cầu trước được gỡ ngay. Kết quả/lỗi cũ không ghi đè phiên mới. Refresh dùng trạng thái loading thay nội dung cũ; subtree trong builder được dựng lại. Đặt form/draft cần giữ state bên ngoài vùng tải, như recipe.
+- Các lần reload đồng thời dùng chung Future và không tạo request trùng. Đổi key trong khi request đang chạy có thể tạo request mới; đây không phải hàng đợi hay rate limiter.
+- Future<bool> trả false khi lỗi, bị thay thế, view đã đóng, controller chưa gắn hoặc đã dispose. Không có callback gửi thành công giả sau khi view bị đóng.
+- Một controller chỉ gắn với một view tại một thời điểm. Controller do app tạo thì app dispose; không tạo controller trong build. Có thể dùng `ListenableBuilder` với `controller.isLoading` để cập nhật riêng nút tải lại.
+- Đây là bỏ qua kết quả lỗi thời, **không hủy request mạng**. Future Dart không tự có cancellation. HTTP client, Dio CancelToken, timeout và đóng client thuộc ứng dụng. Không có polling, retry tự động hoặc cache/offline ngầm.
+- Nếu đã dùng Riverpod/BLoC hoặc cơ chế async riêng, tiếp tục dùng chúng và nối kết quả vào component/UIStateView; không bắt buộc thêm một lớp quản lý state nữa.
+
+## Gửi Form và lỗi theo trường
+
+```dart
+UIForm(
+  onSubmit: () => api.createMember(name: name.text, email: email.text),
+  onSuccess: () { list.reload(); },
+  children: [
+    UITextField(name: 'name', label: 'Họ tên', controller: name),
+    UITextField(name: 'email', label: 'Email', controller: email),
+  ],
+);
+
+// Trong lớp API, ánh xạ lỗi validation của backend:
+throw UIFormException(fieldErrors: {'email': 'Email đã được sử dụng.'});
+```
+
+UIForm đã có validation, trạng thái đang gửi, khóa gửi đồng thời và lỗi theo `name`. Tên trường phải khớp hợp đồng backend; không giả định mọi backend dùng cùng JSON. Đưa thông báo phù hợp người dùng vào UIFormException, không truyền HTML/stack trace/body lỗi thô. `onSuccess` chỉ chạy khi callback gửi hoàn tất thành công; thông báo kết quả và refresh danh sách do ứng dụng chọn.
+
+Không tự retry POST sau timeout: server có thể đã lưu trước khi client mất kết nối. Idempotency key, giao dịch, xác thực, phân quyền và giới hạn số lần thử cần được thiết kế ở ứng dụng/backend.
+
+## Recipe HTTP chạy được
+
+[api_recipe.dart](https://github.com/HYowshi/flutter-ui/blob/main/example/lib/recipes/api_recipe.dart) là ví dụ đầy đủ dùng http.Client có thể inject để test. Trong repo:
+
+```sh
+cd example
+flutter pub get
+flutter run -t lib/recipes/api_recipe.dart --dart-define=API_BASE_URL=https://your-server.example/api/
+```
+
+Không truyền API_BASE_URL thì recipe hiển thị hướng dẫn cấu hình, không gọi server. URL trên là chỗ thay thế bằng backend của bạn. Nếu sao chép recipe sang ứng dụng khác, chạy `flutter pub add http`. Client do recipe tạo được đóng khi đóng trang; client inject do caller sở hữu. Cấu hình client/base URL cố định trong vòng đời trang; dùng Key mới khi thay cấu hình đó.
+
+Hợp đồng ví dụ (hãy đổi để khớp backend thật):
+
+| Endpoint | Request / response |
+|---|---|
+| GET `/api/members` | 200: `[{"id":1,"name":"An","email":"an@example.com"}]` |
+| POST `/api/members` | JSON `{"name":"An","email":"an@example.com"}`; thành công 200/201 với JSON hoặc 204 không body |
+| POST lỗi validation | 422: `{"fieldErrors":{"email":"Email đã được sử dụng."}}` |
+
+Mẫu kiểm tra schema, giới hạn response 1 MiB, chờ header tối đa 20 giây và giới hạn thời gian chờ giữa các chunk 20 giây. Đây không phải deadline tổng hay hủy request header khi timeout. Các status bất ngờ dùng lỗi an toàn; không tự theo redirect hay retry. HTTPS được yêu cầu, ngoại trừ HTTP loopback cho phát triển. Token có thể lấy từ session hiện tại qua `MembersApi.accessToken`, không nhúng secret vào mã nguồn/dart-define. Backend lớn nên dùng server pagination thay vì nâng giới hạn tải tùy tiện.
+
+Web cần CORS từ backend; không tắt kiểm tra TLS hay tìm cách vượt CORS. Native cần cấu hình quyền mạng của ứng dụng. Xem [Flutter networking](https://docs.flutter.dev/cookbook/networking/fetch-data) và [http Client/testing](https://pub.dev/packages/http). Demo “Kết nối API” trên website chỉ mô phỏng Future cục bộ; recipe/test mới minh họa transport HTTP và mapping GET/POST/422, không có backend được cung cấp kèm thư viện.
 
 
 ---
@@ -3078,5 +3245,265 @@ class _EditorRecipeState extends State<EditorRecipe> {
       ],
     ),
   );
+}
+```
+
+
+---
+
+Runnable source: https://github.com/HYowshi/flutter-ui/blob/main/example/lib/recipes/api_recipe.dart
+
+```dart
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:youth_ui/youth_ui.dart';
+
+/// Run with --dart-define=API_BASE_URL=https://your-server.example/api/
+/// No endpoint is contacted until the application supplies a base URL.
+void main() => runApp(
+  const UIApp(
+    primary: Colors.indigo,
+    home: Scaffold(body: ApiMembersPage()),
+  ),
+);
+
+class Member {
+  const Member({required this.id, required this.name, required this.email});
+  final int id;
+  final String name, email;
+
+  factory Member.fromJson(Object? value) => switch (value) {
+    {'id': int id, 'name': String name, 'email': String email} => Member(
+      id: id,
+      name: name,
+      email: email,
+    ),
+    _ => throw const FormatException('Invalid member schema'),
+  };
+}
+
+class MembersApiException implements Exception {
+  const MembersApiException(this.statusCode);
+  final int statusCode;
+}
+
+/// Example application code, not part of youth_ui's public API. Adapt the
+/// endpoint/schema to your backend. The caller owns the injected HTTP client.
+class MembersApi {
+  MembersApi({required this.client, required Uri baseUrl, this.accessToken}) {
+    final local = {'localhost', '127.0.0.1', '::1'}.contains(baseUrl.host);
+    if (baseUrl.host.isEmpty ||
+        !(baseUrl.scheme == 'https' || baseUrl.scheme == 'http' && local) ||
+        baseUrl.userInfo.isNotEmpty ||
+        baseUrl.hasQuery ||
+        baseUrl.hasFragment) {
+      throw ArgumentError(
+        'Use an HTTPS base URL without credentials/query/fragment.',
+      );
+    }
+    _baseUrl = baseUrl.replace(
+      path: baseUrl.path.endsWith('/') ? baseUrl.path : '${baseUrl.path}/',
+    );
+  }
+
+  final http.Client client;
+
+  /// Read the current session token per request; do not embed a secret in code
+  /// or dart-define. No token is needed for unauthenticated endpoints.
+  final Future<String?> Function()? accessToken;
+  late final Uri _baseUrl;
+
+  Future<(int, Object?)> _request(String method, {Object? body}) async {
+    final request = http.Request(method, _baseUrl.resolve('members'))
+      ..followRedirects = false
+      ..headers['Accept'] = 'application/json';
+    final token = await accessToken?.call();
+    if (token != null && token.isNotEmpty) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+    if (body != null) {
+      request.headers['Content-Type'] = 'application/json; charset=utf-8';
+      request.body = jsonEncode(body);
+    }
+    final response = await client
+        .send(request)
+        .timeout(const Duration(seconds: 20));
+    final bytes = <int>[];
+    // Bounded response; the application should use server pagination for large lists.
+    await for (final chunk in response.stream.timeout(
+      const Duration(seconds: 20),
+    )) {
+      if (bytes.length + chunk.length > 1024 * 1024) {
+        throw const FormatException('Response exceeds example limit');
+      }
+      bytes.addAll(chunk);
+    }
+    // Do not expose response bodies for unexpected statuses to widgets/logs.
+    if (response.statusCode >= 300 && response.statusCode != 422) {
+      throw MembersApiException(response.statusCode);
+    }
+    return (
+      response.statusCode,
+      bytes.isEmpty ? null : jsonDecode(utf8.decode(bytes)),
+    );
+  }
+
+  Future<List<Member>> fetchMembers() async {
+    final (status, json) = await _request('GET');
+    if (status != 200) throw MembersApiException(status);
+    if (json is! List) throw const FormatException('Expected member list');
+    return List.unmodifiable(json.map(Member.fromJson));
+  }
+
+  Future<void> createMember({
+    required String name,
+    required String email,
+  }) async {
+    final (status, json) = await _request(
+      'POST',
+      body: {'name': name, 'email': email},
+    );
+    if (status == 422) {
+      final errors = <String, String>{};
+      if (json is Map && json['fieldErrors'] is Map) {
+        final fields = json['fieldErrors'] as Map;
+        for (final name in ['name', 'email']) {
+          final message = fields[name];
+          if (message is String && message.trim().isNotEmpty) {
+            errors[name] = message;
+          }
+        }
+      }
+      throw UIFormException(
+        message: errors.isEmpty ? 'Kiểm tra thông tin rồi thử lại.' : null,
+        fieldErrors: errors,
+      );
+    }
+    if (status != 200 && status != 201 && status != 204) {
+      throw MembersApiException(status);
+    }
+  }
+}
+
+/// Form remains outside the async region so reloading the list keeps edits.
+/// Inject a client/base URL for testing, or provide API_BASE_URL when running.
+class ApiMembersPage extends StatefulWidget {
+  const ApiMembersPage({super.key, this.client, this.baseUrl});
+  final http.Client? client;
+  final Uri? baseUrl;
+  @override
+  State<ApiMembersPage> createState() => _ApiMembersPageState();
+}
+
+class _ApiMembersPageState extends State<ApiMembersPage> {
+  final list = UIAsyncController();
+  final name = TextEditingController(), email = TextEditingController();
+  late final http.Client client;
+  MembersApi? api;
+
+  @override
+  void initState() {
+    super.initState();
+    client = widget.client ?? http.Client();
+    const configured = String.fromEnvironment('API_BASE_URL');
+    final baseUrl =
+        widget.baseUrl ?? (configured.isEmpty ? null : Uri.parse(configured));
+    if (baseUrl != null) api = MembersApi(client: client, baseUrl: baseUrl);
+  }
+
+  @override
+  void dispose() {
+    list.dispose();
+    name.dispose();
+    email.dispose();
+    if (widget.client == null) client.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final service = api;
+    if (service == null) {
+      return const UIStateView.empty(
+        title: 'Chưa cấu hình API',
+        message: 'Chạy ví dụ với --dart-define=API_BASE_URL=https://your-server.example/api/',
+      );
+    }
+    return UIPage(
+      children: [
+        const Text(
+          'Thành viên · API của ứng dụng',
+          style: TextStyle(fontSize: 24),
+        ),
+        UIForm(
+          submitLabel: 'Thêm thành viên',
+          onSubmit: () => service.createMember(
+            name: name.text.trim(),
+            email: email.text.trim(),
+          ),
+          onSuccess: () {
+            name.clear();
+            email.clear();
+            unawaited(list.reload());
+            UINotice.show(context, message: 'Đã thêm thành viên.');
+          },
+          children: [
+            UITextField(
+              name: 'name',
+              label: 'Họ tên',
+              controller: name,
+              validator: UIValidators.required(),
+            ),
+            UITextField(
+              name: 'email',
+              label: 'Email',
+              controller: email,
+              keyboardType: TextInputType.emailAddress,
+              validator: UIValidators.combine([
+                UIValidators.required(),
+                UIValidators.email(),
+              ]),
+            ),
+          ],
+        ),
+        ListenableBuilder(
+          listenable: list,
+          builder: (_, _) => UIButton(
+            label: 'Tải lại danh sách',
+            loading: list.isLoading,
+            onPressed: () => unawaited(list.reload()),
+          ),
+        ),
+        SizedBox(
+          height: 420,
+          child: UIAsyncView<List<Member>>(
+            controller: list,
+            requestKey: service,
+            load: service.fetchMembers,
+            isEmpty: (members) => members.isEmpty,
+            builder: (_, members) => SingleChildScrollView(
+              child: UITable<Member>(
+                label: 'Danh sách thành viên',
+                rows: members,
+                columns: [
+                  UITableColumn(
+                    label: 'Họ tên',
+                    value: (member) => member.name,
+                  ),
+                  UITableColumn(
+                    label: 'Email',
+                    value: (member) => member.email,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }
 ```

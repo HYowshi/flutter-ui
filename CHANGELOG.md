@@ -1,3 +1,11 @@
+## 0.17.0
+
+- Add UIAsyncView<T> and UIAsyncController for Future-based API/repository loading, safe errors/retry, explicit empty states and reload handles.
+- Load once per mount/requestKey; deduplicate concurrent reloads, invalidate stale results on identity changes/disposal and settle superseded futures.
+- Add a local API-state gallery and an executable injectable HTTP GET/POST recipe with typed schema checks, bounded response size and 422-to-UIFormException mapping.
+- Keep networking/auth/client ownership outside the library; add http only to the example project. Document CORS/permissions, cancellation limits and refresh/draft lifetime.
+- Expand async lifecycle, HTTP transport, form save/refresh and accessibility regression coverage and publish integration docs/recipe in the AI bundle.
+
 ## 0.16.0
 
 - Add UITextField.pin: numeric keyboard, ASCII digit filtering for typing/paste/autofill, enforced maximum length, retained leading zeros and exact nonblank code validation.

@@ -49,3 +49,9 @@ This example adds rows in memory, filters them by search, manages selectedKeys/p
 - Wireframes and inference overrides: docs/wireframe.vi.md and WireframeDemo.
 
 For exact constructor parameters/defaults, use [API reference](api-reference.md) for the resolved version. Do not extrapolate properties from similarly named Flutter widgets.
+
+## HTTP API, typed Table and managed Form
+
+[Source](https://github.com/HYowshi/flutter-ui/blob/main/example/lib/recipes/api_recipe.dart) · [Readable source](api_recipe.dart) · [Contract and setup](api-integration.vi.md)
+
+Run `flutter run -t lib/recipes/api_recipe.dart --dart-define=API_BASE_URL=https://your-server.example/api/` from example/. No endpoint is contacted when no base URL is supplied. This is actual injectable http.Client transport, not a deployed backend: adapt the explicitly documented member endpoints/schema. Tests mock GET/POST/422, validate model decoding and exercise form failure/correction/save/list reload. The website's API gallery intentionally uses a local Future simulation instead.

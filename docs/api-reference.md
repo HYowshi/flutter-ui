@@ -1,7 +1,7 @@
 # youth_ui API reference
 
-Generated for **0.16.0** from the public export/part graph of lib/youth_ui.dart.
-Source fingerprint: `22647fbf805db33ae958f1673b3f141b28f66f1b116caa23c45887a72bbad6b2`.
+Generated for **0.17.0** from the public export/part graph of lib/youth_ui.dart.
+Source fingerprint: `39adcae8f7a7b64ff495f1b98ef6703a1d3afe603f59e0de56332c5eca21c6ed`.
 
 Do not edit manually. Run `python tool/generate_ai_docs.py`; CI checks drift.
 These are source-derived declaration excerpts: explicit constructors/defaults,
@@ -30,6 +30,8 @@ its linked detailed guides. Do not copy a declaration as an executable example.
 - [UIApp](#uiapp)
 - [UIThemeToggle](#uithemetoggle)
 - [UIThemeTransition](#uithemetransition)
+- [UIAsyncController](#uiasynccontroller)
+- [UIAsyncView](#uiasyncview)
 - [UITone](#uitone)
 - [UIButtonVariant](#uibuttonvariant)
 - [UIProfile](#uiprofile)
@@ -405,6 +407,63 @@ class UIThemeTransition extends StatefulWidget {
   final Widget child;
 
   final Duration duration;
+}
+```
+
+## UIAsyncController
+
+[Source: lib/src/async_view.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/async_view.dart)
+
+```dart
+class UIAsyncController extends ChangeNotifier {
+  bool get isLoading;
+
+  Future<bool> reload();
+}
+```
+
+## UIAsyncView
+
+[Source: lib/src/async_view.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/async_view.dart)
+
+```dart
+class UIAsyncView<T> extends StatefulWidget {
+  const UIAsyncView({
+    super.key,
+    required this.load,
+    required this.builder,
+    this.requestKey,
+    this.controller,
+    this.isEmpty,
+    this.loadingBuilder,
+    this.emptyBuilder,
+    this.errorBuilder,
+    this.onError,
+    this.failureMessage = 'Chưa thể tải dữ liệu. Vui lòng thử lại.',
+  });
+
+  final Future<T> Function() load;
+
+  final Widget Function(BuildContext context, T data) builder;
+
+  final Object? requestKey;
+
+  final UIAsyncController? controller;
+
+  final bool Function(T data)? isEmpty;
+
+  final WidgetBuilder? loadingBuilder, emptyBuilder;
+
+  final Widget Function(
+    BuildContext context,
+    Object error,
+    Future<bool> Function() retry,
+  )?
+  errorBuilder;
+
+  final void Function(Object error, StackTrace stack)? onError;
+
+  final String failureMessage;
 }
 ```
 

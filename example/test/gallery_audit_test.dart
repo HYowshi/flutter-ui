@@ -34,6 +34,7 @@ void main() {
           'Trạng thái màn hình',
           'Dialog & Sheet',
           'Date Picker',
+          'Kết nối API',
         ]) {
           final mobile = configuration.$1 < 1000;
           if (mobile) {

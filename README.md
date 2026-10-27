@@ -9,7 +9,7 @@ Bộ Flutter/Dart UI dùng lại cho mobile, desktop và web, không gắn với
 Trong thư mục ứng dụng Flutter, chạy **một lệnh** (tự thêm dependency và tải thư viện):
 
 ```sh
-flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.16.0}}"
+flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.17.0}}"
 ```
 
 Sau đó thay `lib/main.dart` của **ứng dụng mới** bằng:
@@ -35,7 +35,7 @@ Bản hiện tại phát hành trên GitHub, **chưa trên pub.dev**: dùng nguy
 
 ## Cài đặt và tải bản đóng gói
 
-Giấy phép **MIT**. Dùng Git dependency ghim `v0.16.0` theo phần Dùng nhanh bên dưới, hoặc tải ZIP/TAR.GZ tại [GitHub Releases](https://github.com/HYowshi/flutter-ui/releases/tag/v0.16.0). [Hướng dẫn cài gói đã giải nén](docs/distribution.vi.md).
+Giấy phép **MIT**. Dùng Git dependency ghim `v0.17.0` theo phần Dùng nhanh bên dưới, hoặc tải ZIP/TAR.GZ tại [GitHub Releases](https://github.com/HYowshi/flutter-ui/releases/tag/v0.17.0). [Hướng dẫn cài gói đã giải nén](docs/distribution.vi.md).
 
 ## Dùng với AI
 
@@ -64,7 +64,7 @@ dependencies:
   youth_ui:
     git:
       url: https://github.com/HYowshi/flutter-ui.git
-      ref: v0.16.0
+      ref: v0.17.0
 ```
 
 ```dart
@@ -83,9 +83,21 @@ void main() => runApp(UIApp(
 ));
 ```
 
-`UIApp` tự tạo và giữ theme sáng/tối, theo hệ thống, hỗ trợ đổi chế độ qua `UIThemeToggle`. Không cần khởi tạo thêm provider hay bộ màu ở từng trang. `submit` là callback của ứng dụng; asset phải khai báo trong pubspec. Bản ví dụ ghim tag v0.16.0; dùng commit cụ thể khi cần đối chiếu chính xác.
+`UIApp` tự tạo và giữ theme sáng/tối, theo hệ thống, hỗ trợ đổi chế độ qua `UIThemeToggle`. Không cần khởi tạo thêm provider hay bộ màu ở từng trang. `submit` là callback của ứng dụng; asset phải khai báo trong pubspec. Bản ví dụ ghim tag v0.17.0; dùng commit cụ thể khi cần đối chiếu chính xác.
 
 Với MaterialApp/router sẵn có, vẫn dùng `YouthUI.colors(...)` một lần rồi đặt `theme: ui.light`, `darkTheme: ui.dark`. Muốn transition mới: đặt `themeAnimationDuration: Duration.zero` và trong builder trả `UIThemeTransition(theme: Theme.of(context), child: child!)`. Không chồng hai animation theme.
+
+## Nối API nhanh
+
+```dart
+UIAsyncView<List<Member>>(
+  load: api.fetchMembers,
+  isEmpty: (rows) => rows.isEmpty,
+  builder: (context, rows) => UITable<Member>(rows: rows, columns: columns),
+);
+```
+
+Tự có loading, lỗi/thử lại và dữ liệu rỗng; không gọi lại khi rebuild. Đổi `requestKey` để tải truy vấn mới; thêm `UIAsyncController` khi muốn tải lại sau khi gửi Form. HTTP/Dio/Firebase vẫn do ứng dụng chọn. Có [hướng dẫn GET/POST và lỗi server](docs/api-integration.vi.md), [recipe HTTP chạy được](example/lib/recipes/api_recipe.dart) và demo “Kết nối API”.
 
 ## Nhập PIN và OTP
 

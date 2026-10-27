@@ -4,6 +4,20 @@ import 'package:youth_ui/youth_ui.dart';
 
 // Copyable partial recipes. App-owned callbacks/models are named explicitly.
 const customizationSamples = <String, String>{
+  'Kết nối API': r'''// Tạo controller trong State, dispose khi đóng trang.
+final reload = UIAsyncController();
+UIAsyncView<List<Member>>(
+  controller: reload,
+  requestKey: (accountId, query), // identity đổi => tải lại, bỏ response cũ
+  load: () => api.fetchMembers(query), // http, Dio, Firebase, repository...
+  isEmpty: (rows) => rows.isEmpty,
+  builder: (context, rows) => UITable<Member>(rows: rows, columns: columns),
+);
+// Sau khi POST thành công:
+await reload.reload();
+// UIForm(onSubmit: () => api.save(...)) đã có loading/khóa gửi trùng.
+// Map lỗi 422 theo tên trường qua UIFormException(fieldErrors: ...).
+// Xem example/lib/recipes/api_recipe.dart cho transport HTTP thực tế.''',
   'Trạng thái màn hình': r'''UIStateView(
   kind: UIStateKind.offline,
   title: 'Chưa có kết nối', message: 'Nội dung đã lưu vẫn có thể xem.',

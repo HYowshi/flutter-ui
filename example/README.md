@@ -17,8 +17,11 @@ Run one command/entry point at a time, choosing the device normally used by your
 | Login form | [auth_recipe.dart](../example/lib/recipes/auth_recipe.dart) | Controllers/dispose, named fields, validation, managed submission and notices |
 | Date editor | [editor_recipe.dart](../example/lib/recipes/editor_recipe.dart) | Controlled date, async confirmation, mounted guards and explicit in-memory state |
 | Searchable list | [customization_example.dart](../example/lib/customization_example.dart) | Theme, search, table selection/paging and FAB |
+| API connection | [api_recipe.dart](lib/recipes/api_recipe.dart) | Injectable HTTP GET/POST, typed response, 422 form errors, async table refresh; supply API_BASE_URL |
 | Component studio | [main.dart](../example/lib/main.dart) | All galleries and component-specific customization examples |
 
 Each recipe is a complete entry point. Consumer projects already using a router should reuse the page/widget portion and their existing app shell, rather than nesting UIApp. Mock callbacks are marked explicitly and do not provide real authentication, networking or persistence.
 
-The recipes are included in `flutter analyze` and exercised in `example/test/recipes_test.dart`. More focused behavior/limits are covered by the library's tests and detailed guides. See [AI cookbook](../docs/ai-cookbook.md).
+The recipes are included in `flutter analyze` and exercised in `example/test/recipes_test.dart` and `example/test/api_recipe_test.dart`. More focused behavior/limits are covered by the library's tests and detailed guides. See [AI cookbook](../docs/ai-cookbook.md).
+
+API recipe: see [endpoint contract and platform setup](../docs/api-integration.vi.md). It has no default live endpoint; run with API_BASE_URL for your backend.
