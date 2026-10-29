@@ -55,6 +55,9 @@ Scaffold(
 
 `UIMobileNavbar(...)` là constructor const tương đương. Chỉ cần truyền items, selectedIndex, onSelected; màu lấy từ theme.
 
+Có thể truyền `onReselected: (index) => scrollController.animateTo(0, duration: const Duration(milliseconds: 240), curve: Curves.easeOut)` để app xử lý riêng lần bấm lại tab hiện tại. Khi có callback này, lần bấm lại chỉ gọi onReselected; khi bỏ qua, vẫn gọi onSelected như các bản trước. Controller thuộc ứng dụng, chỉ cuộn khi `hasClients`; tôn trọng thiết lập giảm chuyển động của app. Menu Thêm cũng hỗ trợ chọn lại trang hiện tại. Trên shell dùng `onMobileReselected`. Việc tải lại dữ liệu hay cuộn trang do app quyết định, thư viện không tự gọi API.
+
+
 | Variant | Thiết kế |
 |---|---|
 | standard / Classic | Thanh liền cạnh dưới, biểu tượng chọn trên nền tonal, nhãn luôn hiện |

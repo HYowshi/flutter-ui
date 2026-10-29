@@ -517,6 +517,7 @@ class UINavbar extends StatefulWidget {
     required List<UINavigationItem> items,
     required int selectedIndex,
     required ValueChanged<int> onSelected,
+    ValueChanged<int>? onReselected,
     UIMobileNavbarVariant variant = UIMobileNavbarVariant.standard,
     VoidCallback? onAction,
     IconData actionIcon = Icons.add_rounded,
@@ -530,6 +531,7 @@ class UINavbar extends StatefulWidget {
     items: items,
     selectedIndex: selectedIndex,
     onSelected: onSelected,
+    onReselected: onReselected,
     variant: variant,
     onAction: onAction,
     actionIcon: actionIcon,
@@ -756,6 +758,7 @@ class UINavigationScaffold extends StatefulWidget {
     this.navbarVariant = UINavbarVariant.pill,
     this.mobileNavbarVariant = UIMobileNavbarVariant.standard,
     this.onMobileAction,
+    this.onMobileReselected,
     this.mobileActionIcon = Icons.add_rounded,
     this.mobileActionLabel = 'Tạo mới',
     this.collapsed = false,
@@ -771,6 +774,7 @@ class UINavigationScaffold extends StatefulWidget {
   final UINavbarVariant navbarVariant;
   final UIMobileNavbarVariant mobileNavbarVariant;
   final VoidCallback? onMobileAction;
+  final ValueChanged<int>? onMobileReselected;
   final IconData mobileActionIcon;
   final String mobileActionLabel;
   final bool collapsed;
@@ -830,6 +834,7 @@ class _UINavigationScaffoldState extends State<UINavigationScaffold> {
                 selectedIndex: widget.selectedIndex,
                 onSelected: widget.onSelected,
                 variant: widget.mobileNavbarVariant,
+                onReselected: widget.onMobileReselected,
                 onAction: widget.onMobileAction,
                 actionIcon: widget.mobileActionIcon,
                 actionLabel: widget.mobileActionLabel,

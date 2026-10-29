@@ -1,6 +1,6 @@
 # youth_ui: guide for coding agents
 
-Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This guide targets **0.19.0**, not a package named `flutter_ui` on pub.dev. The repository/folder name is Flutter UI; the Dart package/import is youth_ui.
+Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This guide targets **0.19.1**, not a package named `flutter_ui` on pub.dev. The repository/folder name is Flutter UI; the Dart package/import is youth_ui.
 
 ## Reading order and version matching
 
@@ -16,7 +16,7 @@ Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This 
 Fast installation from the consumer app directory (adds the dependency and resolves it in one command):
 
 ```sh
-flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.19.0}}"
+flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.19.1}}"
 ```
 
 This release is distributed through GitHub, not pub.dev. Do not replace this command with `flutter pub add youth_ui`. Git must be installed. Alternatively, edit pubspec.yaml manually:
@@ -26,10 +26,10 @@ dependencies:
   youth_ui:
     git:
       url: https://github.com/HYowshi/flutter-ui.git
-      ref: v0.19.0
+      ref: v0.19.1
 ```
 
-That release tag identifies the 0.19.0 MIT-licensed distribution. `main` follows ongoing work; pin a reviewed commit for reproducibility. Run `flutter pub get` after changing dependencies. Requirements for this version: Dart ^3.13.0; Flutter >=3.47.0. Repository CI uses Flutter 3.47.5. Do not upgrade an application's SDK or dependencies without a reason required by the task.
+That release tag identifies the 0.19.1 MIT-licensed distribution. `main` follows ongoing work; pin a reviewed commit for reproducibility. Run `flutter pub get` after changing dependencies. Requirements for this version: Dart ^3.13.0; Flutter >=3.47.0. Repository CI uses Flutter 3.47.5. Do not upgrade an application's SDK or dependencies without a reason required by the task.
 
 ```dart
 import 'package:flutter/material.dart';
@@ -96,7 +96,7 @@ Use ordinary Flutter widgets for features the library does not provide. Do not i
 
 ## Styled navigation
 
-UISidebar provides standard/tonal/floating/contrast/outline and an optional collapsed rail. It requires bounded height. For MOBILE NAVBAR use `UIMobileNavbar` or `UINavbar.mobile(...)` in `Scaffold.bottomNavigationBar`, with standard/pill/floating/dock/centerAction. It handles SafeArea, keyboard hiding, badges, disabled items, reduced motion, large text/RTL and More overflow. Center action is onAction (null disables it), never a destination. Selection/routing belongs to the caller. Use stable UINavigationItem ids to reject stale menu selection after reordering. Legacy `UINavbar(...)` remains a TOP desktop header for compatibility; do not use it as mobile bottom navigation.
+UISidebar provides standard/tonal/floating/contrast/outline and an optional collapsed rail. It requires bounded height. For MOBILE NAVBAR use `UIMobileNavbar` or `UINavbar.mobile(...)` in `Scaffold.bottomNavigationBar`, with standard/pill/floating/dock/centerAction. It handles SafeArea, keyboard hiding, badges, disabled items, reduced motion, large text/RTL and More overflow. Center action is onAction (null disables it), never a destination. Optional onReselected handles active-tab taps separately (including hidden destinations chosen via More); without it, active taps still call onSelected. The shell forwards onMobileReselected. The application owns scroll controllers, scroll-to-top and refresh behavior. Selection/routing belongs to the caller. Use stable UINavigationItem ids to reject stale menu selection after reordering. Legacy `UINavbar(...)` remains a TOP desktop header for compatibility; do not use it as mobile bottom navigation.
 
 UINavigationScaffold owns a Scaffold/SafeArea and swaps sidebar/top navbar/mobile bottom navbar while retaining its main child State on resize. Default sidebar breakpoint is local width 1024 and scale <=1.5; sidebar-preferred layout uses 760. Below local width 760 it uses mobile bottom navigation; `layout: UINavigationLayout.mobile` forces it. Set mobileNavbarVariant and onMobileAction independently of desktop navbarVariant. It does not add scrolling or routes. Pass UIPage/ListView as appropriate and do not nest it in an existing Scaffold by accident. Use standalone navigation components with an existing router/shell. Small header slots can be hidden on narrow widths; do not put drafts there. See navigation.vi.md and navigation_recipe.dart; existing UIAdaptiveScaffold remains a distinct component with supporting-pane and 2–5 destination semantics.
 

@@ -1,3 +1,10 @@
+## 0.19.1
+
+- Smooth selection backgrounds and labels with reduced-motion support; correct disabled selected-icon styling and active-pill icon colors.
+- Add optional mobile onReselected / shell onMobileReselected callbacks for application-owned scroll-to-top or refresh behavior. Existing onSelected fallback remains compatible.
+- Show representative navbar miniature icons, active capsules and center actions in the gallery's style chooser; demonstrate active-tab callbacks.
+- Cover rapid animated reflow, active hidden destinations, narrow-screen action overflow, and callback compatibility in regression tests.
+
 ## 0.19.0
 
 - Add mobile bottom navigation: Classic, Active Pill, Floating, Contrast Dock and Center Action, via UIMobileNavbar / UINavbar.mobile.

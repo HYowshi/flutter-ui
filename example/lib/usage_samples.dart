@@ -14,6 +14,7 @@ UINavigationScaffold(
   layout: UINavigationLayout.adaptive,
   sidebarVariant: UISidebarVariant.contrast,
   mobileNavbarVariant: UIMobileNavbarVariant.floating,
+  // onMobileReselected: (index) => scrollToTop(), // callback của ứng dụng
   child: page, // UIPage/ListView của ứng dụng; shell không tự thêm scroll view
 );
 // Hoặc ghép UISidebar / UINavbar.mobile vào Scaffold/router hiện tại.

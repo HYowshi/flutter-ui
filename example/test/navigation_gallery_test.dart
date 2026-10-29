@@ -66,6 +66,21 @@ void main() {
             .selectedIndex,
         0,
       );
+      final mobileHome = find.descendant(
+        of: find.byType(UIMobileNavbar),
+        matching: find.byTooltip('Trang chủ'),
+      );
+      await tester.ensureVisible(mobileHome);
+      for (var i = 0; i < 3; i++) {
+        await tester.tap(mobileHome);
+        await tester.pump(const Duration(milliseconds: 50));
+      }
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Tab đang mở · app có thể cuộn về đầu trang'),
+        findsOneWidget,
+      );
+      expect(find.byType(SnackBar), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );

@@ -1,4 +1,4 @@
-# youth_ui 0.19.0: AI full-text documentation
+# youth_ui 0.19.1: AI full-text documentation
 
 Generated bundle; individual source/guide files remain authoritative.
 
@@ -9,7 +9,7 @@ Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/ai-guide.md
 
 # youth_ui: guide for coding agents
 
-Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This guide targets **0.19.0**, not a package named `flutter_ui` on pub.dev. The repository/folder name is Flutter UI; the Dart package/import is youth_ui.
+Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This guide targets **0.19.1**, not a package named `flutter_ui` on pub.dev. The repository/folder name is Flutter UI; the Dart package/import is youth_ui.
 
 ## Reading order and version matching
 
@@ -25,7 +25,7 @@ Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This 
 Fast installation from the consumer app directory (adds the dependency and resolves it in one command):
 
 ```sh
-flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.19.0}}"
+flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.19.1}}"
 ```
 
 This release is distributed through GitHub, not pub.dev. Do not replace this command with `flutter pub add youth_ui`. Git must be installed. Alternatively, edit pubspec.yaml manually:
@@ -35,10 +35,10 @@ dependencies:
   youth_ui:
     git:
       url: https://github.com/HYowshi/flutter-ui.git
-      ref: v0.19.0
+      ref: v0.19.1
 ```
 
-That release tag identifies the 0.19.0 MIT-licensed distribution. `main` follows ongoing work; pin a reviewed commit for reproducibility. Run `flutter pub get` after changing dependencies. Requirements for this version: Dart ^3.13.0; Flutter >=3.47.0. Repository CI uses Flutter 3.47.5. Do not upgrade an application's SDK or dependencies without a reason required by the task.
+That release tag identifies the 0.19.1 MIT-licensed distribution. `main` follows ongoing work; pin a reviewed commit for reproducibility. Run `flutter pub get` after changing dependencies. Requirements for this version: Dart ^3.13.0; Flutter >=3.47.0. Repository CI uses Flutter 3.47.5. Do not upgrade an application's SDK or dependencies without a reason required by the task.
 
 ```dart
 import 'package:flutter/material.dart';
@@ -105,7 +105,7 @@ Use ordinary Flutter widgets for features the library does not provide. Do not i
 
 ## Styled navigation
 
-UISidebar provides standard/tonal/floating/contrast/outline and an optional collapsed rail. It requires bounded height. For MOBILE NAVBAR use `UIMobileNavbar` or `UINavbar.mobile(...)` in `Scaffold.bottomNavigationBar`, with standard/pill/floating/dock/centerAction. It handles SafeArea, keyboard hiding, badges, disabled items, reduced motion, large text/RTL and More overflow. Center action is onAction (null disables it), never a destination. Selection/routing belongs to the caller. Use stable UINavigationItem ids to reject stale menu selection after reordering. Legacy `UINavbar(...)` remains a TOP desktop header for compatibility; do not use it as mobile bottom navigation.
+UISidebar provides standard/tonal/floating/contrast/outline and an optional collapsed rail. It requires bounded height. For MOBILE NAVBAR use `UIMobileNavbar` or `UINavbar.mobile(...)` in `Scaffold.bottomNavigationBar`, with standard/pill/floating/dock/centerAction. It handles SafeArea, keyboard hiding, badges, disabled items, reduced motion, large text/RTL and More overflow. Center action is onAction (null disables it), never a destination. Optional onReselected handles active-tab taps separately (including hidden destinations chosen via More); without it, active taps still call onSelected. The shell forwards onMobileReselected. The application owns scroll controllers, scroll-to-top and refresh behavior. Selection/routing belongs to the caller. Use stable UINavigationItem ids to reject stale menu selection after reordering. Legacy `UINavbar(...)` remains a TOP desktop header for compatibility; do not use it as mobile bottom navigation.
 
 UINavigationScaffold owns a Scaffold/SafeArea and swaps sidebar/top navbar/mobile bottom navbar while retaining its main child State on resize. Default sidebar breakpoint is local width 1024 and scale <=1.5; sidebar-preferred layout uses 760. Below local width 760 it uses mobile bottom navigation; `layout: UINavigationLayout.mobile` forces it. Set mobileNavbarVariant and onMobileAction independently of desktop navbarVariant. It does not add scrolling or routes. Pass UIPage/ListView as appropriate and do not nest it in an existing Scaffold by accident. Use standalone navigation components with an existing router/shell. Small header slots can be hidden on narrow widths; do not put drafts there. See navigation.vi.md and navigation_recipe.dart; existing UIAdaptiveScaffold remains a distinct component with supporting-pane and 2–5 destination semantics.
 
@@ -168,8 +168,8 @@ Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/api-reference.md
 
 # youth_ui API reference
 
-Generated for **0.19.0** from the public export/part graph of lib/youth_ui.dart.
-Source fingerprint: `d88291a05ff1dbda91a51cfe3c14523210e49f9649d4abfe7f76daecbde400ca`.
+Generated for **0.19.1** from the public export/part graph of lib/youth_ui.dart.
+Source fingerprint: `6bb67ac0eadac11f5b7d00dda85b8a070d488cf3941c61b8ad873cb88b817e45`.
 
 Do not edit manually. Run `python tool/generate_ai_docs.py`; CI checks drift.
 These are source-derived declaration excerpts: explicit constructors/defaults,
@@ -1621,6 +1621,7 @@ class UIMobileNavbar extends StatefulWidget {
     required this.items,
     required this.selectedIndex,
     required this.onSelected,
+    this.onReselected,
     this.variant = UIMobileNavbarVariant.standard,
     this.onAction,
     this.actionIcon = Icons.add_rounded,
@@ -1636,6 +1637,8 @@ class UIMobileNavbar extends StatefulWidget {
   final int selectedIndex;
 
   final ValueChanged<int> onSelected;
+
+  final ValueChanged<int>? onReselected;
 
   final UIMobileNavbarVariant variant;
 
@@ -1860,6 +1863,7 @@ class UINavbar extends StatefulWidget {
     required List<UINavigationItem> items,
     required int selectedIndex,
     required ValueChanged<int> onSelected,
+    ValueChanged<int>? onReselected,
     UIMobileNavbarVariant variant = UIMobileNavbarVariant.standard,
     VoidCallback? onAction,
     IconData actionIcon = Icons.add_rounded,
@@ -1920,6 +1924,7 @@ class UINavigationScaffold extends StatefulWidget {
     this.navbarVariant = UINavbarVariant.pill,
     this.mobileNavbarVariant = UIMobileNavbarVariant.standard,
     this.onMobileAction,
+    this.onMobileReselected,
     this.mobileActionIcon = Icons.add_rounded,
     this.mobileActionLabel = 'Tạo mới',
     this.collapsed = false,
@@ -1946,6 +1951,8 @@ class UINavigationScaffold extends StatefulWidget {
   final UIMobileNavbarVariant mobileNavbarVariant;
 
   final VoidCallback? onMobileAction;
+
+  final ValueChanged<int>? onMobileReselected;
 
   final IconData mobileActionIcon;
 
@@ -3116,14 +3123,14 @@ Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/distribution.vi.md
 
 # Cài đặt và bản phân phối
 
-Bản hiện tại: **youth_ui 0.19.0**, giấy phép **MIT**. Thư viện dùng Flutter >=3.47.0 và Dart ^3.13.0. Không phải package tên flutter_ui trên pub.dev.
+Bản hiện tại: **youth_ui 0.19.1**, giấy phép **MIT**. Thư viện dùng Flutter >=3.47.0 và Dart ^3.13.0. Không phải package tên flutter_ui trên pub.dev.
 
 ## Cài trực tiếp từ GitHub
 
 Cách nhanh nhất: mở terminal tại thư mục ứng dụng và chạy một lệnh. Lệnh tự ghi dependency và tải gói:
 
 ```sh
-flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.19.0}}"
+flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.19.1}}"
 ```
 
 Không cần tải ZIP hay chạy thêm `flutter pub get` sau lệnh thành công. Bản GitHub cần Git và kết nối mạng. Chưa dùng `flutter pub add youth_ui` vì bản này chưa phát hành trên pub.dev.
@@ -3137,23 +3144,23 @@ dependencies:
   youth_ui:
     git:
       url: https://github.com/HYowshi/flutter-ui.git
-      ref: v0.19.0
+      ref: v0.19.1
 ```
 
 Chạy `flutter pub get`, rồi import `package:youth_ui/youth_ui.dart`. Không cần sao chép từng file trong lib/src. Tag cố định giúp các dự án không tự thay đổi theo main; commit cụ thể là mức ghim chính xác nhất.
 
 ## Dùng ZIP / TAR.GZ
 
-Tải file tại [GitHub Releases](https://github.com/HYowshi/flutter-ui/releases/tag/v0.19.0), đối chiếu SHA256SUMS.txt rồi giải nén. Hai định dạng có cùng bộ file, một thư mục gốc youth_ui-0.19.0 và release.json ghi commit/hash từng file.
+Tải file tại [GitHub Releases](https://github.com/HYowshi/flutter-ui/releases/tag/v0.19.1), đối chiếu SHA256SUMS.txt rồi giải nén. Hai định dạng có cùng bộ file, một thư mục gốc youth_ui-0.19.1 và release.json ghi commit/hash từng file.
 
-Ví dụ đặt thư viện vào `packages/youth_ui-0.19.0` của app:
+Ví dụ đặt thư viện vào `packages/youth_ui-0.19.1` của app:
 
 ```yaml
 dependencies:
   flutter:
     sdk: flutter
   youth_ui:
-    path: packages/youth_ui-0.19.0
+    path: packages/youth_ui-0.19.1
 ```
 
 `path` tính từ thư mục chứa pubspec.yaml của app. Không dùng đường dẫn ổ D của người phát triển trong dự án chia sẻ cho người khác. Thêm dependency Git thay vì path khi không muốn đưa toàn bộ thư viện vào repo app.
@@ -3345,6 +3352,9 @@ Scaffold(
 ```
 
 `UIMobileNavbar(...)` là constructor const tương đương. Chỉ cần truyền items, selectedIndex, onSelected; màu lấy từ theme.
+
+Có thể truyền `onReselected: (index) => scrollController.animateTo(0, duration: const Duration(milliseconds: 240), curve: Curves.easeOut)` để app xử lý riêng lần bấm lại tab hiện tại. Khi có callback này, lần bấm lại chỉ gọi onReselected; khi bỏ qua, vẫn gọi onSelected như các bản trước. Controller thuộc ứng dụng, chỉ cuộn khi `hasClients`; tôn trọng thiết lập giảm chuyển động của app. Menu Thêm cũng hỗ trợ chọn lại trang hiện tại. Trên shell dùng `onMobileReselected`. Việc tải lại dữ liệu hay cuộn trang do app quyết định, thư viện không tự gọi API.
+
 
 | Variant | Thiết kế |
 |---|---|

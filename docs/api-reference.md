@@ -1,7 +1,7 @@
 # youth_ui API reference
 
-Generated for **0.19.0** from the public export/part graph of lib/youth_ui.dart.
-Source fingerprint: `d88291a05ff1dbda91a51cfe3c14523210e49f9649d4abfe7f76daecbde400ca`.
+Generated for **0.19.1** from the public export/part graph of lib/youth_ui.dart.
+Source fingerprint: `6bb67ac0eadac11f5b7d00dda85b8a070d488cf3941c61b8ad873cb88b817e45`.
 
 Do not edit manually. Run `python tool/generate_ai_docs.py`; CI checks drift.
 These are source-derived declaration excerpts: explicit constructors/defaults,
@@ -1453,6 +1453,7 @@ class UIMobileNavbar extends StatefulWidget {
     required this.items,
     required this.selectedIndex,
     required this.onSelected,
+    this.onReselected,
     this.variant = UIMobileNavbarVariant.standard,
     this.onAction,
     this.actionIcon = Icons.add_rounded,
@@ -1468,6 +1469,8 @@ class UIMobileNavbar extends StatefulWidget {
   final int selectedIndex;
 
   final ValueChanged<int> onSelected;
+
+  final ValueChanged<int>? onReselected;
 
   final UIMobileNavbarVariant variant;
 
@@ -1692,6 +1695,7 @@ class UINavbar extends StatefulWidget {
     required List<UINavigationItem> items,
     required int selectedIndex,
     required ValueChanged<int> onSelected,
+    ValueChanged<int>? onReselected,
     UIMobileNavbarVariant variant = UIMobileNavbarVariant.standard,
     VoidCallback? onAction,
     IconData actionIcon = Icons.add_rounded,
@@ -1752,6 +1756,7 @@ class UINavigationScaffold extends StatefulWidget {
     this.navbarVariant = UINavbarVariant.pill,
     this.mobileNavbarVariant = UIMobileNavbarVariant.standard,
     this.onMobileAction,
+    this.onMobileReselected,
     this.mobileActionIcon = Icons.add_rounded,
     this.mobileActionLabel = 'Tạo mới',
     this.collapsed = false,
@@ -1778,6 +1783,8 @@ class UINavigationScaffold extends StatefulWidget {
   final UIMobileNavbarVariant mobileNavbarVariant;
 
   final VoidCallback? onMobileAction;
+
+  final ValueChanged<int>? onMobileReselected;
 
   final IconData mobileActionIcon;
 

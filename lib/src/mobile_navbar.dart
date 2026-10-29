@@ -10,6 +10,7 @@ class UIMobileNavbar extends StatefulWidget {
     required this.items,
     required this.selectedIndex,
     required this.onSelected,
+    this.onReselected,
     this.variant = UIMobileNavbarVariant.standard,
     this.onAction,
     this.actionIcon = Icons.add_rounded,
@@ -22,6 +23,10 @@ class UIMobileNavbar extends StatefulWidget {
   final List<UINavigationItem> items;
   final int selectedIndex;
   final ValueChanged<int> onSelected;
+
+  /// Optional active-tab action (for example, scroll to top).
+  /// When omitted, active taps continue to call onSelected.
+  final ValueChanged<int>? onReselected;
   final UIMobileNavbarVariant variant;
   final VoidCallback? onAction;
   final IconData actionIcon;
@@ -35,6 +40,14 @@ class UIMobileNavbar extends StatefulWidget {
 class _UIMobileNavbarState extends State<UIMobileNavbar> {
   bool _menuOpen = false;
   Object? _layoutSignature;
+
+  void _select(int index) {
+    if (index == widget.selectedIndex && widget.onReselected != null) {
+      widget.onReselected!(index);
+    } else {
+      widget.onSelected(index);
+    }
+  }
 
   Future<void> _more(List<int> indices, {bool includeAction = false}) async {
     if (_menuOpen) return;
@@ -84,7 +97,7 @@ class _UIMobileNavbarState extends State<UIMobileNavbar> {
       }
       if (_identity(items[result]) == _identity(widget.items[result]) &&
           widget.items[result].enabled) {
-        widget.onSelected(result);
+        _select(result);
       }
     } finally {
       _menuOpen = false;
@@ -197,7 +210,7 @@ class _UIMobileNavbarState extends State<UIMobileNavbar> {
                 onTap: more
                     ? () =>
                           unawaited(_more(hidden, includeAction: hiddenAction))
-                    : () => widget.onSelected(indices[slot]),
+                    : () => _select(indices[slot]),
               ),
             ),
           );
@@ -380,7 +393,11 @@ class _MobileDestination extends StatelessWidget {
               ? onActive
               : active
         : foreground;
-    final glyph = selected && !horizontal
+    final glyph = !item.enabled
+        ? foreground.withValues(alpha: .4)
+        : selected && horizontal
+        ? s.onPrimaryContainer
+        : selected && !horizontal
         ? inverse
               ? onActive
               : variant == UIMobileNavbarVariant.floating
@@ -430,12 +447,16 @@ class _MobileDestination extends StatelessWidget {
       ),
     );
     if (!horizontal) {
-      icon = Container(
+      icon = AnimatedContainer(
+        duration: UIMotion.resolve(context, UIMotion.fast),
+        curve: Curves.easeOutCubic,
         width: 56,
         height: 32,
         decoration: BoxDecoration(
           color: selected
-              ? inverse
+              ? !item.enabled
+                    ? foreground.withValues(alpha: .1)
+                    : inverse
                     ? active
                     : variant == UIMobileNavbarVariant.floating
                     ? s.primary
@@ -448,11 +469,9 @@ class _MobileDestination extends StatelessWidget {
         child: Center(child: icon),
       );
     }
-    final text = Text(
-      item.label,
-      textAlign: TextAlign.center,
-      maxLines: horizontal ? 1 : 2,
-      overflow: TextOverflow.ellipsis,
+    final text = AnimatedDefaultTextStyle(
+      duration: UIMotion.resolve(context, UIMotion.fast),
+      curve: Curves.easeOutCubic,
       style: TextStyle(
         fontSize: horizontal ? 12 : 11,
         height: 1.15,
@@ -464,6 +483,12 @@ class _MobileDestination extends StatelessWidget {
             ? s.primary
             : foreground,
         fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+      ),
+      child: Text(
+        item.label,
+        textAlign: TextAlign.center,
+        maxLines: horizontal ? 1 : 2,
+        overflow: TextOverflow.ellipsis,
       ),
     );
     return Tooltip(

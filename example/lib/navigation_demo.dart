@@ -176,6 +176,7 @@ class _NavigationDemoState extends State<NavigationDemo> {
                 selected: navbar == variant,
                 onTap: () => setState(() => navbar = variant),
                 horizontal: true,
+                mobileVariant: variant,
                 rounded: variant != UIMobileNavbarVariant.standard,
                 inverse: variant == UIMobileNavbarVariant.dock,
               ),
@@ -336,12 +337,14 @@ class _MobilePhone extends StatelessWidget {
                       selectedIndex: selected,
                       onSelected: onSelected,
                       variant: variant,
-                      onAction: () => ScaffoldMessenger.of(phoneContext)
-                          .showSnackBar(
-                            const SnackBar(
-                              content: Text('Tạo mới · hành động mẫu'),
-                            ),
-                          ),
+                      onReselected: (_) => UINotice.show(
+                        phoneContext,
+                        message: 'Tab đang mở · app có thể cuộn về đầu trang',
+                      ),
+                      onAction: () => UINotice.show(
+                        phoneContext,
+                        message: 'Tạo mới · hành động mẫu',
+                      ),
                     ),
                   ),
                   Positioned(
@@ -380,10 +383,12 @@ class _StyleTile extends StatelessWidget {
     this.rounded = false,
     this.outlined = false,
     this.horizontal = false,
+    this.mobileVariant,
   });
   final String label;
   final bool selected, inverse, rounded, outlined, horizontal;
   final VoidCallback onTap;
+  final UIMobileNavbarVariant? mobileVariant;
   @override
   Widget build(BuildContext context) {
     final s = Theme.of(context).colorScheme;
@@ -417,27 +422,7 @@ class _StyleTile extends StatelessWidget {
                     borderRadius: BorderRadius.circular(rounded ? 16 : 7),
                   ),
                   child: horizontal
-                      ? Row(
-                          children: [
-                            for (var i = 0; i < 3; i++)
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(3),
-                                  child: DecoratedBox(
-                                    decoration: BoxDecoration(
-                                      color: i == 0
-                                          ? ink
-                                          : ink.withValues(alpha: .16),
-                                      borderRadius: BorderRadius.circular(
-                                        outlined ? 2 : 12,
-                                      ),
-                                    ),
-                                    child: const SizedBox(height: 9),
-                                  ),
-                                ),
-                              ),
-                          ],
-                        )
+                      ? _NavbarMiniature(variant: mobileVariant!, ink: ink)
                       : Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -481,6 +466,69 @@ class _StyleTile extends StatelessWidget {
       ),
     );
   }
+}
+
+class _NavbarMiniature extends StatelessWidget {
+  const _NavbarMiniature({required this.variant, required this.ink});
+  final UIMobileNavbarVariant variant;
+  final Color ink;
+  @override
+  Widget build(BuildContext context) => ExcludeSemantics(
+    child: Row(
+      children: [
+        for (var i = 0; i < 4; i++) ...[
+          if (i == 2 && variant == UIMobileNavbarVariant.centerAction)
+            Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(color: ink, shape: BoxShape.circle),
+              child: Icon(
+                Icons.add,
+                size: 12,
+                color: Theme.of(context).colorScheme.surfaceContainerLowest,
+              ),
+            ),
+          Expanded(
+            flex: i == 0 && variant == UIMobileNavbarVariant.pill ? 2 : 1,
+            child: Container(
+              height: 26,
+              margin: const EdgeInsets.symmetric(horizontal: 1),
+              decoration: BoxDecoration(
+                color: i == 0 ? ink.withValues(alpha: .16) : Colors.transparent,
+                borderRadius: BorderRadius.circular(
+                  variant == UIMobileNavbarVariant.floating ? 5 : 16,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    [
+                      Icons.home_rounded,
+                      Icons.folder_outlined,
+                      Icons.chat_outlined,
+                      Icons.person_outline,
+                    ][i],
+                    size: 13,
+                    color: i == 0 ? ink : ink.withValues(alpha: .5),
+                  ),
+                  if (i == 0 && variant == UIMobileNavbarVariant.pill)
+                    Flexible(
+                      child: Container(
+                        width: 10,
+                        height: 3,
+                        margin: const EdgeInsetsDirectional.only(start: 2),
+                        color: ink,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
+    ),
+  );
 }
 
 class _Profile extends StatelessWidget {

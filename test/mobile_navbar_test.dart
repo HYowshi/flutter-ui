@@ -28,9 +28,10 @@ Widget host(
   bool rtl = false,
   EdgeInsets padding = EdgeInsets.zero,
   double keyboard = 0,
+  bool reducedMotion = true,
 }) => UIApp(
   primary: Colors.indigo,
-  reduceMotion: true,
+  reduceMotion: reducedMotion,
   initialThemeMode: ThemeMode.dark,
   home: MediaQuery(
     data: MediaQueryData(
@@ -39,7 +40,7 @@ Widget host(
       padding: padding,
       viewPadding: padding,
       viewInsets: EdgeInsets.only(bottom: keyboard),
-      disableAnimations: true,
+      disableAnimations: reducedMotion,
     ),
     child: Directionality(
       textDirection: rtl ? TextDirection.rtl : TextDirection.ltr,
@@ -279,6 +280,135 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'reselect is separate and absent callback preserves existing behavior',
+    (tester) async {
+      final selected = <int>[], reselected = <int>[];
+      Widget content(bool intercept) => host(
+        UINavbar.mobile(
+          items: destinations,
+          selectedIndex: 0,
+          onSelected: selected.add,
+          onReselected: intercept ? reselected.add : null,
+        ),
+      );
+      await tester.pumpWidget(content(true));
+      await tester.tap(find.byTooltip('Trang chủ'));
+      await tester.tap(find.byTooltip('Khám phá'));
+      expect(reselected, [0]);
+      expect(selected, [1]);
+      await tester.pumpWidget(content(false));
+      await tester.tap(find.byTooltip('Trang chủ'));
+      expect(selected, [1, 0]);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('More can reselect the current hidden destination', (
+    tester,
+  ) async {
+    int? reselected;
+    final items = [
+      ...destinations,
+      const UINavigationItem(
+        id: 'extra',
+        label: 'Extra',
+        icon: Icons.folder_outlined,
+      ),
+    ];
+    await tester.pumpWidget(
+      host(
+        UIMobileNavbar(
+          items: items,
+          selectedIndex: 4,
+          onSelected: (_) => fail('Unexpected navigation'),
+          onReselected: (i) => reselected = i,
+        ),
+        width: 240,
+      ),
+    );
+    await tester.tap(find.byTooltip('Thêm'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byTooltip('Extra'));
+    await tester.tap(find.byTooltip('Extra'));
+    await tester.pumpAndSettle();
+    expect(reselected, 4);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('center action moves into More when the bar is too narrow', (
+    tester,
+  ) async {
+    var actions = 0;
+    await tester.pumpWidget(
+      host(
+        UIMobileNavbar(
+          items: destinations,
+          selectedIndex: 0,
+          onSelected: (_) => fail('Unexpected navigation'),
+          variant: UIMobileNavbarVariant.centerAction,
+          onAction: () => actions++,
+        ),
+        width: 180,
+      ),
+    );
+    expect(find.byType(FloatingActionButton), findsNothing);
+    await tester.tap(find.byTooltip('Thêm'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byTooltip('Tạo mới'));
+    await tester.tap(find.byTooltip('Tạo mới'));
+    await tester.pumpAndSettle();
+    expect(actions, 1);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets(
+    'rapid animated selections and reflow settle without overflow or idle frames',
+    (tester) async {
+      late StateSetter update;
+      var width = 390.0, scale = 1.0;
+      var selected = 0;
+      await tester.pumpWidget(
+        StatefulBuilder(
+          builder: (_, state) {
+            update = state;
+            return host(
+              UIMobileNavbar(
+                items: destinations,
+                selectedIndex: selected,
+                onSelected: (_) {},
+                variant: UIMobileNavbarVariant.pill,
+              ),
+              width: width,
+              scale: scale,
+              rtl: true,
+              reducedMotion: false,
+            );
+          },
+        ),
+      );
+      for (final config in [
+        (390.0, 2, 1.0),
+        (390.0, 1, 1.0),
+        (280.0, 3, 2.0),
+        (120.0, 0, 3.0),
+        (390.0, 2, 1.0),
+      ]) {
+        update(() {
+          width = config.$1;
+          selected = config.$2;
+          scale = config.$3;
+        });
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 40));
+        expect(tester.takeException(), isNull);
+      }
+      await tester.pumpAndSettle();
+      expect(tester.binding.hasScheduledFrame, isFalse);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('mobile bottom destinations support keyboard activation', (
     tester,
