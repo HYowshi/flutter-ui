@@ -1,13 +1,13 @@
 # Cài đặt và bản phân phối
 
-Bản hiện tại: **youth_ui 0.17.0**, giấy phép **MIT**. Thư viện dùng Flutter >=3.47.0 và Dart ^3.13.0. Không phải package tên flutter_ui trên pub.dev.
+Bản hiện tại: **youth_ui 0.18.0**, giấy phép **MIT**. Thư viện dùng Flutter >=3.47.0 và Dart ^3.13.0. Không phải package tên flutter_ui trên pub.dev.
 
 ## Cài trực tiếp từ GitHub
 
 Cách nhanh nhất: mở terminal tại thư mục ứng dụng và chạy một lệnh. Lệnh tự ghi dependency và tải gói:
 
 ```sh
-flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.17.0}}"
+flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.18.0}}"
 ```
 
 Không cần tải ZIP hay chạy thêm `flutter pub get` sau lệnh thành công. Bản GitHub cần Git và kết nối mạng. Chưa dùng `flutter pub add youth_ui` vì bản này chưa phát hành trên pub.dev.
@@ -21,23 +21,23 @@ dependencies:
   youth_ui:
     git:
       url: https://github.com/HYowshi/flutter-ui.git
-      ref: v0.17.0
+      ref: v0.18.0
 ```
 
 Chạy `flutter pub get`, rồi import `package:youth_ui/youth_ui.dart`. Không cần sao chép từng file trong lib/src. Tag cố định giúp các dự án không tự thay đổi theo main; commit cụ thể là mức ghim chính xác nhất.
 
 ## Dùng ZIP / TAR.GZ
 
-Tải file tại [GitHub Releases](https://github.com/HYowshi/flutter-ui/releases/tag/v0.17.0), đối chiếu SHA256SUMS.txt rồi giải nén. Hai định dạng có cùng bộ file, một thư mục gốc youth_ui-0.17.0 và release.json ghi commit/hash từng file.
+Tải file tại [GitHub Releases](https://github.com/HYowshi/flutter-ui/releases/tag/v0.18.0), đối chiếu SHA256SUMS.txt rồi giải nén. Hai định dạng có cùng bộ file, một thư mục gốc youth_ui-0.18.0 và release.json ghi commit/hash từng file.
 
-Ví dụ đặt thư viện vào `packages/youth_ui-0.17.0` của app:
+Ví dụ đặt thư viện vào `packages/youth_ui-0.18.0` của app:
 
 ```yaml
 dependencies:
   flutter:
     sdk: flutter
   youth_ui:
-    path: packages/youth_ui-0.17.0
+    path: packages/youth_ui-0.18.0
 ```
 
 `path` tính từ thư mục chứa pubspec.yaml của app. Không dùng đường dẫn ổ D của người phát triển trong dự án chia sẻ cho người khác. Thêm dependency Git thay vì path khi không muốn đưa toàn bộ thư viện vào repo app.

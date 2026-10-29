@@ -55,3 +55,9 @@ For exact constructor parameters/defaults, use [API reference](api-reference.md)
 [Source](https://github.com/HYowshi/flutter-ui/blob/main/example/lib/recipes/api_recipe.dart) · [Readable source](api_recipe.dart) · [Contract and setup](api-integration.vi.md)
 
 Run `flutter run -t lib/recipes/api_recipe.dart --dart-define=API_BASE_URL=https://your-server.example/api/` from example/. No endpoint is contacted when no base URL is supplied. This is actual injectable http.Client transport, not a deployed backend: adapt the explicitly documented member endpoints/schema. Tests mock GET/POST/422, validate model decoding and exercise form failure/correction/save/list reload. The website's API gallery intentionally uses a local Future simulation instead.
+
+## Sidebar, navbar and adaptive shell
+
+[Source](https://github.com/HYowshi/flutter-ui/blob/main/example/lib/recipes/navigation_recipe.dart) · [Readable source](navigation_recipe.dart) · [Guide](navigation.vi.md)
+
+Run `flutter run -t lib/recipes/navigation_recipe.dart` from example/. The page controls selection and collapsed state; UINavigationScaffold changes navigation layout while keeping the draft. Its app-owned callback can be replaced with the consumer router. There is no automatic route registration or API service. NavigationDemo in the studio offers five sidebar and four navbar variants.

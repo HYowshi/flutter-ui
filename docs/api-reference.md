@@ -1,7 +1,7 @@
 # youth_ui API reference
 
-Generated for **0.17.0** from the public export/part graph of lib/youth_ui.dart.
-Source fingerprint: `39adcae8f7a7b64ff495f1b98ef6703a1d3afe603f59e0de56332c5eca21c6ed`.
+Generated for **0.18.0** from the public export/part graph of lib/youth_ui.dart.
+Source fingerprint: `fa8e014dc60ec92cae834c1be6a61343c367c42f14d5d9f56c04604422cee6e7`.
 
 Do not edit manually. Run `python tool/generate_ai_docs.py`; CI checks drift.
 These are source-derived declaration excerpts: explicit constructors/defaults,
@@ -67,6 +67,13 @@ its linked detailed guides. Do not copy a declaration as an executable example.
 - [UIEntrance](#uientrance)
 - [UIAnimatedContent](#uianimatedcontent)
 - [UIReveal](#uireveal)
+- [UISidebarVariant](#uisidebarvariant)
+- [UINavbarVariant](#uinavbarvariant)
+- [UINavigationLayout](#uinavigationlayout)
+- [UINavigationItem](#uinavigationitem)
+- [UISidebar](#uisidebar)
+- [UINavbar](#uinavbar)
+- [UINavigationScaffold](#uinavigationscaffold)
 - [UIRadio](#uiradio)
 - [UIRadioGroup](#uiradiogroup)
 - [UISelect](#uiselect)
@@ -1525,6 +1532,180 @@ class UIReveal extends StatelessWidget {
   final Widget child;
 
   final Duration duration;
+}
+```
+
+## UISidebarVariant
+
+[Source: lib/src/navigation.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/navigation.dart)
+
+```dart
+enum UISidebarVariant { standard, tonal, floating, contrast, outline }
+```
+
+## UINavbarVariant
+
+[Source: lib/src/navigation.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/navigation.dart)
+
+```dart
+enum UINavbarVariant { underline, pill, filled, floating }
+```
+
+## UINavigationLayout
+
+[Source: lib/src/navigation.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/navigation.dart)
+
+```dart
+enum UINavigationLayout { adaptive, sidebar, navbar }
+```
+
+## UINavigationItem
+
+[Source: lib/src/navigation.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/navigation.dart)
+
+```dart
+class UINavigationItem {
+  const UINavigationItem({
+    required this.label,
+    required this.icon,
+    this.id,
+    this.selectedIcon,
+    this.badge,
+    this.group,
+    this.enabled = true,
+  });
+
+  final String label;
+
+  final IconData icon;
+
+  final Object? id;
+
+  final IconData? selectedIcon;
+
+  final String? badge, group;
+
+  final bool enabled;
+}
+```
+
+## UISidebar
+
+[Source: lib/src/navigation.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/navigation.dart)
+
+```dart
+class UISidebar extends StatefulWidget {
+  const UISidebar({
+    super.key,
+    required this.items,
+    required this.selectedIndex,
+    required this.onSelected,
+    this.variant = UISidebarVariant.standard,
+    this.collapsed = false,
+    this.width = 264,
+    this.title,
+    this.subtitle,
+    this.leading,
+    this.footer,
+    this.semanticLabel = 'Điều hướng chính',
+  });
+
+  final List<UINavigationItem> items;
+
+  final int selectedIndex;
+
+  final ValueChanged<int> onSelected;
+
+  final UISidebarVariant variant;
+
+  final bool collapsed;
+
+  final double width;
+
+  final String? title, subtitle;
+
+  final Widget? leading, footer;
+
+  final String semanticLabel;
+}
+```
+
+## UINavbar
+
+[Source: lib/src/navigation.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/navigation.dart)
+
+```dart
+class UINavbar extends StatefulWidget {
+  const UINavbar({
+    super.key,
+    required this.items,
+    required this.selectedIndex,
+    required this.onSelected,
+    this.variant = UINavbarVariant.pill,
+    this.title,
+    this.leading,
+    this.trailing,
+    this.menuLabel = 'Mở menu điều hướng',
+  });
+
+  final List<UINavigationItem> items;
+
+  final int selectedIndex;
+
+  final ValueChanged<int> onSelected;
+
+  final UINavbarVariant variant;
+
+  final String? title;
+
+  final Widget? leading, trailing;
+
+  final String menuLabel;
+}
+```
+
+## UINavigationScaffold
+
+[Source: lib/src/navigation.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/navigation.dart)
+
+```dart
+class UINavigationScaffold extends StatefulWidget {
+  const UINavigationScaffold({
+    super.key,
+    required this.items,
+    required this.selectedIndex,
+    required this.onSelected,
+    required this.child,
+    this.title,
+    this.subtitle,
+    this.leading,
+    this.trailing,
+    this.sidebarFooter,
+    this.layout = UINavigationLayout.adaptive,
+    this.sidebarVariant = UISidebarVariant.floating,
+    this.navbarVariant = UINavbarVariant.pill,
+    this.collapsed = false,
+  });
+
+  final List<UINavigationItem> items;
+
+  final int selectedIndex;
+
+  final ValueChanged<int> onSelected;
+
+  final Widget child;
+
+  final String? title, subtitle;
+
+  final Widget? leading, trailing, sidebarFooter;
+
+  final UINavigationLayout layout;
+
+  final UISidebarVariant sidebarVariant;
+
+  final UINavbarVariant navbarVariant;
+
+  final bool collapsed;
 }
 ```
 

@@ -21,13 +21,14 @@ GUIDES = [
     "ai-guide.md", "api-reference.md", "ai-cookbook.md", "consumer-agents.md",
     "forms-feedback.vi.md", "images.vi.md", "wireframe.vi.md",
     "customization.vi.md", "states-dialog-date.vi.md", "motion-input-notice.vi.md",
-    "distribution.vi.md", "api-integration.vi.md",
+    "distribution.vi.md", "api-integration.vi.md", "navigation.vi.md",
 ]
 RECIPES = [
     "example/lib/customization_example.dart",
     "example/lib/recipes/auth_recipe.dart",
     "example/lib/recipes/editor_recipe.dart",
     "example/lib/recipes/api_recipe.dart",
+    "example/lib/recipes/navigation_recipe.dart",
 ]
 
 

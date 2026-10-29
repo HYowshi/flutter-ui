@@ -1,3 +1,12 @@
+## 0.18.0
+
+- Add five UISidebar treatments (standard, tonal, floating, contrast, outline) and four top UINavbar treatments (underline, pill, filled, floating).
+- Add UINavigationItem with stable optional id, icons, badge, grouping and disabled state; callbacks keep application routing explicit.
+- Add UINavigationScaffold with adaptive/sidebar/navbar layouts, local-width and text-scale adaptation and retained main content State across breakpoints.
+- Support collapsed icon rails, scrollable groups/footer, native adaptive mobile menus, desktop menu-all access, keyboard focus and selected/enabled semantics.
+- Guard menu selection against reordered/replaced/disabled destinations and disposed sources; use shared theme roles and reduced-motion timing.
+- Add an interactive style gallery, executable navigation recipe, integration docs and regression tests for all variants, accessibility, resizing and lifecycle.
+
 ## 0.17.0
 
 - Add UIAsyncView<T> and UIAsyncController for Future-based API/repository loading, safe errors/retry, explicit empty states and reload handles.

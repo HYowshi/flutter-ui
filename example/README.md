@@ -18,6 +18,7 @@ Run one command/entry point at a time, choosing the device normally used by your
 | Date editor | [editor_recipe.dart](../example/lib/recipes/editor_recipe.dart) | Controlled date, async confirmation, mounted guards and explicit in-memory state |
 | Searchable list | [customization_example.dart](../example/lib/customization_example.dart) | Theme, search, table selection/paging and FAB |
 | API connection | [api_recipe.dart](lib/recipes/api_recipe.dart) | Injectable HTTP GET/POST, typed response, 422 form errors, async table refresh; supply API_BASE_URL |
+| Navigation | [navigation_recipe.dart](lib/recipes/navigation_recipe.dart) | Adaptive Sidebar/Navbar, controlled selection, collapsed rail and retained draft |
 | Component studio | [main.dart](../example/lib/main.dart) | All galleries and component-specific customization examples |
 
 Each recipe is a complete entry point. Consumer projects already using a router should reuse the page/widget portion and their existing app shell, rather than nesting UIApp. Mock callbacks are marked explicitly and do not provide real authentication, networking or persistence.

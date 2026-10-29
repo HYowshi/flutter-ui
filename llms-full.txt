@@ -1,4 +1,4 @@
-# youth_ui 0.17.0: AI full-text documentation
+# youth_ui 0.18.0: AI full-text documentation
 
 Generated bundle; individual source/guide files remain authoritative.
 
@@ -9,7 +9,7 @@ Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/ai-guide.md
 
 # youth_ui: guide for coding agents
 
-Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This guide targets **0.17.0**, not a package named `flutter_ui` on pub.dev. The repository/folder name is Flutter UI; the Dart package/import is youth_ui.
+Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This guide targets **0.18.0**, not a package named `flutter_ui` on pub.dev. The repository/folder name is Flutter UI; the Dart package/import is youth_ui.
 
 ## Reading order and version matching
 
@@ -25,7 +25,7 @@ Scope: the reusable Flutter/Dart package `youth_ui` in HYowshi/flutter-ui. This 
 Fast installation from the consumer app directory (adds the dependency and resolves it in one command):
 
 ```sh
-flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.17.0}}"
+flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.18.0}}"
 ```
 
 This release is distributed through GitHub, not pub.dev. Do not replace this command with `flutter pub add youth_ui`. Git must be installed. Alternatively, edit pubspec.yaml manually:
@@ -35,10 +35,10 @@ dependencies:
   youth_ui:
     git:
       url: https://github.com/HYowshi/flutter-ui.git
-      ref: v0.17.0
+      ref: v0.18.0
 ```
 
-That release tag identifies the 0.17.0 MIT-licensed distribution. `main` follows ongoing work; pin a reviewed commit for reproducibility. Run `flutter pub get` after changing dependencies. Requirements for this version: Dart ^3.13.0; Flutter >=3.47.0. Repository CI uses Flutter 3.47.5. Do not upgrade an application's SDK or dependencies without a reason required by the task.
+That release tag identifies the 0.18.0 MIT-licensed distribution. `main` follows ongoing work; pin a reviewed commit for reproducibility. Run `flutter pub get` after changing dependencies. Requirements for this version: Dart ^3.13.0; Flutter >=3.47.0. Repository CI uses Flutter 3.47.5. Do not upgrade an application's SDK or dependencies without a reason required by the task.
 
 ```dart
 import 'package:flutter/material.dart';
@@ -66,6 +66,7 @@ UIThemeToggle depends on the controller scope installed by UIApp. In an existing
 |---|---|
 | Theme/bootstrap | UIApp; YouthUI.colors; YouthUI.init; UIThemeController |
 | Scrolling page / grid / actions | UIPage; UIGrid; UIActions |
+| Styled sidebar/top navbar/app shell | UISidebar; UINavbar; UINavigationScaffold; UINavigationItem |
 | App frame with responsive navigation | UIAdaptiveScaffold + UIDestination |
 | Main/secondary action | UIButton with UIButtonVariant and UITone |
 | Floating primary action | UIFloatingActionButton in Scaffold's FAB slot |
@@ -101,6 +102,12 @@ Use ordinary Flutter widgets for features the library does not provide. Do not i
 - `initialValue` initializes text/select fields. It is not a general controlled-value API. Do not pass a nonexistent `UISelect.value`. Reset intentionally with an appropriate key/state reset when the record changes.
 - UITextField accepts either controller or initialValue, not both. Changing initialValue does not overwrite an ongoing edit. Search/multiline convenience factories expose fewer options than the main constructor; use the main constructor when a preset lacks an option.
 - Check mounted/context.mounted after await before touching UI. Ignore stale responses when the edited record changes. Widgets guard their own lifecycles, not all caller-owned futures.
+
+## Styled navigation
+
+UISidebar provides standard/tonal/floating/contrast/outline and an optional collapsed rail. It requires bounded height and accepts theme-derived styling, groups, badges and disabled items. UINavbar provides underline/pill/filled/floating top navigation; wide links scroll with a menu-all action, narrow/large-text layouts use a native adaptive menu. These use UINavigationItem, not UIDestination. The application owns selectedIndex/onSelected and routing; stable item ids protect against stale menu selection after reordering.
+
+UINavigationScaffold owns a Scaffold/SafeArea and swaps sidebar/navbar while retaining its main child State on resize. Default sidebar breakpoint is local width 1024 and scale <=1.5; sidebar-preferred layout uses 760. It does not add scrolling or routes. Pass UIPage/ListView as appropriate and do not nest it in an existing Scaffold by accident. Use standalone navigation components with an existing router/shell. Small header slots can be hidden on narrow widths; do not put drafts there. See navigation.vi.md and navigation_recipe.dart; existing UIAdaptiveScaffold remains a distinct component with supporting-pane and 2–5 destination semantics.
 
 ## API integration
 
@@ -161,8 +168,8 @@ Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/api-reference.md
 
 # youth_ui API reference
 
-Generated for **0.17.0** from the public export/part graph of lib/youth_ui.dart.
-Source fingerprint: `39adcae8f7a7b64ff495f1b98ef6703a1d3afe603f59e0de56332c5eca21c6ed`.
+Generated for **0.18.0** from the public export/part graph of lib/youth_ui.dart.
+Source fingerprint: `fa8e014dc60ec92cae834c1be6a61343c367c42f14d5d9f56c04604422cee6e7`.
 
 Do not edit manually. Run `python tool/generate_ai_docs.py`; CI checks drift.
 These are source-derived declaration excerpts: explicit constructors/defaults,
@@ -228,6 +235,13 @@ its linked detailed guides. Do not copy a declaration as an executable example.
 - [UIEntrance](#uientrance)
 - [UIAnimatedContent](#uianimatedcontent)
 - [UIReveal](#uireveal)
+- [UISidebarVariant](#uisidebarvariant)
+- [UINavbarVariant](#uinavbarvariant)
+- [UINavigationLayout](#uinavigationlayout)
+- [UINavigationItem](#uinavigationitem)
+- [UISidebar](#uisidebar)
+- [UINavbar](#uinavbar)
+- [UINavigationScaffold](#uinavigationscaffold)
 - [UIRadio](#uiradio)
 - [UIRadioGroup](#uiradiogroup)
 - [UISelect](#uiselect)
@@ -1689,6 +1703,180 @@ class UIReveal extends StatelessWidget {
 }
 ```
 
+## UISidebarVariant
+
+[Source: lib/src/navigation.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/navigation.dart)
+
+```dart
+enum UISidebarVariant { standard, tonal, floating, contrast, outline }
+```
+
+## UINavbarVariant
+
+[Source: lib/src/navigation.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/navigation.dart)
+
+```dart
+enum UINavbarVariant { underline, pill, filled, floating }
+```
+
+## UINavigationLayout
+
+[Source: lib/src/navigation.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/navigation.dart)
+
+```dart
+enum UINavigationLayout { adaptive, sidebar, navbar }
+```
+
+## UINavigationItem
+
+[Source: lib/src/navigation.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/navigation.dart)
+
+```dart
+class UINavigationItem {
+  const UINavigationItem({
+    required this.label,
+    required this.icon,
+    this.id,
+    this.selectedIcon,
+    this.badge,
+    this.group,
+    this.enabled = true,
+  });
+
+  final String label;
+
+  final IconData icon;
+
+  final Object? id;
+
+  final IconData? selectedIcon;
+
+  final String? badge, group;
+
+  final bool enabled;
+}
+```
+
+## UISidebar
+
+[Source: lib/src/navigation.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/navigation.dart)
+
+```dart
+class UISidebar extends StatefulWidget {
+  const UISidebar({
+    super.key,
+    required this.items,
+    required this.selectedIndex,
+    required this.onSelected,
+    this.variant = UISidebarVariant.standard,
+    this.collapsed = false,
+    this.width = 264,
+    this.title,
+    this.subtitle,
+    this.leading,
+    this.footer,
+    this.semanticLabel = 'Điều hướng chính',
+  });
+
+  final List<UINavigationItem> items;
+
+  final int selectedIndex;
+
+  final ValueChanged<int> onSelected;
+
+  final UISidebarVariant variant;
+
+  final bool collapsed;
+
+  final double width;
+
+  final String? title, subtitle;
+
+  final Widget? leading, footer;
+
+  final String semanticLabel;
+}
+```
+
+## UINavbar
+
+[Source: lib/src/navigation.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/navigation.dart)
+
+```dart
+class UINavbar extends StatefulWidget {
+  const UINavbar({
+    super.key,
+    required this.items,
+    required this.selectedIndex,
+    required this.onSelected,
+    this.variant = UINavbarVariant.pill,
+    this.title,
+    this.leading,
+    this.trailing,
+    this.menuLabel = 'Mở menu điều hướng',
+  });
+
+  final List<UINavigationItem> items;
+
+  final int selectedIndex;
+
+  final ValueChanged<int> onSelected;
+
+  final UINavbarVariant variant;
+
+  final String? title;
+
+  final Widget? leading, trailing;
+
+  final String menuLabel;
+}
+```
+
+## UINavigationScaffold
+
+[Source: lib/src/navigation.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/navigation.dart)
+
+```dart
+class UINavigationScaffold extends StatefulWidget {
+  const UINavigationScaffold({
+    super.key,
+    required this.items,
+    required this.selectedIndex,
+    required this.onSelected,
+    required this.child,
+    this.title,
+    this.subtitle,
+    this.leading,
+    this.trailing,
+    this.sidebarFooter,
+    this.layout = UINavigationLayout.adaptive,
+    this.sidebarVariant = UISidebarVariant.floating,
+    this.navbarVariant = UINavbarVariant.pill,
+    this.collapsed = false,
+  });
+
+  final List<UINavigationItem> items;
+
+  final int selectedIndex;
+
+  final ValueChanged<int> onSelected;
+
+  final Widget child;
+
+  final String? title, subtitle;
+
+  final Widget? leading, trailing, sidebarFooter;
+
+  final UINavigationLayout layout;
+
+  final UISidebarVariant sidebarVariant;
+
+  final UINavbarVariant navbarVariant;
+
+  final bool collapsed;
+}
+```
+
 ## UIRadio
 
 [Source: lib/src/radio.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/radio.dart)
@@ -2276,6 +2464,12 @@ For exact constructor parameters/defaults, use [API reference](api-reference.md)
 
 Run `flutter run -t lib/recipes/api_recipe.dart --dart-define=API_BASE_URL=https://your-server.example/api/` from example/. No endpoint is contacted when no base URL is supplied. This is actual injectable http.Client transport, not a deployed backend: adapt the explicitly documented member endpoints/schema. Tests mock GET/POST/422, validate model decoding and exercise form failure/correction/save/list reload. The website's API gallery intentionally uses a local Future simulation instead.
 
+## Sidebar, navbar and adaptive shell
+
+[Source](https://github.com/HYowshi/flutter-ui/blob/main/example/lib/recipes/navigation_recipe.dart) · [Readable source](navigation_recipe.dart) · [Guide](navigation.vi.md)
+
+Run `flutter run -t lib/recipes/navigation_recipe.dart` from example/. The page controls selection and collapsed state; UINavigationScaffold changes navigation layout while keeping the draft. Its app-owned callback can be replaced with the consumer router. There is no automatic route registration or API service. NavigationDemo in the studio offers five sidebar and four navbar variants.
+
 
 ---
 
@@ -2844,14 +3038,14 @@ Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/distribution.vi.md
 
 # Cài đặt và bản phân phối
 
-Bản hiện tại: **youth_ui 0.17.0**, giấy phép **MIT**. Thư viện dùng Flutter >=3.47.0 và Dart ^3.13.0. Không phải package tên flutter_ui trên pub.dev.
+Bản hiện tại: **youth_ui 0.18.0**, giấy phép **MIT**. Thư viện dùng Flutter >=3.47.0 và Dart ^3.13.0. Không phải package tên flutter_ui trên pub.dev.
 
 ## Cài trực tiếp từ GitHub
 
 Cách nhanh nhất: mở terminal tại thư mục ứng dụng và chạy một lệnh. Lệnh tự ghi dependency và tải gói:
 
 ```sh
-flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.17.0}}"
+flutter pub add "youth_ui@{git: {url: https://github.com/HYowshi/flutter-ui.git, ref: v0.18.0}}"
 ```
 
 Không cần tải ZIP hay chạy thêm `flutter pub get` sau lệnh thành công. Bản GitHub cần Git và kết nối mạng. Chưa dùng `flutter pub add youth_ui` vì bản này chưa phát hành trên pub.dev.
@@ -2865,23 +3059,23 @@ dependencies:
   youth_ui:
     git:
       url: https://github.com/HYowshi/flutter-ui.git
-      ref: v0.17.0
+      ref: v0.18.0
 ```
 
 Chạy `flutter pub get`, rồi import `package:youth_ui/youth_ui.dart`. Không cần sao chép từng file trong lib/src. Tag cố định giúp các dự án không tự thay đổi theo main; commit cụ thể là mức ghim chính xác nhất.
 
 ## Dùng ZIP / TAR.GZ
 
-Tải file tại [GitHub Releases](https://github.com/HYowshi/flutter-ui/releases/tag/v0.17.0), đối chiếu SHA256SUMS.txt rồi giải nén. Hai định dạng có cùng bộ file, một thư mục gốc youth_ui-0.17.0 và release.json ghi commit/hash từng file.
+Tải file tại [GitHub Releases](https://github.com/HYowshi/flutter-ui/releases/tag/v0.18.0), đối chiếu SHA256SUMS.txt rồi giải nén. Hai định dạng có cùng bộ file, một thư mục gốc youth_ui-0.18.0 và release.json ghi commit/hash từng file.
 
-Ví dụ đặt thư viện vào `packages/youth_ui-0.17.0` của app:
+Ví dụ đặt thư viện vào `packages/youth_ui-0.18.0` của app:
 
 ```yaml
 dependencies:
   flutter:
     sdk: flutter
   youth_ui:
-    path: packages/youth_ui-0.17.0
+    path: packages/youth_ui-0.18.0
 ```
 
 `path` tính từ thư mục chứa pubspec.yaml của app. Không dùng đường dẫn ổ D của người phát triển trong dự án chia sẻ cho người khác. Thêm dependency Git thay vì path khi không muốn đưa toàn bộ thư viện vào repo app.
@@ -3011,6 +3205,97 @@ Hợp đồng ví dụ (hãy đổi để khớp backend thật):
 Mẫu kiểm tra schema, giới hạn response 1 MiB, chờ header tối đa 20 giây và giới hạn thời gian chờ giữa các chunk 20 giây. Đây không phải deadline tổng hay hủy request header khi timeout. Các status bất ngờ dùng lỗi an toàn; không tự theo redirect hay retry. HTTPS được yêu cầu, ngoại trừ HTTP loopback cho phát triển. Token có thể lấy từ session hiện tại qua `MembersApi.accessToken`, không nhúng secret vào mã nguồn/dart-define. Backend lớn nên dùng server pagination thay vì nâng giới hạn tải tùy tiện.
 
 Web cần CORS từ backend; không tắt kiểm tra TLS hay tìm cách vượt CORS. Native cần cấu hình quyền mạng của ứng dụng. Xem [Flutter networking](https://docs.flutter.dev/cookbook/networking/fetch-data) và [http Client/testing](https://pub.dev/packages/http). Demo “Kết nối API” trên website chỉ mô phỏng Future cục bộ; recipe/test mới minh họa transport HTTP và mapping GET/POST/422, không có backend được cung cấp kèm thư viện.
+
+
+---
+
+Source: https://github.com/HYowshi/flutter-ui/blob/main/docs/navigation.vi.md
+
+# Sidebar & Navbar · 0.18
+
+## Chọn mẫu rồi gọi widget
+
+```dart
+final items = [
+  UINavigationItem(id: 'home', label: 'Tổng quan', icon: Icons.home_outlined),
+  UINavigationItem(id: 'inbox', label: 'Tin nhắn', icon: Icons.chat_outlined, badge: '12'),
+];
+
+UINavigationScaffold(
+  title: 'Workspace',
+  items: items,
+  selectedIndex: selected,
+  onSelected: (index) => setState(() => selected = index),
+  sidebarVariant: UISidebarVariant.floating,
+  navbarVariant: UINavbarVariant.pill,
+  child: page,
+);
+```
+
+Các màu lấy từ ColorScheme của UIApp/theme hiện tại. Không cần gán màu riêng cho từng mục. Tham số style chỉ chọn cách thể hiện; caller sở hữu selectedIndex và routing. `onSelected` có thể cập nhật State, gọi router hiện tại hoặc đổi page. Không tự thêm route, gọi API hay mở URL từ label/id.
+
+## Năm Sidebar
+
+| Variant | Ngôn ngữ thiết kế |
+|---|---|
+| standard | Bề mặt nhẹ, selected nền mềm và vạch ở đầu dòng |
+| tonal | Nền phân lớp, mục chọn mang màu primary với chữ onPrimary |
+| floating | Khối bo 24 px, bóng nhẹ, mục chọn dạng pill |
+| contrast | Nền primary toàn khối, chữ onPrimary, mục chọn đảo vai trò màu |
+| outline | Khung và đường viền nhấn mục chọn, nền ít nhiễu |
+
+`UISidebar` có title/subtitle/leading/footer, nhóm `UINavigationItem.group`, badge và enabled. `collapsed: true` chuyển thành rail 80 px; chiều rộng thực dưới 200 px cũng ẩn nhãn, giữ tooltip và tên semantics. Nhãn dài tối đa hai dòng, sau đó ellipsis; tooltip/semantics giữ nhãn đầy đủ. Badge là chuỗi do app định dạng, ví dụ `99+`.
+
+Sidebar mặc định rộng 264 px; width phải hữu hạn và >=64. Widget cần chiều cao hữu hạn: đặt trong Expanded/Scaffold hoặc SizedBox. Nếu parent cho chiều rộng nhỏ hơn 64 px thì sidebar không được hiển thị. Dùng Navbar/menu hoặc shell tự thích ứng khi vùng quá nhỏ, thay vì ép Sidebar cạnh nội dung.
+
+Header, mục và footer cùng nằm trong vùng cuộn. Footer ở phía cuối vùng còn lại khi đủ chỗ, cuộn tiếp khi không đủ; không che các mục bên dưới. Footer/leading phải vừa constraints, dùng nội dung gọn; không đặt Expanded hay ListView không giới hạn vào footer. Khi tự thu gọn sidebar, truyền footer phù hợp dạng rail (ví dụ avatar thay vì hàng thông tin dài).
+
+## Bốn Navbar
+
+| Variant | Ngôn ngữ thiết kế |
+|---|---|
+| underline | Mục đang chọn có đường nhấn dưới chân |
+| pill | Capsule nền mềm quanh mục đang chọn |
+| filled | Mục chọn primary đậm, nền thanh dùng surfaceContainerLow |
+| floating | Thanh bo 28 px, viền/bóng nhẹ và capsule |
+
+`UINavbar` là thanh điều hướng trên, không phải bottom NavigationBar. Có title, leading và trailing; tận dụng theme của ứng dụng. Vùng rộng cho các liên kết cuộn ngang, kèm nút menu tất cả mục để chuột cũng truy cập được mục nằm ngoài vùng nhìn. Nhãn ngang giới hạn một dòng và có tooltip đầy đủ.
+
+Khi rộng dưới 760 px hoặc text scale >1.4, các mục chuyển vào menu native có focus, đóng bằng Back/Escape/outside và tự chọn dialog/sheet theo viewport. Vùng hẹp dưới 360 px bỏ leading trang trí, dưới 280 px bỏ trailing để ưu tiên nút menu và title. Các slot phải tự phù hợp chiều rộng còn lại; tránh nhét form hoặc một hàng action dài vào header.
+
+Menu chụp danh sách/index khi mở. Dùng `id` ổn định cho từng destination; khi menu đang mở mà danh sách bị đổi thứ tự/thay mục, lựa chọn lỗi thời không được áp dụng nhầm. Nếu không có id, danh tính mặc định là `(label, icon, group)`. `enabled:false` chặn chọn cả bằng pointer, keyboard và semantics.
+
+## Khung tự thích ứng
+
+UINavigationScaffold sở hữu Scaffold và SafeArea:
+
+- layout adaptive: sidebar khi local width >=1024 px và text scale <=1.5; còn lại Navbar.
+- layout sidebar: ưu tiên sidebar từ 760 px; vẫn về Navbar khi vùng quá hẹp hoặc chữ lớn.
+- layout navbar: Navbar trên mọi kích thước.
+
+Nội dung chính được giữ bằng key nội bộ khi đổi hai cách bố trí; không mất TextField/State chỉ vì resize. Điều này không thay việc lưu state giữa các route do app thay đổi. Brand/action slots có thể xuất hiện/ẩn theo layout; không dùng chúng làm nơi giữ form/draft quan trọng.
+
+Shell không tự thêm scroll view cho child. Truyền UIPage/ListView hoặc nội dung có constraints phù hợp; không lồng thêm Scaffold/MaterialApp trừ khi chủ đích. App đã có shell/router có thể dùng UISidebar và UINavbar riêng. UIAdaptiveScaffold/UIDestination cũ vẫn dành cho bố cục có supporting pane và 2–5 destinations; không trộn hai loại model mà không chuyển đổi rõ ràng.
+
+## Tương tác và thiết kế
+
+Selected state dùng nền, hình dạng/vạch/viền và độ đậm chữ; nhãn rõ ràng, thứ tự mục ổn định giữa desktop và mobile. Các mục có tooltip, selected/enabled semantics, InkWell focus/hover/pressed, hỗ trợ Tab/Shift+Tab và Enter/Space. Tôn trọng reduced motion; không có blur nền, shimmer hay animation lặp. Sidebar dựng mục theo SliverList, không lưu cache item vô hạn.
+
+Nhóm là tiêu đề phân loại một cấp, không phải cây menu nhiều tầng/accordion. Hãy giữ Navbar ngắn; với nhiều mục, ưu tiên Sidebar và cấu trúc nhóm rõ ràng. Tham khảo [Fluent navigation guidance](https://fluent2.microsoft.design/components/web/react/core/nav/usage) về hierarchy, selection, reflow và footer. Đây là triển khai Flutter riêng, không phải bản sao Fluent hoặc Material.
+
+## Demo và recipe
+
+Gallery “Sidebar & Navbar” cho đổi 5 Sidebar, 4 Navbar, rail và chọn mục; các bản xem trước dùng dữ liệu minh họa, cùng một theme. Menu ở preview hẹp trên desktop có thể là dialog vì viewport thật vẫn rộng.
+
+[navigation_recipe.dart](https://github.com/HYowshi/flutter-ui/blob/main/example/lib/recipes/navigation_recipe.dart) là entry point chạy được:
+
+```sh
+cd example
+flutter pub get
+flutter run -t lib/recipes/navigation_recipe.dart
+```
+
+Kiểm thử gồm narrow/large text/RTL/dark, từng variant, keyboard, mục vô hiệu hóa, menu lỗi thời và giữ bản nháp khi resize. Các kiểm thử này không phải phép đo FPS/GPU trên thiết bị thật.
 
 
 ---
@@ -3505,5 +3790,95 @@ class _ApiMembersPageState extends State<ApiMembersPage> {
       ],
     );
   }
+}
+```
+
+
+---
+
+Runnable source: https://github.com/HYowshi/flutter-ui/blob/main/example/lib/recipes/navigation_recipe.dart
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:youth_ui/youth_ui.dart';
+
+const navigationItems = [
+  UINavigationItem(
+    id: 'home',
+    label: 'Tổng quan',
+    icon: Icons.home_outlined,
+    group: 'WORKSPACE',
+  ),
+  UINavigationItem(
+    id: 'projects',
+    label: 'Dự án',
+    icon: Icons.folder_outlined,
+    badge: '8',
+    group: 'WORKSPACE',
+  ),
+  UINavigationItem(
+    id: 'inbox',
+    label: 'Tin nhắn',
+    icon: Icons.chat_outlined,
+    badge: '12',
+    group: 'WORKSPACE',
+  ),
+  UINavigationItem(
+    id: 'settings',
+    label: 'Cài đặt',
+    icon: Icons.settings_outlined,
+    group: 'QUẢN LÝ',
+  ),
+];
+
+void main() =>
+    runApp(const UIApp(primary: Colors.indigo, home: NavigationRecipe()));
+
+/// Reuse this page inside the consumer's existing app/router; no nested UIApp.
+class NavigationRecipe extends StatefulWidget {
+  const NavigationRecipe({super.key});
+  @override
+  State<NavigationRecipe> createState() => _NavigationRecipeState();
+}
+
+class _NavigationRecipeState extends State<NavigationRecipe> {
+  int selected = 0;
+  bool collapsed = false;
+  @override
+  Widget build(BuildContext context) => UINavigationScaffold(
+    title: 'Forma',
+    subtitle: 'Design workspace',
+    items: navigationItems,
+    selectedIndex: selected,
+    onSelected: (index) => setState(() => selected = index),
+    sidebarVariant: UISidebarVariant.floating,
+    navbarVariant: UINavbarVariant.pill,
+    collapsed: collapsed,
+    trailing: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          tooltip: 'Thu gọn / mở rộng',
+          icon: const Icon(Icons.view_sidebar_outlined),
+          onPressed: () => setState(() => collapsed = !collapsed),
+        ),
+        const UIThemeToggle(),
+      ],
+    ),
+    child: UIPage(
+      children: [
+        Text('WORKSPACE / ${navigationItems[selected].label.toUpperCase()}'),
+        Text(
+          navigationItems[selected].label,
+          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
+        ),
+        const Text('Thay nội dung này bằng trang hoặc router của ứng dụng.'),
+        UITextField.multiline(label: 'Bản nháp'),
+        const UIAlert(
+          message: 'Thử resize cửa sổ: nội dung đang nhập được giữ khi đổi Sidebar/Navbar.',
+        ),
+      ],
+    ),
+  );
 }
 ```

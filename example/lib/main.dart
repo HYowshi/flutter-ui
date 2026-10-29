@@ -6,6 +6,7 @@ import 'package:youth_ui/youth_ui.dart';
 
 import 'usage_samples.dart';
 import 'api_demo.dart';
+import 'navigation_demo.dart';
 
 void main() => runApp(const ShowcaseApp());
 
@@ -106,6 +107,7 @@ class _StudioState extends State<Studio> {
     'Dialog & Sheet',
     'Date Picker',
     'Kết nối API',
+    'Sidebar & Navbar',
   ];
   static const icons = [
     Icons.grid_view_rounded,
@@ -127,6 +129,7 @@ class _StudioState extends State<Studio> {
     Icons.web_asset_outlined,
     Icons.date_range_outlined,
     Icons.cloud_sync_outlined,
+    Icons.view_sidebar_outlined,
   ];
   @override
   void dispose() {
@@ -284,6 +287,15 @@ class _StudioState extends State<Studio> {
                               if (selected == 15) const StateViewDemo(),
                               if (selected == 16) const AdaptiveDialogDemo(),
                               if (selected == 17) const DatePickerDemo(),
+                              if (selected == 19)
+                                const DemoBlock(
+                                  number: '20',
+                                  title: 'Sidebar & Navbar',
+                                  description: 'Nhiều cách điều hướng, cùng một hệ màu và hành vi nhất quán.',
+                                  effects: '5 Sidebar / 4 Navbar · icon rail · menu mobile · focus / hover / selected',
+                                  code: "UINavigationScaffold(\n  title: 'Workspace', items: items,\n  selectedIndex: selected, onSelected: select,\n  sidebarVariant: UISidebarVariant.floating,\n  navbarVariant: UINavbarVariant.pill,\n  child: page,\n);",
+                                  child: NavigationDemo(),
+                                ),
                               if (selected == 18)
                                 const DemoBlock(
                                   number: '19',
@@ -368,6 +380,7 @@ class _StudioState extends State<Studio> {
     'Popup tự chọn dialog hoặc bottom sheet, giữ nội dung và thao tác rõ ràng.',
     'Chọn ngày, khoảng ngày, giới hạn hợp lệ và dùng cùng form.',
     'Truyền hàm API; trạng thái tải, lỗi, rỗng và cập nhật dữ liệu được xử lý thống nhất.',
+    'Sidebar và Navbar nhiều phong cách, tự thích ứng PC/mobile và kế thừa theme.',
   ];
   Widget sidebar(BuildContext context, {bool closeDrawer = false}) {
     final s = Theme.of(context).colorScheme;
@@ -462,7 +475,7 @@ class _StudioState extends State<Studio> {
           ),
           const SizedBox(height: 20),
           Text(
-            'v0.17.0 · Ready-to-use Flutter UI',
+            'v0.18.0 · Ready-to-use Flutter UI',
             style: TextStyle(fontSize: 10, color: s.onSurfaceVariant),
           ),
         ],

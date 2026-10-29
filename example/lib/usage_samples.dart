@@ -4,6 +4,20 @@ import 'package:youth_ui/youth_ui.dart';
 
 // Copyable partial recipes. App-owned callbacks/models are named explicitly.
 const customizationSamples = <String, String>{
+  'Sidebar & Navbar': r'''final items = [
+  UINavigationItem(id: 'home', label: 'Tổng quan', icon: Icons.home_outlined),
+  UINavigationItem(id: 'inbox', label: 'Tin nhắn', icon: Icons.chat_outlined, badge: '12'),
+];
+UINavigationScaffold(
+  title: 'Workspace', items: items,
+  selectedIndex: selected, onSelected: (i) => setState(() => selected = i),
+  layout: UINavigationLayout.adaptive,
+  sidebarVariant: UISidebarVariant.contrast,
+  navbarVariant: UINavbarVariant.floating,
+  child: page, // UIPage/ListView của ứng dụng; shell không tự thêm scroll view
+);
+// Hoặc ghép UISidebar / UINavbar vào Scaffold/router hiện tại.
+// Route do onSelected của ứng dụng quản lý; dùng id ổn định khi có menu mobile.''',
   'Kết nối API': r'''// Tạo controller trong State, dispose khi đóng trang.
 final reload = UIAsyncController();
 UIAsyncView<List<Member>>(
