@@ -32,6 +32,7 @@ jobs:
         working-directory: example
       - run: flutter build web --release --base-href /flutter-ui/ --no-web-resources-cdn
         working-directory: example
+      - run: python3 tool/version_web_assets.py example/build/web
       - run: python3 tool/generate_ai_docs.py --check --publish example/build/web
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
