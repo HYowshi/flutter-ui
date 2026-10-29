@@ -6,11 +6,13 @@ import 'package:flutter/material.dart';
 import 'adaptive_dialog.dart';
 import 'motion.dart';
 
+part 'mobile_navbar.dart';
+
 enum UISidebarVariant { standard, tonal, floating, contrast, outline }
 
 enum UINavbarVariant { underline, pill, filled, floating }
 
-enum UINavigationLayout { adaptive, sidebar, navbar }
+enum UINavigationLayout { adaptive, sidebar, navbar, mobile }
 
 /// A controlled navigation destination. The application owns routing.
 @immutable
@@ -509,6 +511,35 @@ class _UISidebarState extends State<UISidebar> {
 /// Top navigation. Narrow layouts use a native adaptive menu instead of
 /// squeezing links; wide layouts retain horizontal scroll for long labels.
 class UINavbar extends StatefulWidget {
+  /// Mobile bottom navigation. Use in Scaffold.bottomNavigationBar.
+  static UIMobileNavbar mobile({
+    Key? key,
+    required List<UINavigationItem> items,
+    required int selectedIndex,
+    required ValueChanged<int> onSelected,
+    UIMobileNavbarVariant variant = UIMobileNavbarVariant.standard,
+    VoidCallback? onAction,
+    IconData actionIcon = Icons.add_rounded,
+    String actionLabel = 'Tạo mới',
+    String moreLabel = 'Thêm',
+    double maxWidth = 560,
+    bool hideOnKeyboard = true,
+    bool useSafeArea = true,
+  }) => UIMobileNavbar(
+    key: key,
+    items: items,
+    selectedIndex: selectedIndex,
+    onSelected: onSelected,
+    variant: variant,
+    onAction: onAction,
+    actionIcon: actionIcon,
+    actionLabel: actionLabel,
+    moreLabel: moreLabel,
+    maxWidth: maxWidth,
+    hideOnKeyboard: hideOnKeyboard,
+    useSafeArea: useSafeArea,
+  );
+
   const UINavbar({
     super.key,
     required this.items,
@@ -723,6 +754,10 @@ class UINavigationScaffold extends StatefulWidget {
     this.layout = UINavigationLayout.adaptive,
     this.sidebarVariant = UISidebarVariant.floating,
     this.navbarVariant = UINavbarVariant.pill,
+    this.mobileNavbarVariant = UIMobileNavbarVariant.standard,
+    this.onMobileAction,
+    this.mobileActionIcon = Icons.add_rounded,
+    this.mobileActionLabel = 'Tạo mới',
     this.collapsed = false,
   });
   final List<UINavigationItem> items;
@@ -734,6 +769,10 @@ class UINavigationScaffold extends StatefulWidget {
   final UINavigationLayout layout;
   final UISidebarVariant sidebarVariant;
   final UINavbarVariant navbarVariant;
+  final UIMobileNavbarVariant mobileNavbarVariant;
+  final VoidCallback? onMobileAction;
+  final IconData mobileActionIcon;
+  final String mobileActionLabel;
   final bool collapsed;
   @override
   State<UINavigationScaffold> createState() => _UINavigationScaffoldState();
@@ -747,11 +786,55 @@ class _UINavigationScaffoldState extends State<UINavigationScaffold> {
       final scale = MediaQuery.textScalerOf(context).scale(14) / 14;
       final sidebar =
           widget.layout != UINavigationLayout.navbar &&
+          widget.layout != UINavigationLayout.mobile &&
           scale <= 1.5 &&
           constraints.maxWidth >=
               (widget.layout == UINavigationLayout.sidebar ? 760 : 1024);
+      final mobile =
+          widget.layout == UINavigationLayout.mobile ||
+          (!sidebar && constraints.maxWidth < 760);
       final content = KeyedSubtree(key: _content, child: widget.child);
       return Scaffold(
+        appBar: mobile
+            ? AppBar(
+                title: widget.title == null
+                    ? null
+                    : Text(
+                        widget.title!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                leading: widget.leading == null
+                    ? null
+                    : Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: widget.leading,
+                      ),
+                actions: [
+                  if (widget.trailing != null)
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: constraints.maxWidth * .42,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsetsDirectional.only(end: 8),
+                        child: widget.trailing,
+                      ),
+                    ),
+                ],
+              )
+            : null,
+        bottomNavigationBar: mobile
+            ? UIMobileNavbar(
+                items: widget.items,
+                selectedIndex: widget.selectedIndex,
+                onSelected: widget.onSelected,
+                variant: widget.mobileNavbarVariant,
+                onAction: widget.onMobileAction,
+                actionIcon: widget.mobileActionIcon,
+                actionLabel: widget.mobileActionLabel,
+              )
+            : null,
         body: SafeArea(
           child: sidebar
               ? Row(
@@ -785,6 +868,8 @@ class _UINavigationScaffoldState extends State<UINavigationScaffold> {
                     ),
                   ],
                 )
+              : mobile
+              ? content
               : Column(
                   children: [
                     UINavbar(

@@ -1,7 +1,7 @@
 # youth_ui API reference
 
-Generated for **0.18.0** from the public export/part graph of lib/youth_ui.dart.
-Source fingerprint: `fa8e014dc60ec92cae834c1be6a61343c367c42f14d5d9f56c04604422cee6e7`.
+Generated for **0.19.0** from the public export/part graph of lib/youth_ui.dart.
+Source fingerprint: `d88291a05ff1dbda91a51cfe3c14523210e49f9649d4abfe7f76daecbde400ca`.
 
 Do not edit manually. Run `python tool/generate_ai_docs.py`; CI checks drift.
 These are source-derived declaration excerpts: explicit constructors/defaults,
@@ -62,6 +62,8 @@ its linked detailed guides. Do not copy a declaration as an executable example.
 - [UIForm](#uiform)
 - [UIValidators](#uivalidators)
 - [UIImage](#uiimage)
+- [UIMobileNavbarVariant](#uimobilenavbarvariant)
+- [UIMobileNavbar](#uimobilenavbar)
 - [UIMotion](#uimotion)
 - [UIAnimatedSize](#uianimatedsize)
 - [UIEntrance](#uientrance)
@@ -1432,6 +1434,55 @@ class UIImage extends StatefulWidget {
 }
 ```
 
+## UIMobileNavbarVariant
+
+[Source: lib/src/mobile_navbar.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/mobile_navbar.dart)
+
+```dart
+enum UIMobileNavbarVariant { standard, pill, floating, dock, centerAction }
+```
+
+## UIMobileNavbar
+
+[Source: lib/src/mobile_navbar.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/mobile_navbar.dart)
+
+```dart
+class UIMobileNavbar extends StatefulWidget {
+  const UIMobileNavbar({
+    super.key,
+    required this.items,
+    required this.selectedIndex,
+    required this.onSelected,
+    this.variant = UIMobileNavbarVariant.standard,
+    this.onAction,
+    this.actionIcon = Icons.add_rounded,
+    this.actionLabel = 'Tạo mới',
+    this.moreLabel = 'Thêm',
+    this.hideOnKeyboard = true,
+    this.useSafeArea = true,
+    this.maxWidth = 560,
+  });
+
+  final List<UINavigationItem> items;
+
+  final int selectedIndex;
+
+  final ValueChanged<int> onSelected;
+
+  final UIMobileNavbarVariant variant;
+
+  final VoidCallback? onAction;
+
+  final IconData actionIcon;
+
+  final String actionLabel, moreLabel;
+
+  final bool hideOnKeyboard, useSafeArea;
+
+  final double maxWidth;
+}
+```
+
 ## UIMotion
 
 [Source: lib/src/motion.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/motion.dart)
@@ -1556,7 +1607,7 @@ enum UINavbarVariant { underline, pill, filled, floating }
 [Source: lib/src/navigation.dart](https://github.com/HYowshi/flutter-ui/blob/main/lib/src/navigation.dart)
 
 ```dart
-enum UINavigationLayout { adaptive, sidebar, navbar }
+enum UINavigationLayout { adaptive, sidebar, navbar, mobile }
 ```
 
 ## UINavigationItem
@@ -1636,6 +1687,21 @@ class UISidebar extends StatefulWidget {
 
 ```dart
 class UINavbar extends StatefulWidget {
+  static UIMobileNavbar mobile({
+    Key? key,
+    required List<UINavigationItem> items,
+    required int selectedIndex,
+    required ValueChanged<int> onSelected,
+    UIMobileNavbarVariant variant = UIMobileNavbarVariant.standard,
+    VoidCallback? onAction,
+    IconData actionIcon = Icons.add_rounded,
+    String actionLabel = 'Tạo mới',
+    String moreLabel = 'Thêm',
+    double maxWidth = 560,
+    bool hideOnKeyboard = true,
+    bool useSafeArea = true,
+  });
+
   const UINavbar({
     super.key,
     required this.items,
@@ -1684,6 +1750,10 @@ class UINavigationScaffold extends StatefulWidget {
     this.layout = UINavigationLayout.adaptive,
     this.sidebarVariant = UISidebarVariant.floating,
     this.navbarVariant = UINavbarVariant.pill,
+    this.mobileNavbarVariant = UIMobileNavbarVariant.standard,
+    this.onMobileAction,
+    this.mobileActionIcon = Icons.add_rounded,
+    this.mobileActionLabel = 'Tạo mới',
     this.collapsed = false,
   });
 
@@ -1704,6 +1774,14 @@ class UINavigationScaffold extends StatefulWidget {
   final UISidebarVariant sidebarVariant;
 
   final UINavbarVariant navbarVariant;
+
+  final UIMobileNavbarVariant mobileNavbarVariant;
+
+  final VoidCallback? onMobileAction;
+
+  final IconData mobileActionIcon;
+
+  final String mobileActionLabel;
 
   final bool collapsed;
 }

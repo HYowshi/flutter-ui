@@ -13,10 +13,10 @@ UINavigationScaffold(
   selectedIndex: selected, onSelected: (i) => setState(() => selected = i),
   layout: UINavigationLayout.adaptive,
   sidebarVariant: UISidebarVariant.contrast,
-  navbarVariant: UINavbarVariant.floating,
+  mobileNavbarVariant: UIMobileNavbarVariant.floating,
   child: page, // UIPage/ListView của ứng dụng; shell không tự thêm scroll view
 );
-// Hoặc ghép UISidebar / UINavbar vào Scaffold/router hiện tại.
+// Hoặc ghép UISidebar / UINavbar.mobile vào Scaffold/router hiện tại.
 // Route do onSelected của ứng dụng quản lý; dùng id ổn định khi có menu mobile.''',
   'Kết nối API': r'''// Tạo controller trong State, dispose khi đóng trang.
 final reload = UIAsyncController();

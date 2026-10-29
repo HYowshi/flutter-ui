@@ -39,7 +39,40 @@ const navigationItems = [
 ];
 
 const sidebarNames = ['Workspace', 'Tonal', 'Floating', 'Contrast', 'Outline'];
-const navbarNames = ['Underline', 'Pill', 'Filled', 'Floating'];
+const navbarNames = [
+  'Classic',
+  'Active Pill',
+  'Floating',
+  'Contrast Dock',
+  'Center Action',
+];
+const mobileNavigationItems = [
+  UINavigationItem(
+    id: 'home',
+    label: 'Trang chủ',
+    icon: Icons.home_outlined,
+    selectedIcon: Icons.home_rounded,
+  ),
+  UINavigationItem(
+    id: 'projects',
+    label: 'Dự án',
+    icon: Icons.folder_outlined,
+    selectedIcon: Icons.folder_rounded,
+  ),
+  UINavigationItem(
+    id: 'inbox',
+    label: 'Tin nhắn',
+    icon: Icons.chat_outlined,
+    selectedIcon: Icons.chat_rounded,
+    badge: '12',
+  ),
+  UINavigationItem(
+    id: 'profile',
+    label: 'Tài khoản',
+    icon: Icons.person_outline_rounded,
+    selectedIcon: Icons.person_rounded,
+  ),
+];
 
 class NavigationDemo extends StatefulWidget {
   const NavigationDemo({super.key});
@@ -49,7 +82,8 @@ class NavigationDemo extends StatefulWidget {
 
 class _NavigationDemoState extends State<NavigationDemo> {
   UISidebarVariant sidebar = UISidebarVariant.floating;
-  UINavbarVariant navbar = UINavbarVariant.pill;
+  UIMobileNavbarVariant navbar = UIMobileNavbarVariant.pill;
+  int mobileSelected = 0;
   int selected = 1;
   bool collapsed = false;
   @override
@@ -128,63 +162,83 @@ class _NavigationDemoState extends State<NavigationDemo> {
         _section(
           context,
           '02',
-          'Navbar collection',
-          'Bốn nhịp điệu cho ứng dụng và website. Vùng hẹp mở menu riêng.',
+          'Mobile bottom navigation',
+          'Năm mẫu thanh điều hướng dưới. Chạm để chuyển trang ngay trong khung điện thoại.',
         ),
         const SizedBox(height: 18),
         UIGrid(
-          maxColumns: 4,
-          minItemWidth: 150,
+          maxColumns: 5,
+          minItemWidth: 140,
           children: [
-            for (final variant in UINavbarVariant.values)
+            for (final variant in UIMobileNavbarVariant.values)
               _StyleTile(
                 label: navbarNames[variant.index],
                 selected: navbar == variant,
                 onTap: () => setState(() => navbar = variant),
                 horizontal: true,
-                rounded: variant == UINavbarVariant.floating,
-                outlined: variant == UINavbarVariant.underline,
+                rounded: variant != UIMobileNavbarVariant.standard,
+                inverse: variant == UIMobileNavbarVariant.dock,
               ),
           ],
         ),
         const SizedBox(height: 18),
-        Container(
-          height: 340,
-          clipBehavior: Clip.antiAlias,
-          decoration: BoxDecoration(
-            color: s.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: s.outlineVariant),
-          ),
-          child: Column(
-            children: [
-              UINavbar(
-                items: navigationItems,
-                selectedIndex: selected,
-                onSelected: (i) => setState(() => selected = i),
-                title: 'Forma',
-                variant: navbar,
-                leading: Icon(Icons.layers_rounded, color: s.primary),
-                trailing: CircleAvatar(
-                  radius: 16,
-                  backgroundColor: s.secondaryContainer,
-                  foregroundColor: s.onSecondaryContainer,
-                  child: const Text('LN', style: TextStyle(fontSize: 11)),
-                ),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final phone = _MobilePhone(
+              variant: navbar,
+              selected: mobileSelected,
+              onSelected: (i) => setState(() => mobileSelected = i),
+            );
+            return Container(
+              padding: EdgeInsets.all(constraints.maxWidth < 400 ? 8 : 24),
+              decoration: BoxDecoration(
+                color: s.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(24),
               ),
-              Expanded(
-                child: NavigationWorkspace(
-                  title: navigationItems[selected].label,
-                  minimal: true,
-                ),
-              ),
-            ],
-          ),
+              child: constraints.maxWidth >= 760
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        SizedBox(width: 360, child: phone),
+                        const SizedBox(width: 32),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                navbarNames[navbar.index],
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium,
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Điều hướng ở vùng ngón tay dễ chạm. Mỗi mẫu dùng chung dữ liệu, callback và bộ màu của ứng dụng.',
+                                style: TextStyle(height: 1.6),
+                              ),
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Safe Area · badge · selected state\nChữ lớn / RTL · bàn phím\nMục Thêm khi thiếu chỗ · reduced motion',
+                                style: TextStyle(height: 1.8),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    )
+                  : Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 390),
+                        child: phone,
+                      ),
+                    ),
+            );
+          },
         ),
         const SizedBox(height: 20),
         const UIAlert(
           message:
-              'Chọn mục để thử tương tác. Mở menu ở vùng hẹp, dùng Tab/Enter trên PC. '
+              'Chọn mục để thử tương tác. Navbar mobile ở dưới; nút giữa là hành động độc lập. Dùng Tab/Enter trên PC. '
               'Màu sắc đi theo theme; đây là dữ liệu giao diện mẫu, không tạo route hoặc gọi dịch vụ.',
         ),
       ],
@@ -227,6 +281,94 @@ class _NavigationDemoState extends State<NavigationDemo> {
       ),
     ],
   );
+}
+
+class _MobilePhone extends StatelessWidget {
+  const _MobilePhone({
+    required this.variant,
+    required this.selected,
+    required this.onSelected,
+  });
+  final UIMobileNavbarVariant variant;
+  final int selected;
+  final ValueChanged<int> onSelected;
+  @override
+  Widget build(BuildContext context) {
+    final s = Theme.of(context).colorScheme;
+    return LayoutBuilder(
+      builder: (context, constraints) => Container(
+        height: 640,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(34),
+          border: Border.all(color: s.outlineVariant, width: 2),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            size: Size(constraints.maxWidth, 636),
+            padding: const EdgeInsets.only(bottom: 18),
+            viewPadding: const EdgeInsets.only(bottom: 18),
+            viewInsets: EdgeInsets.zero,
+          ),
+          child: ScaffoldMessenger(
+            child: Builder(
+              builder: (phoneContext) => Stack(
+                children: [
+                  Scaffold(
+                    appBar: AppBar(
+                      title: const Text('Forma'),
+                      actions: const [
+                        Padding(
+                          padding: EdgeInsets.only(right: 16),
+                          child: CircleAvatar(
+                            radius: 16,
+                            child: Text('LN', style: TextStyle(fontSize: 11)),
+                          ),
+                        ),
+                      ],
+                    ),
+                    body: NavigationWorkspace(
+                      title: mobileNavigationItems[selected].label,
+                      minimal: false,
+                    ),
+                    bottomNavigationBar: UINavbar.mobile(
+                      items: mobileNavigationItems,
+                      selectedIndex: selected,
+                      onSelected: onSelected,
+                      variant: variant,
+                      onAction: () => ScaffoldMessenger.of(phoneContext)
+                          .showSnackBar(
+                            const SnackBar(
+                              content: Text('Tạo mới · hành động mẫu'),
+                            ),
+                          ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 6,
+                    left: 0,
+                    right: 0,
+                    child: IgnorePointer(
+                      child: Center(
+                        child: Container(
+                          width: 88,
+                          height: 3,
+                          decoration: BoxDecoration(
+                            color: s.onSurface.withValues(alpha: .4),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _StyleTile extends StatelessWidget {

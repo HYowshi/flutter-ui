@@ -1,3 +1,10 @@
+## 0.19.0
+
+- Add mobile bottom navigation: Classic, Active Pill, Floating, Contrast Dock and Center Action, via UIMobileNavbar / UINavbar.mobile.
+- Handle safe areas, keyboard visibility, extra destinations in More, disabled destinations, large text, RTL and reduced motion. Center action has its own callback and fully hittable bounds.
+- Adaptive navigation shell now uses bottom navigation on compact screens; preserve existing desktop top-navbar API.
+- Replace top-navbar gallery previews with interactive phone frames; update recipes, usage snippets and AI documentation.
+
 ## 0.18.0
 
 - Add five UISidebar treatments (standard, tonal, floating, contrast, outline) and four top UINavbar treatments (underline, pill, filled, floating).

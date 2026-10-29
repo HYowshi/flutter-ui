@@ -6,7 +6,7 @@ import 'package:youth_ui/youth_ui.dart';
 
 void main() {
   testWidgets(
-    'gallery switches all sidebar/navbar styles and keeps shared selection',
+    'gallery switches all sidebar/navbar styles and keeps independent mobile selection',
     (tester) async {
       tester.view.physicalSize = const Size(1400, 1000);
       tester.view.devicePixelRatio = 1;
@@ -40,14 +40,17 @@ void main() {
         tester.widget<UISidebar>(find.byType(UISidebar)).collapsed,
         isTrue,
       );
-      for (final variant in UINavbarVariant.values) {
+      for (final variant in UIMobileNavbarVariant.values) {
         final tile = find
             .widgetWithText(InkWell, navbarNames[variant.index])
             .last;
         await tester.ensureVisible(tile);
         await tester.tap(tile);
         await tester.pumpAndSettle();
-        expect(tester.widget<UINavbar>(find.byType(UINavbar)).variant, variant);
+        expect(
+          tester.widget<UIMobileNavbar>(find.byType(UIMobileNavbar)).variant,
+          variant,
+        );
       }
       final sidebarHome = find.descendant(
         of: find.byType(UISidebar),
@@ -57,34 +60,38 @@ void main() {
       await tester.tap(sidebarHome);
       await tester.pumpAndSettle();
       expect(tester.widget<UISidebar>(find.byType(UISidebar)).selectedIndex, 0);
-      expect(tester.widget<UINavbar>(find.byType(UINavbar)).selectedIndex, 0);
+      expect(
+        tester
+            .widget<UIMobileNavbar>(find.byType(UIMobileNavbar))
+            .selectedIndex,
+        0,
+      );
       expect(tester.takeException(), isNull);
     },
   );
 
-  testWidgets('executable recipe selects via mobile menu and switches theme', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(390, 800);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-    await tester.pumpWidget(
-      const UIApp(
-        primary: Colors.indigo,
-        reduceMotion: true,
-        home: NavigationRecipe(),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Mở menu điều hướng'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byTooltip('Dự án · 8'));
-    await tester.pumpAndSettle();
-    expect(find.text('WORKSPACE / DỰ ÁN'), findsOneWidget);
-    await tester.tap(find.byTooltip('Đổi sáng / tối'));
-    await tester.pumpAndSettle();
-    expect(find.text('WORKSPACE / DỰ ÁN'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+  testWidgets(
+    'executable recipe selects via bottom navigation and switches theme',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 800);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        const UIApp(
+          primary: Colors.indigo,
+          reduceMotion: true,
+          home: NavigationRecipe(),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Dự án · 8'));
+      await tester.pumpAndSettle();
+      expect(find.text('WORKSPACE / DỰ ÁN'), findsOneWidget);
+      await tester.tap(find.byTooltip('Đổi sáng / tối'));
+      await tester.pumpAndSettle();
+      expect(find.text('WORKSPACE / DỰ ÁN'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

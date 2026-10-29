@@ -292,8 +292,8 @@ class _StudioState extends State<Studio> {
                                   number: '20',
                                   title: 'Sidebar & Navbar',
                                   description: 'Nhiều cách điều hướng, cùng một hệ màu và hành vi nhất quán.',
-                                  effects: '5 Sidebar / 4 Navbar · icon rail · menu mobile · focus / hover / selected',
-                                  code: "UINavigationScaffold(\n  title: 'Workspace', items: items,\n  selectedIndex: selected, onSelected: select,\n  sidebarVariant: UISidebarVariant.floating,\n  navbarVariant: UINavbarVariant.pill,\n  child: page,\n);",
+                                  effects: '5 Sidebar / 5 Mobile Navbar · Safe Area · badge · center action',
+                                  code: "UINavigationScaffold(\n  title: 'Workspace', items: items,\n  selectedIndex: selected, onSelected: select,\n  sidebarVariant: UISidebarVariant.floating,\n  mobileNavbarVariant: UIMobileNavbarVariant.pill,\n  child: page,\n);",
                                   child: NavigationDemo(),
                                 ),
                               if (selected == 18)
@@ -475,7 +475,7 @@ class _StudioState extends State<Studio> {
           ),
           const SizedBox(height: 20),
           Text(
-            'v0.18.0 · Ready-to-use Flutter UI',
+            'v0.19.0 · Ready-to-use Flutter UI',
             style: TextStyle(fontSize: 10, color: s.onSurfaceVariant),
           ),
         ],

@@ -51,7 +51,7 @@ class _NavigationRecipeState extends State<NavigationRecipe> {
     selectedIndex: selected,
     onSelected: (index) => setState(() => selected = index),
     sidebarVariant: UISidebarVariant.floating,
-    navbarVariant: UINavbarVariant.pill,
+    mobileNavbarVariant: UIMobileNavbarVariant.pill,
     collapsed: collapsed,
     trailing: Row(
       mainAxisSize: MainAxisSize.min,
